@@ -1,16 +1,16 @@
 {
-    "name": ":vendor_name/:package_name",
-    "description": ":package_description",
+    "name": "lucalongo/laravel-bookings",
+    "description": "Add bookings ability to any Eloquent model",
     "keywords": [
-        ":vendor_name",
-        ":package_name"
+        "lucalongo",
+        "laravel-bookings"
     ],
-    "homepage": "https://github.com/:vendor_name/:package_name",
+    "homepage": "https://github.com/lucalongo/laravel-bookings",
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": ":author_email",
+            "name": "Luca Longo",
+            "email": "l.longo@ambita.it",
             "role": "Developer"
         }
     ],
@@ -27,13 +27,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Spatie\\Skeleton\\": "src",
-            "Spatie\\Skeleton\\Database\\Factories\\": "database/factories"
+            "LucaLongo\\Bookings\\": "src",
+            "LucaLongo\\Bookings\\Database\\Factories\\": "database/factories"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Spatie\\Skeleton\\Tests\\": "tests"
+            "LucaLongo\\Bookings\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -47,10 +47,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Spatie\\Skeleton\\SkeletonServiceProvider"
+                "LucaLongo\\Bookings\\BookingsServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "Spatie\\Skeleton\\SkeletonFacade"
+                "Bookings": "LucaLongo\\Bookings\\BookingsFacade"
             }
         }
     },

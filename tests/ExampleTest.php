@@ -1,6 +1,6 @@
 <?php
 
-namespace Spatie\Skeleton\Tests;
+namespace LucaLongo\Bookings\Tests;
 
 class ExampleTest extends TestCase
 {

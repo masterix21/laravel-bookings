@@ -1,6 +1,6 @@
 <?php
 
-namespace Spatie\Skeleton\Database\Factories;
+namespace LucaLongo\Bookings\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 

@@ -1,12 +1,12 @@
 <?php
 
-namespace Spatie\Skeleton\Commands;
+namespace LucaLongo\Bookings\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class BookingsCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'laravel-bookings';
 
     public $description = 'My command';
 
