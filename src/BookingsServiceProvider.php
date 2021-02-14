@@ -2,9 +2,9 @@
 
 namespace LucaLongo\Bookings;
 
+use LucaLongo\Bookings\Commands\BookingsCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use LucaLongo\Bookings\Commands\BookingsCommand;
 
 class BookingsServiceProvider extends PackageServiceProvider
 {
