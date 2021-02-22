@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateBookingResourcesTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('booking_resources', function (Blueprint $table) {
+            $table->id()->primary();
+            $table->morphs('model');
+            $table->string('name', 255);
+            $table->text('description')->nullable();
+            $table->integer('min_slot')->nullable();
+            $table->integer('max_slot')->nullable();
+            $table->integer('quantity')->nullable();
+
+            $table->timestamps();
+        });
+    }
+}

@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateBookingResourceParentTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('booking_resource_parent', function (Blueprint $table) {
+            $table->id()->primary();
+
+            $table->unsignedBigInteger('parent_id');
+            $table->foreign('parent_id')->references('id')->on('resources')->onUpdate('cascade')->onDelete('cascade');
+
+            $table->unsignedBigInteger('resource_id');
+            $table->foreign('resource_id')->references('id')->on('resources')->onUpdate('cascade')->onDelete('cascade');
+
+            $table->timestamps();
+        });
+    }
+}
