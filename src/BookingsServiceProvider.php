@@ -19,7 +19,7 @@ class BookingsServiceProvider extends PackageServiceProvider
             ->name('laravel-bookings')
             ->hasConfigFile()
             ->hasViews()
-            ->hasMigrations(['booking_resources', 'booking_resource_parent', 'bookings'])
+            ->hasMigrations(['create_booking_resources_table', 'create_booking_resource_parent_table', 'create_bookings_table'])
             ->hasCommand(BookingsCommand::class);
     }
 }
