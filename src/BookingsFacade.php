@@ -1,11 +1,11 @@
 <?php
 
-namespace LucaLongo\Bookings;
+namespace Masterix21\Bookings;
 
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \LucaLongo\Bookings\Bookings
+ * @see \Masterix21\Bookings\Bookings
  */
 class BookingsFacade extends Facade
 {

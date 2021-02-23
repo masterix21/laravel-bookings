@@ -1,6 +1,6 @@
 <?php
 
-namespace LucaLongo\Bookings;
+namespace Masterix21\Bookings;
 
 class Bookings
 {

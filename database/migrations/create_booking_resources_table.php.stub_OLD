@@ -10,12 +10,14 @@ class CreateBookingResourcesTable extends Migration
     {
         Schema::create('booking_resources', function (Blueprint $table) {
             $table->id()->primary();
+
             $table->morphs('model');
+
             $table->string('name', 255);
-            $table->text('description')->nullable();
-            $table->integer('min_slot')->nullable();
-            $table->integer('max_slot')->nullable();
-            $table->integer('quantity')->nullable();
+
+            $table->unsignedInteger('min_slot')->nullable();
+            $table->unsignedInteger('max_slot')->nullable();
+            $table->unsignedInteger('quantity')->nullable();
 
             $table->timestamps();
         });

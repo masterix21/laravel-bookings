@@ -11,11 +11,13 @@ class CreateBookingResourceParentTable extends Migration
         Schema::create('booking_resource_parent', function (Blueprint $table) {
             $table->id()->primary();
 
-            $table->unsignedBigInteger('parent_id');
-            $table->foreign('parent_id')->references('id')->on('resources')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('parent_id')
+                ->references('id')->on('resources')
+                ->onUpdate('cascade')->onDelete('cascade');
 
-            $table->unsignedBigInteger('resource_id');
-            $table->foreign('resource_id')->references('id')->on('resources')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('resource_id')
+                ->references('id')->on('resources')
+                ->onUpdate('cascade')->onDelete('cascade');
 
             $table->timestamps();
         });

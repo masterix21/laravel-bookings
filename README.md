@@ -27,13 +27,13 @@ composer require lucalongo/laravel-bookings
 You can publish and run the migrations with:
 
 ```bash
-php artisan vendor:publish --provider="LucaLongo\Bookings\BookingsServiceProvider" --tag="laravel-bookings-migrations"
+php artisan vendor:publish --provider="Masterix21\Bookings\BookingsServiceProvider" --tag="laravel-bookings-migrations"
 php artisan migrate
 ```
 
 You can publish the config file with:
 ```bash
-php artisan vendor:publish --provider="LucaLongo\Bookings\BookingsServiceProvider" --tag="laravel-bookings-config"
+php artisan vendor:publish --provider="Masterix21\Bookings\BookingsServiceProvider" --tag="laravel-bookings-config"
 ```
 
 This is the contents of the published config file:
@@ -46,8 +46,8 @@ return [
 ## Usage
 
 ```php
-$laravel-bookings = new LucaLongo\Bookings();
-echo $laravel-bookings->echoPhrase('Hello, LucaLongo!');
+$laravel-bookings = new Masterix21\Bookings();
+echo $laravel-bookings->echoPhrase('Hello, Masterix21!');
 ```
 
 ## Testing

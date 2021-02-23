@@ -11,16 +11,18 @@ class CreateBookingsTable extends Migration
         Schema::create('bookings', function (Blueprint $table) {
             $table->id()->primary();
 
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('user_id')
+                ->references('id')->on('users')
+                ->onUpdate('cascade')->onDelete('cascade');
 
-            $table->unsignedBigInteger('resource_id');
-            $table->foreign('resource_id')->references('id')->on('resources')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('resource_id')
+                ->references('id')->on('resources')
+                ->onUpdate('cascade')->onDelete('cascade');
 
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
-            $table->dateTime('date_start');
-            $table->dateTime('date_end');
+            $table->dateTime('start');
+            $table->dateTime('end');
             $table->decimal('price', 12, 4);
             $table->text('note')->nullable();
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace LucaLongo\Bookings\Tests;
+namespace Masterix21\Bookings\Tests;
 
 class ExampleTest extends TestCase
 {

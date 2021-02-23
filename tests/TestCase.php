@@ -1,9 +1,9 @@
 <?php
 
-namespace LucaLongo\Bookings\Tests;
+namespace Masterix21\Bookings\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use LucaLongo\Bookings\BookingsServiceProvider;
+use Masterix21\Bookings\BookingsServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
@@ -13,7 +13,7 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'LucaLongo\\Bookings\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'Masterix21\\Bookings\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 

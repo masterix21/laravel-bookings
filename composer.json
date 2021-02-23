@@ -1,6 +1,7 @@
 {
-    "name": "lucalongo/laravel-bookings",
+    "name": "masterix21/laravel-bookings",
     "description": "Add bookings ability to any Eloquent model",
+    "type": "library",
     "keywords": [
         "lucalongo",
         "laravel-bookings"
@@ -27,13 +28,13 @@
     },
     "autoload": {
         "psr-4": {
-            "LucaLongo\\Bookings\\": "src",
-            "LucaLongo\\Bookings\\Database\\Factories\\": "database/factories"
+            "Masterix21\\Bookings\\": "src",
+            "Masterix21\\Bookings\\Database\\Factories\\": "database/factories"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "LucaLongo\\Bookings\\Tests\\": "tests"
+            "Masterix21\\Bookings\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -47,10 +48,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "LucaLongo\\Bookings\\BookingsServiceProvider"
+                "Masterix21\\Bookings\\BookingsServiceProvider"
             ],
             "aliases": {
-                "Bookings": "LucaLongo\\Bookings\\BookingsFacade"
+                "Bookings": "Masterix21\\Bookings\\BookingsFacade"
             }
         }
     },

@@ -1,8 +1,8 @@
 <?php
 
-namespace LucaLongo\Bookings;
+namespace Masterix21\Bookings;
 
-use LucaLongo\Bookings\Commands\BookingsCommand;
+use Masterix21\Bookings\Commands\BookingsCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
