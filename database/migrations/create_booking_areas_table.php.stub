@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateBookingAreasTable extends Migration
+{
+    public function up()
+    {
+        Schema::create(resolve(config('bookings.models.area'))->getTable(), function (Blueprint $table) {
+            $table->id();
+
+            $table->string('name');
+
+            $table->string('prefix', 15)->nullable();
+            $table->string('suffix', 15)->nullable();
+
+            $table->boolean('visible')->default(true);
+            $table->boolean('bookable')->default(true);
+
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists(resolve(config('bookings.models.area'))->getTable());
+    }
+}

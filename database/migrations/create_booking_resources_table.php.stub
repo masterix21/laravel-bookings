@@ -1,0 +1,34 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateBookingResourcesTable extends Migration
+{
+    public function up()
+    {
+        Schema::create(resolve(config('bookings.models.resource'))->getTable(), function (Blueprint $table) {
+            $table->id();
+
+            tap(resolve(config('bookings.models.area')), fn ($area) => $table
+                ->foreignIdFor($area)
+                ->references($area->getKeyName())->on($area->getTable())
+                ->onUpdate('cascade')->onDelete('cascade'));
+
+            $table->string('code', 60)->nullable();
+
+            $table->morphs('model');
+
+            $table->unsignedInteger('min')->nullable();
+            $table->unsignedInteger('max')->nullable();
+
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists(resolve(config('bookings.models.resource'))->getTable());
+    }
+}

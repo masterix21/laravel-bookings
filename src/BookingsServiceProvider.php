@@ -2,7 +2,6 @@
 
 namespace Masterix21\Bookings;
 
-use Masterix21\Bookings\Commands\BookingsCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -18,10 +17,15 @@ class BookingsServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-bookings')
             ->hasConfigFile()
-            ->hasViews()
-            ->hasMigration('create_booking_resources_table')
-            ->hasMigration('create_booking_resource_parent_table')
-            ->hasMigration('create_bookings_table')
-            ->hasCommand(BookingsCommand::class);
+            ->hasMigrations([
+                "create_booking_areas_table",
+                "create_booking_resources_table",
+                "create_booking_timetables_table",
+                "create_booking_resource_children_table",
+                "create_bookings_table",
+                "create_booking_boundaries_table",
+                "create_booking_exclusions_table",
+                "create_booking_children_table",
+            ]);
     }
 }

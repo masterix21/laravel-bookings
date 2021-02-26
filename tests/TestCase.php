@@ -3,11 +3,14 @@
 namespace Masterix21\Bookings\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Masterix21\Bookings\BookingsServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
+    use DatabaseMigrations;
+
     public function setUp(): void
     {
         parent::setUp();
