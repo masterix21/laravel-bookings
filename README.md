@@ -1,27 +1,18 @@
 # Add bookings ability to any Eloquent model
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/lucalongo/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/lucalongo/laravel-bookings)
-[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/lucalongo/laravel-bookings/run-tests?label=tests)](https://github.com/lucalongo/laravel-bookings/actions?query=workflow%3ATests+branch%3Amaster)
-[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/lucalongo/laravel-bookings/Check%20&%20fix%20styling?label=code%20style)](https://github.com/lucalongo/laravel-bookings/actions?query=workflow%3A"Check+%26+fix+styling"+branch%3Amaster)
-[![Total Downloads](https://img.shields.io/packagist/dt/lucalongo/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/lucalongo/laravel-bookings)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/masterix21/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
+[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/masterix21/laravel-bookings/run-tests?label=tests)](https://github.com/masterix21/laravel-bookings/actions?query=workflow%3ATests+branch%3Amaster)
+[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/masterix21/laravel-bookings/Check%20&%20fix%20styling?label=code%20style)](https://github.com/masterix21/laravel-bookings/actions?query=workflow%3A"Check+%26+fix+styling"+branch%3Amaster)
+[![Total Downloads](https://img.shields.io/packagist/dt/masterix21/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
 
-
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
-
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/package-laravel-bookings-laravel.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/package-laravel-bookings-laravel)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+Fresh way to concepts the booking processes: for any eloquent model, for any app. Highly customizable.
 
 ## Installation
 
 You can install the package via composer:
 
 ```bash
-composer require lucalongo/laravel-bookings
+composer require masterix21/laravel-bookings
 ```
 
 You can publish and run the migrations with:
@@ -36,19 +27,9 @@ You can publish the config file with:
 php artisan vendor:publish --provider="Masterix21\Bookings\BookingsServiceProvider" --tag="laravel-bookings-config"
 ```
 
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
-
 ## Usage
 
-```php
-$laravel-bookings = new Masterix21\Bookings();
-echo $laravel-bookings->echoPhrase('Hello, Masterix21!');
-```
+@TODO
 
 ## Testing
 
