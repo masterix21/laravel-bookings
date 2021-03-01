@@ -10,9 +10,9 @@ use Masterix21\Bookings\Models\Concerns\BelongsToResource;
 
 class ResourceChild extends Model
 {
-    use HasFactory,
-        BelongsToArea,
-        BelongsToResource;
+    use HasFactory;
+    use BelongsToArea;
+    use BelongsToResource;
 
     public function parent(): BelongsTo
     {

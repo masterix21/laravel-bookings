@@ -11,9 +11,9 @@ use Masterix21\Bookings\Models\Concerns\HasTimetables;
 
 class Resource extends Model
 {
-    use HasFactory,
-        BelongsToArea,
-        HasTimetables;
+    use HasFactory;
+    use BelongsToArea;
+    use HasTimetables;
 
     public function model(): MorphTo
     {

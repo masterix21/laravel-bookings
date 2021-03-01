@@ -9,8 +9,8 @@ use Masterix21\Bookings\Models\Concerns\HasTimetables;
 
 class Area extends Model
 {
-    use HasFactory,
-        HasTimetables;
+    use HasFactory;
+    use HasTimetables;
 
     public function bookings(): HasMany
     {

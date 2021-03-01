@@ -9,7 +9,7 @@ use Masterix21\Bookings\Models\Concerns\BelongsToResource;
 
 class Booking extends Model
 {
-    use HasFactory,
-        BelongsToArea,
-        BelongsToResource;
+    use HasFactory;
+    use BelongsToArea;
+    use BelongsToResource;
 }
