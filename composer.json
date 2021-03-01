@@ -6,7 +6,7 @@
         "lucalongo",
         "laravel-bookings"
     ],
-    "homepage": "https://github.com/lucalongo/laravel-bookings",
+    "homepage": "https://github.com/masterix21/laravel-bookings",
     "license": "MIT",
     "authors": [
         {
@@ -17,8 +17,10 @@
     ],
     "require": {
         "php": "^7.4|^8.0",
-        "spatie/laravel-package-tools": "^1.1",
-        "illuminate/contracts": "^8.0"
+        "illuminate/contracts": "^8.0",
+        "lorisleiva/laravel-actions": "^2.0",
+        "nesbot/carbon": "^2.45",
+        "spatie/laravel-package-tools": "^1.1"
     },
     "require-dev": {
         "orchestra/testbench": "^6.0",

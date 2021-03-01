@@ -3,14 +3,13 @@
 namespace Masterix21\Bookings\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Masterix21\Bookings\BookingsServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
-    use DatabaseMigrations;
-
     public function setUp(): void
     {
         parent::setUp();
@@ -36,9 +35,11 @@ class TestCase extends Orchestra
             'prefix' => '',
         ]);
 
-        /*
-        include_once __DIR__.'/../database/migrations/create_laravel_bookings_table.php.stub';
-        (new \CreatePackageTable())->up();
-        */
+        collect(File::files(__DIR__ .'/../database/migrations'))
+            ->each(function ($file) {
+                include_once $file->getRealPath();
+                $class = Str::of($file->getFilename())->before('.php.stub')->studly();
+                resolve((string) $class)->up();
+            });
     }
 }
