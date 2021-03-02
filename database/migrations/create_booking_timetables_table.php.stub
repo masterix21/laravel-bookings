@@ -13,11 +13,13 @@ class CreateBookingTimetablesTable extends Migration
 
             tap(resolve(config('bookings.models.area')), fn ($area) => $table
                 ->foreignIdFor($area)
+                ->nullable()
                 ->references($area->getKeyName())->on($area->getTable())
                 ->onUpdate('cascade')->onDelete('cascade'));
 
             tap(resolve(config('bookings.models.resource')), fn ($resource) => $table
                 ->foreignIdFor($resource)
+                ->nullable()
                 ->references($resource->getKeyName())->on($resource->getTable())
                 ->onUpdate('cascade')->onDelete('cascade'));
 
