@@ -16,6 +16,16 @@ class CreateBookingChildrenTable extends Migration
                 ->references($booking->getKeyName())->on($booking->getTable())
                 ->onUpdate('cascade')->onDelete('cascade'));
 
+            tap(resolve(config('bookings.models.booking_child')), fn ($booking_child) => $table
+                ->foreignIdFor($booking_child, 'parent_child_id')
+                ->references($booking_child->getKeyName())->on($booking_child->getTable())
+                ->onUpdate('cascade')->onDelete('cascade'));
+
+            tap(resolve(config('bookings.models.area')), fn ($area) => $table
+                ->foreignIdFor($area)
+                ->references($area->getKeyName())->on($area->getTable())
+                ->onUpdate('cascade')->onDelete('cascade'));
+
             tap(resolve(config('bookings.models.resource')), fn ($resource) => $table
                 ->foreignIdFor($resource)
                 ->references($resource->getKeyName())->on($resource->getTable())

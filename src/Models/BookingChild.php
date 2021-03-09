@@ -15,6 +15,11 @@ class BookingChild extends Model
         return $this->belongsTo(config('bookings.models.booking'));
     }
 
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(config('bookings.models.booking_child'));
+    }
+
     public function resource(): BelongsTo
     {
         return $this->belongsTo(config('bookings.models.resource'));
