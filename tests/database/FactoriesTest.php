@@ -18,6 +18,8 @@ class FactoriesTest extends TestCase
         $resourceClass = config('bookings.models.resource');
         /** @var Timetable $timetableClass */
         $timetableClass = config('bookings.models.timetable');
+        /** @var Timetable $ResourseChildClass */
+        $ResourseChildClass = config('bookings.models.');
 
         $areaClass::factory()->count(21)->create();
         $this->assertEquals(21, $areaClass::query()->count());
