@@ -4,10 +4,8 @@ namespace Masterix21\Bookings\Tests\database\factories;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Masterix21\Bookings\Models\Area;
 use Masterix21\Bookings\Models\Booking;
 use Masterix21\Bookings\Models\BookingChild;
-use Masterix21\Bookings\Models\Resource;
 
 class BookingBoundaryFactory extends Factory
 {
@@ -18,7 +16,6 @@ class BookingBoundaryFactory extends Factory
 
     public function definition()
     {
-
         $fromDay = $this->faker->boolean(25) ? $this->faker->dateTimeThisYear : null;
         $fromTime = $this->faker->dateTime;
 

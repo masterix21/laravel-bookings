@@ -3,7 +3,6 @@
 namespace Masterix21\Bookings\Tests\database\factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Database\Eloquent\Model;
 use Masterix21\Bookings\Models\Area;
 use Masterix21\Bookings\Models\Resource;
 
@@ -32,4 +31,3 @@ class ResourceChildFactory extends Factory
         ];
     }
 }
-
