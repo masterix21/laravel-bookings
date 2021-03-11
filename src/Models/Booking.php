@@ -22,11 +22,11 @@ class Booking extends Model
 
     public function boundaries(): HasMany
     {
-        return $this->hasMany(config('bookings.models.boundary'));
+        return $this->hasMany(config('bookings.models.period'));
     }
 
     public function exclusions(): HasManyThrough
     {
-        return $this->hasManyThrough(config('bookings.models.exclusion'), config('bookings.models.boundary'));
+        return $this->hasManyThrough(config('bookings.models.exclusion'), config('bookings.models.period'));
     }
 }

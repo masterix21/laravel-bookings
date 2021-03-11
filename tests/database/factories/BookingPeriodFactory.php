@@ -4,12 +4,10 @@ namespace Masterix21\Bookings\Tests\database\factories;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Masterix21\Bookings\Models\Area;
 use Masterix21\Bookings\Models\Booking;
 use Masterix21\Bookings\Models\BookingChild;
-use Masterix21\Bookings\Models\Resource;
 
-class BookingBoundaryFactory extends Factory
+class BookingPeriodFactory extends Factory
 {
     public function modelName()
     {

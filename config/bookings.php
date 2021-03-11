@@ -12,7 +12,7 @@ return [
         'timetable' => \Masterix21\Bookings\Models\Timetable::class,
         'resource_child' => \Masterix21\Bookings\Models\ResourceChild::class,
         'booking' => \Masterix21\Bookings\Models\Booking::class,
-        'boundary' => \Masterix21\Bookings\Models\Boundary::class,
+        'period' => \Masterix21\Bookings\Models\Period::class,
         'exclusion' => \Masterix21\Bookings\Models\Exclusion::class,
         'booking_child' => \Masterix21\Bookings\Models\BookingChild::class,
     ],

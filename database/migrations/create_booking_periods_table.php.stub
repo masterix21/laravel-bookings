@@ -4,11 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateBookingBoundariesTable extends Migration
+class CreateBookingPeriodsTable extends Migration
 {
     public function up()
     {
-        Schema::create(resolve(config('bookings.models.boundary'))->getTable(), function (Blueprint $table) {
+        Schema::create(resolve(config('bookings.models.period'))->getTable(), function (Blueprint $table) {
             $table->id();
 ;
             tap(resolve(config('bookings.models.booking')), fn ($booking) => $table
@@ -30,6 +30,6 @@ class CreateBookingBoundariesTable extends Migration
 
     public function down()
     {
-        Schema::dropIfExists(resolve(config('bookings.models.boundary'))->getTable());
+        Schema::dropIfExists(resolve(config('bookings.models.period'))->getTable());
     }
 }

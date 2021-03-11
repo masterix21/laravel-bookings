@@ -15,11 +15,11 @@ class Exclusion extends Model
 
     public function booking(): belongsToThrough
     {
-        return $this->belongsToThrough(config('bookings.models.booking'), config('bookings.models.boundary'));
+        return $this->belongsToThrough(config('bookings.models.booking'), config('bookings.models.period'));
     }
 
-    public function boundary(): BelongsTo
+    public function period(): BelongsTo
     {
-        return $this->belongsTo(config('bookings.models.boundary'));
+        return $this->belongsTo(config('bookings.models.period'));
     }
 }

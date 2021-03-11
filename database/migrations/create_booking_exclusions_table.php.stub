@@ -11,9 +11,9 @@ class CreateBookingExclusionsTable extends Migration
         Schema::create(resolve(config('bookings.models.exclusion'))->getTable(), function (Blueprint $table) {
             $table->id();
 
-            tap(resolve(config('bookings.models.boundary')), fn ($boundary) => $table
-                ->foreignIdFor($boundary)
-                ->references($boundary->getKeyName())->on($boundary->getTable())
+            tap(resolve(config('bookings.models.period')), fn ($period) => $table
+                ->foreignIdFor($period)
+                ->references($period->getKeyName())->on($period->getTable())
                 ->onUpdate('cascade')->onDelete('cascade'));
 
             $table->char('weekdays', 7)->default('1111111');
@@ -30,6 +30,6 @@ class CreateBookingExclusionsTable extends Migration
 
     public function down()
     {
-        Schema::dropIfExists(resolve(config('bookings.models.boundary'))->getTable());
+        Schema::dropIfExists(resolve(config('bookings.models.exclusion'))->getTable());
     }
 }
