@@ -16,7 +16,6 @@ class BookingPeriodFactory extends Factory
 
     public function definition()
     {
-
         $fromDay = $this->faker->boolean(25) ? $this->faker->dateTimeThisYear : null;
         $fromTime = $this->faker->dateTime;
 
