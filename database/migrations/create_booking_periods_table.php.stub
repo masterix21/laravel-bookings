@@ -11,10 +11,7 @@ class CreateBookingPeriodsTable extends Migration
         Schema::create(resolve(config('bookings.models.period'))->getTable(), function (Blueprint $table) {
             $table->id();
 ;
-            tap(resolve(config('bookings.models.booking')), fn ($booking) => $table
-                ->foreignIdFor($booking)
-                ->references($booking->getKeyName())->on($booking->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
+            $table->foreignIdFor(config('bookings.models.booking'))->constrained()->cascadeOnDelete();
 
             $table->char('weekdays', 7)->default('1111111');
 

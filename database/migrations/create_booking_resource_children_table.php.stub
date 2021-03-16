@@ -11,20 +11,9 @@ class CreateBookingResourceChildrenTable extends Migration
         Schema::create(resolve(config('bookings.models.resource_child'))->getTable(), function (Blueprint $table) {
             $table->id();
 
-            tap(resolve(config('bookings.models.resource')), fn ($resource) => $table
-                ->foreignIdFor($resource, 'parent_id')
-                ->references($resource->getKeyName())->on($resource->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
-
-            tap(resolve(config('bookings.models.area')), fn ($area) => $table
-                ->foreignIdFor($area)
-                ->references($area->getKeyName())->on($area->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
-
-            tap(resolve(config('bookings.models.resource')), fn ($resource) => $table
-                ->foreignIdFor($resource)
-                ->references($resource->getKeyName())->on($resource->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
+            $table->foreignIdFor(config('bookings.models.resource'), 'parent_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.area'))->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.resource'))->constrained()->cascadeOnDelete();
 
             $table->boolean('required')->default(false);
 

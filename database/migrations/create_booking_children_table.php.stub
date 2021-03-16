@@ -11,25 +11,10 @@ class CreateBookingChildrenTable extends Migration
         Schema::create(resolve(config('bookings.models.booking_child'))->getTable(), function (Blueprint $table) {
             $table->id();
 
-            tap(resolve(config('bookings.models.booking')), fn ($booking) => $table
-                ->foreignIdFor($booking)
-                ->references($booking->getKeyName())->on($booking->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
-
-            tap(resolve(config('bookings.models.booking_child')), fn ($booking_child) => $table
-                ->foreignIdFor($booking_child, 'parent_child_id')
-                ->references($booking_child->getKeyName())->on($booking_child->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
-
-            tap(resolve(config('bookings.models.area')), fn ($area) => $table
-                ->foreignIdFor($area)
-                ->references($area->getKeyName())->on($area->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
-
-            tap(resolve(config('bookings.models.resource')), fn ($resource) => $table
-                ->foreignIdFor($resource)
-                ->references($resource->getKeyName())->on($resource->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
+            $table->foreignIdFor(config('bookings.models.booking'))->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.booking_child'), 'parent_child_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.area'))->constrained()->restrictOnDelete();
+            $table->foreignIdFor(config('bookings.models.resource'))->constrained()->restrictOnDelete();
 
             $table->boolean('required')->default(false);
 
@@ -39,6 +24,6 @@ class CreateBookingChildrenTable extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('booking_children');
+        Schema::dropIfExists(resolve(config('bookings.models.booking_child'))->getTable());
     }
 }

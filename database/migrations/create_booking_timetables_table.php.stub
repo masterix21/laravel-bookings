@@ -11,17 +11,8 @@ class CreateBookingTimetablesTable extends Migration
         Schema::create(resolve(config('bookings.models.timetable'))->getTable(), function (Blueprint $table) {
             $table->id();
 
-            tap(resolve(config('bookings.models.area')), fn ($area) => $table
-                ->foreignIdFor($area)
-                ->nullable()
-                ->references($area->getKeyName())->on($area->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
-
-            tap(resolve(config('bookings.models.resource')), fn ($resource) => $table
-                ->foreignIdFor($resource)
-                ->nullable()
-                ->references($resource->getKeyName())->on($resource->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
+            $table->foreignIdFor(config('bookings.models.area'))->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.resource'))->nullable()->constrained()->cascadeOnDelete();
 
             $table->char('weekdays', 7)->default('1111111');
 

@@ -11,10 +11,7 @@ class CreateBookingResourcesTable extends Migration
         Schema::create(resolve(config('bookings.models.resource'))->getTable(), function (Blueprint $table) {
             $table->id();
 
-            tap(resolve(config('bookings.models.area')), fn ($area) => $table
-                ->foreignIdFor($area)
-                ->references($area->getKeyName())->on($area->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
+            $table->foreignIdFor(config('bookings.models.area'))->constrained()->cascadeOnDelete();
 
             $table->string('code', 60)->nullable();
 

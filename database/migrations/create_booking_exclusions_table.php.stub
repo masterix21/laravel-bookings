@@ -11,10 +11,7 @@ class CreateBookingExclusionsTable extends Migration
         Schema::create(resolve(config('bookings.models.exclusion'))->getTable(), function (Blueprint $table) {
             $table->id();
 
-            tap(resolve(config('bookings.models.period')), fn ($period) => $table
-                ->foreignIdFor($period)
-                ->references($period->getKeyName())->on($period->getTable())
-                ->onUpdate('cascade')->onDelete('cascade'));
+            $table->foreignIdFor(config('bookings.models.period'))->constrained()->cascadeOnDelete();
 
             $table->char('weekdays', 7)->default('1111111');
 

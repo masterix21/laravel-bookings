@@ -11,10 +11,7 @@ class CreateBookingsTable extends Migration
         Schema::create(resolve(config('bookings.models.booking'))->getTable(), function (Blueprint $table) {
             $table->id();
 
-            tap(resolve(config('bookings.user')), fn ($user) => $table
-                ->foreignIdFor($user)
-                ->references($user->getKeyName())->on($user->getTable())
-                ->onUpdate('cascade')->onDelete('restrict'));
+            $table->foreignIdFor(config('bookings.user'))->constrained()->restrictOnDelete();
 
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
