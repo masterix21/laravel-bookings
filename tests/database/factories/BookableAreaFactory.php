@@ -4,11 +4,11 @@ namespace Masterix21\Bookings\Tests\database\factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class AreaFactory extends Factory
+class BookableAreaFactory extends Factory
 {
     public function modelName()
     {
-        return config('bookings.models.area');
+        return config('bookings.models.bookable_area');
     }
 
     public function definition()
@@ -17,8 +17,8 @@ class AreaFactory extends Factory
             'name' => $this->faker->text(50),
             'prefix' => $this->faker->randomElement([null, $this->faker->randomLetter, $this->faker->randomDigit]),
             'suffix' => $this->faker->randomElement([null, $this->faker->randomLetter, $this->faker->randomDigit]),
-            'visible' => $this->faker->boolean(70),
-            'bookable' => $this->faker->boolean(60),
+            'is_visible' => $this->faker->boolean(70),
+            'is_bookable' => $this->faker->boolean(60),
         ];
     }
 }

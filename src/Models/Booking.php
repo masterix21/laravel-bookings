@@ -4,29 +4,32 @@ namespace Masterix21\Bookings\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Masterix21\Bookings\Models\Concerns\BelongsToArea;
-use Masterix21\Bookings\Models\Concerns\BelongsToResource;
 
 class Booking extends Model
 {
     use HasFactory;
-    use BelongsToArea;
-    use BelongsToResource;
 
-    public function children(): HasMany
+    protected $guarded = [];
+
+    public function user(): BelongsTo
     {
-        return $this->hasMany(config('bookings.models.booking_child'));
+        return $this->belongsTo(config('bookings.models.user'), 'user_id');
     }
 
-    public function boundaries(): HasMany
+    public function bookedResources(): HasMany
     {
-        return $this->hasMany(config('bookings.models.period'));
+        return $this->hasMany(config('bookings.models.booked_resource'), 'booking_id');
     }
 
-    public function exclusions(): HasManyThrough
+    public function bookedPeriods(): HasMany
     {
-        return $this->hasManyThrough(config('bookings.models.exclusion'), config('bookings.models.period'));
+        return $this->hasMany(config('bookings.models.booked_period'), 'booking_id');
+    }
+
+    public function unbookedPeriods(): HasMany
+    {
+        return $this->hasMany(config('bookings.models.unbooked_period'), 'booking_id');
     }
 }

@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateBookableTimetablesTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('bookable_timetables', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignIdFor(config('bookings.models.bookable_area'), 'bookable_area_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_resource'), 'bookable_resource_id')->nullable()->constrained()->cascadeOnDelete();
+
+            $table->string('label')->nullable();
+
+            $table->char('weekdays', 7)->default('1111111');
+
+            $table->date('from_date')->nullable();
+            $table->date('to_date')->nullable();
+
+            $table->time('from_time')->nullable();
+            $table->time('to_time')->nullable();
+
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('bookable_timetables');
+    }
+}

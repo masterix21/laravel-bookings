@@ -1,0 +1,42 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateBookedResourcesTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('booked_resources', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignIdFor(config('bookings.models.booking'), 'booking_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_area'), 'bookable_area_id')->constrained()->restrictOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_resource'), 'bookable_resource_id')->constrained()->restrictOnDelete();
+
+            $table->string('label')->nullable();
+
+            $table->boolean('is_required')->default(false);
+
+            $table->unsignedInteger('min')->nullable();
+            $table->unsignedInteger('max')->nullable();
+            $table->unsignedInteger('max_nested')->nullable();
+
+            $table->timestamps();
+        });
+
+        Schema::table('booked_resources', function (Blueprint $table) {
+            $table->after('booking_id', function ($table) {
+                $table->foreignIdFor(config('bookings.models.booked_resource'), 'parent_id')
+                    ->nullable()
+                    ->constrained()->cascadeOnDelete();
+            });
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('booked_resources');
+    }
+}

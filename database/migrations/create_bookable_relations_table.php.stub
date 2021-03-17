@@ -1,0 +1,36 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateBookableRelationsTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('bookable_relations', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignIdFor(config('bookings.models.bookable_area'), 'bookable_area_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_resource'), 'bookable_resource_id')->constrained()->cascadeOnDelete();
+
+            $table->boolean('is_required')->default(false);
+
+            $table->unsignedInteger('min')->nullable();
+            $table->unsignedInteger('max')->nullable();
+
+            $table->timestamps();
+        });
+
+        Schema::table('bookable_relations', function (Blueprint $table) {
+            $table->foreignIdFor(config('bookings.models.bookable_relation'), 'parent_id')
+                ->nullable()->after('id')
+                ->constrained()->cascadeOnDelete();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('bookable_relations');
+    }
+}

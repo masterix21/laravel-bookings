@@ -18,14 +18,14 @@ class BookingsServiceProvider extends PackageServiceProvider
             ->name('laravel-bookings')
             ->hasConfigFile()
             ->hasMigrations([
-                "create_booking_areas_table",
-                "create_booking_resources_table",
-                "create_booking_timetables_table",
-                "create_booking_resource_children_table",
+                "create_bookable_areas_table",
+                "create_bookable_resources_table",
+                "create_bookable_timetables_table",
+                "create_bookable_relations_table",
                 "create_bookings_table",
-                "create_booking_boundaries_table",
-                "create_booking_exclusions_table",
-                "create_booking_children_table",
+                "create_booked_resources_table",
+                "create_booked_periods_table",
+                "create_unbooked_periods_table",
             ]);
     }
 }

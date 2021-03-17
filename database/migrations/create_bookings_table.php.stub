@@ -8,13 +8,15 @@ class CreateBookingsTable extends Migration
 {
     public function up()
     {
-        Schema::create(resolve(config('bookings.models.booking'))->getTable(), function (Blueprint $table) {
+        Schema::create('bookings', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignIdFor(config('bookings.user'))->constrained()->restrictOnDelete();
+            $table->string('code', 64)->index();
 
-            $table->string('first_name')->nullable();
-            $table->string('last_name')->nullable();
+            $table->foreignIdFor(config('bookings.models.user'), 'user_id')->constrained()->restrictOnDelete();
+
+            $table->string('label')->nullable();
+
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
 
@@ -26,6 +28,6 @@ class CreateBookingsTable extends Migration
 
     public function down()
     {
-        Schema::dropIfExists(resolve(config('bookings.models.booking'))->getTable());
+        Schema::dropIfExists('bookings');
     }
 }

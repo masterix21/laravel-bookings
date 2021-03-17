@@ -1,19 +1,15 @@
 <?php
 
 return [
-    /*
-     * User model
-     */
-    'user' => \Illuminate\Foundation\Auth\User::class,
-
     'models' => [
-        'area' => \Masterix21\Bookings\Models\Area::class,
-        'resource' => \Masterix21\Bookings\Models\Resource::class,
-        'timetable' => \Masterix21\Bookings\Models\Timetable::class,
-        'resource_child' => \Masterix21\Bookings\Models\ResourceChild::class,
+        'user' => \Illuminate\Foundation\Auth\User::class,
+        'bookable_area' => \Masterix21\Bookings\Models\BookableArea::class,
+        'bookable_resource' => \Masterix21\Bookings\Models\BookableResource::class,
+        'bookable_timetable' => \Masterix21\Bookings\Models\BookableTimetable::class,
+        'bookable_relation' => \Masterix21\Bookings\Models\BookableRelation::class,
         'booking' => \Masterix21\Bookings\Models\Booking::class,
-        'period' => \Masterix21\Bookings\Models\Period::class,
-        'exclusion' => \Masterix21\Bookings\Models\Exclusion::class,
-        'booking_child' => \Masterix21\Bookings\Models\BookingChild::class,
+        'booked_resource' => \Masterix21\Bookings\Models\BookedResource::class,
+        'booked_period' => \Masterix21\Bookings\Models\BookedPeriod::class,
+        'unbooked_period' => \Masterix21\Bookings\Models\UnbookedPeriod::class,
     ],
 ];

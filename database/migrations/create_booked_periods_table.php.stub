@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateBookedPeriodsTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('booked_periods', function (Blueprint $table) {
+            $table->id();
+;
+            $table->foreignIdFor(config('bookings.models.booking'), 'booking_id')
+                ->constrained()->cascadeOnDelete();
+
+            $table->foreignIdFor(config('bookings.models.booked_resource'), 'booked_resource_id')
+                ->nullable()->constrained()->cascadeOnDelete();
+
+            $table->string('label')->nullable();
+
+            $table->date('from_date')->nullable();
+            $table->date('to_date')->nullable();
+
+            $table->time('from_time')->nullable();
+            $table->time('to_time')->nullable();
+
+            $table->text('note')->nullable();
+
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('booked_periods');
+    }
+}

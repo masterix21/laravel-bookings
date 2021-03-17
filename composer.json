@@ -16,17 +16,18 @@
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
+        "php": "^8.0",
         "illuminate/contracts": "^8.0",
         "lorisleiva/laravel-actions": "^2.0",
         "nesbot/carbon": "^2.45",
         "spatie/laravel-package-tools": "^1.1",
+        "spatie/period": "^1.6",
         "staudenmeir/belongs-to-through": "^2.11"
     },
     "require-dev": {
         "orchestra/testbench": "^6.0",
         "phpunit/phpunit": "^9.3",
-        "spatie/laravel-ray": "^1.9",
+        "spatie/laravel-ray": "^1.17",
         "vimeo/psalm": "^4.4"
     },
     "autoload": {
