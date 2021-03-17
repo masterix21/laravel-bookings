@@ -3,14 +3,12 @@
 namespace Masterix21\Bookings\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Masterix21\Bookings\BookingsServiceProvider;
 use Masterix21\Bookings\Tests\Database\Migrations\CreateProductsTable;
 use Masterix21\Bookings\Tests\Database\Migrations\CreateUsersTable;
-use Masterix21\Bookings\Tests\TestClasses\User;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra

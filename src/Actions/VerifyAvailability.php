@@ -2,16 +2,14 @@
 
 namespace Masterix21\Bookings\Actions;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Masterix21\Bookings\Models\BookableArea;
+use Masterix21\Bookings\Models\BookableRelation;
+use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookableTimetable;
 use Masterix21\Bookings\Models\BookedResource;
-use Masterix21\Bookings\Models\BookableResource;
-use Masterix21\Bookings\Models\BookableRelation;
 use Spatie\Period\PeriodCollection;
 
 class VerifyAvailability
@@ -26,10 +24,9 @@ class VerifyAvailability
      */
     public function handle(
         PeriodCollection $periods,
-        BookableArea|BookableResource|array $resources,
+        BookableArea | BookableResource | array $resources,
         ?array $children = null
-    ): bool
-    {
+    ): bool {
         if (! $resources instanceof BookableArea) {
             $resources = Collection::wrap($resources);
         }

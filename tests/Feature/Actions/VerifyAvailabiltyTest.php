@@ -4,11 +4,11 @@ namespace Masterix21\Bookings\Tests\Feature\Actions;
 
 use Masterix21\Bookings\Actions\VerifyAvailability;
 use Masterix21\Bookings\Models\BookableArea;
+use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\BookableTimetable;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\BookedResource;
 use Masterix21\Bookings\Models\Booking;
-use Masterix21\Bookings\Models\BookableResource;
-use Masterix21\Bookings\Models\BookableTimetable;
 use Masterix21\Bookings\Tests\TestCase;
 use Masterix21\Bookings\Tests\TestClasses\User;
 use Spatie\Period\Period;
