@@ -32,7 +32,7 @@ class BookableTimetable extends Model
         'to_date' => 'datetime:Y-m-d',
     ];
 
-    public function scopeWhereWeekdaysDates(Builder $builder, Collection|array|string $dates): Builder
+    public function scopeWhereWeekdaysDates(Builder $builder, Collection | array | string $dates): Builder
     {
         return $builder->where(function (Builder $query) use ($dates) {
             Collection::wrap($dates)

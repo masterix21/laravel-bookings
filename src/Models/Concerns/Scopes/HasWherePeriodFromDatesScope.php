@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 /** @mixin Model */
 trait HasWherePeriodFromDatesScope
 {
-    public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
+    public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, Collection | array | string $dates): Builder
     {
         return $builder->where(function ($query) use ($dates) {
             Collection::wrap($dates)
@@ -20,7 +20,7 @@ trait HasWherePeriodFromDatesScope
         });
     }
 
-    public function scopeWhereDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
+    public function scopeWhereDatesAreWithinPeriods(Builder $builder, Collection | array | string $dates): Builder
     {
         return $builder->where(function ($query) use ($dates) {
             Collection::wrap($dates)
