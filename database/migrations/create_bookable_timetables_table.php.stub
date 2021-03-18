@@ -16,7 +16,13 @@ class CreateBookableTimetablesTable extends Migration
 
             $table->string('label')->nullable();
 
-            $table->char('weekdays', 7)->default('1111111');
+            $table->boolean('monday')->default(true);
+            $table->boolean('tuesday')->default(true);
+            $table->boolean('wednesday')->default(true);
+            $table->boolean('thursday')->default(true);
+            $table->boolean('friday')->default(true);
+            $table->boolean('saturday')->default(true);
+            $table->boolean('sunday')->default(true);
 
             $table->date('from_date')->nullable();
             $table->date('to_date')->nullable();

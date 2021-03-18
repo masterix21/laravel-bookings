@@ -2,8 +2,6 @@
 
 namespace Masterix21\Bookings\Actions;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableRelation;
@@ -18,19 +16,16 @@ class VerifyAvailability
 
     /**
      * @param PeriodCollection $periods
-     * @param BookableArea|BookableResource|BookableResource[] $resources
-     * @param null|BookableRelation[] $children
+     * @param BookableArea|BookableResource $bookable
+     * @param null|BookableRelation[] $relations
      * @return bool
      */
     public function handle(
         PeriodCollection $periods,
-        BookableArea | BookableResource | array $resources,
-        ?array $children = null
-    ): bool {
-        if (! $resources instanceof BookableArea) {
-            $resources = Collection::wrap($resources);
-        }
-
+        BookableArea|BookableResource $bookable,
+        ?array $relations = null
+    ): bool
+    {
         $dates = collect();
 
         foreach ($periods as $period) {
@@ -43,19 +38,34 @@ class VerifyAvailability
 
         ///
         /// Verify if the resource (or area) has a timetable compatible with the supplied period.
-        // $hasValidTimetable = BookableTimetable::query()
-
-
-        //
-        // Verify if already exists a booking in the same period(s).
-        $hasBookings = BookedResource::query()
-            ->when($resources instanceof BookableArea, fn ($query) => $query->where('bookable_area_id', $resources->id))
-            ->when(! $resources instanceof BookableArea, fn ($query) => $query->whereIn('bookable_resource_id', $resources->pluck('id')))
-            ->whereHas('bookedPeriods', function (Builder $query) use ($dates) {
-                $dates->each(fn ($date) => $query->whereBetweenColumns($date->format('Y-m-d'), ['from_date', 'to_date']));
-            })
+        $hasValidTimetable = BookableTimetable::query()
+            ->when($bookable instanceof BookableArea, fn ($query) => $query->where('bookable_area_id', $bookable->id))
+            ->when($bookable instanceof BookableResource, fn ($query) => $query->where(function ($query) use ($bookable) {
+                $query->where('bookable_resource_id', $bookable->id)
+                    ->orWhere('bookable_area_id', $bookable->bookable_area_id);
+            }))
+            ->whereWeekdaysDates($dates)
+            ->whereAllDatesAreWithinPeriods($dates)
             ->count() > 0;
 
-        return ! $hasBookings;
+        if (! $hasValidTimetable) {
+            return false;
+        }
+
+        //
+        // If $bookable is a BookableResource, check if is available because has no bookings.
+        if ($bookable instanceof BookableResource) {
+            return BookedResource::query()
+                    ->where('bookable_resource_id', $bookable->id)
+                    ->whereHas('bookedPeriods', fn ($query) => $query->whereDatesAreWithinPeriods($dates))
+                    ->count() === 0;
+        }
+
+        //
+        // Verify if the BookableArea has bookable resources within the periods.
+        return BookableResource::query()
+                ->where('bookable_area_id', $bookable->id)
+                ->whereDoesntHave('bookedPeriods', fn ($query) => $query->whereDatesAreWithinPeriods($dates))
+                ->count() > 0;
     }
 }

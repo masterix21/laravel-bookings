@@ -19,14 +19,6 @@ class BookableTimetableFactory extends Factory
 
         return [
             'label' => $this->faker->randomElement(null, $this->faker->text(80)),
-            'weekdays' =>
-                $this->faker->randomElement(['0', '1'])
-                . $this->faker->randomElement(['0', '1'])
-                . $this->faker->randomElement(['0', '1'])
-                . $this->faker->randomElement(['0', '1'])
-                . $this->faker->randomElement(['0', '1'])
-                . $this->faker->randomElement(['0', '1'])
-                . $this->faker->randomElement(['0', '1']),
             'from_date' => optional($fromDay)->format('Y-m-d'),
             'to_date' => ! blank($fromDay) ? Carbon::parse($fromDay)->addDays(7) : null,
             'from_time' => Carbon::parse($fromTime),
