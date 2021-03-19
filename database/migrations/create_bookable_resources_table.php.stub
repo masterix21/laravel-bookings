@@ -20,6 +20,7 @@ class CreateBookableResourcesTable extends Migration
             $table->unsignedInteger('min')->nullable();
             $table->unsignedInteger('max')->nullable();
             $table->unsignedInteger('max_nested')->nullable();
+            $table->unsignedInteger('size')->nullable();
 
             $table->boolean('is_visible')->default(true);
             $table->boolean('is_bookable')->default(true);

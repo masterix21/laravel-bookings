@@ -3,6 +3,7 @@
 namespace Masterix21\Bookings\Tests\Feature\Actions;
 
 use Masterix21\Bookings\Actions\VerifyAvailability;
+use Masterix21\Bookings\Exceptions\VerifyAvailability\NoSeatsException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookableTimetable;
@@ -17,7 +18,7 @@ use Spatie\Period\PeriodCollection;
 class AreaVerifyAvailabilityTest extends TestCase
 {
     /** @test */
-    public function it_returns_true_because_area_has_resources_not_booked_and_with_a_valid_timetable()
+    public function it_works_because_area_has_bookable_resources()
     {
         BookableArea::factory()
             ->count(1)
@@ -31,16 +32,16 @@ class AreaVerifyAvailabilityTest extends TestCase
             ->create();
 
         $result = VerifyAvailability::run(
-            new PeriodCollection(
+            periods: new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
                     now()->subWeek()->endOf('week')->format('Y-m-d'),
                 )
             ),
-            BookableArea::first()
+            bookable: BookableArea::first(),
         );
 
-        $this->assertTrue($result);
+        $this->assertNull($result);
 
         $startDate = now()->subWeek()->startOf('week');
 
@@ -80,7 +81,7 @@ class AreaVerifyAvailabilityTest extends TestCase
             BookableArea::first()
         );
 
-        $this->assertTrue($result);
+        $this->assertNull($result);
 
         User::factory()
             ->count(1)
@@ -101,7 +102,9 @@ class AreaVerifyAvailabilityTest extends TestCase
             )
             ->create();
 
-        $result = VerifyAvailability::run(
+        $this->expectException(NoSeatsException::class);
+
+        VerifyAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -110,7 +113,5 @@ class AreaVerifyAvailabilityTest extends TestCase
             ),
             BookableArea::first()
         );
-
-        $this->assertFalse($result);
     }
 }

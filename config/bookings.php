@@ -11,5 +11,6 @@ return [
         'booked_resource' => \Masterix21\Bookings\Models\BookedResource::class,
         'booked_period' => \Masterix21\Bookings\Models\BookedPeriod::class,
         'unbooked_period' => \Masterix21\Bookings\Models\UnbookedPeriod::class,
+        'booked_dates' => \Masterix21\Bookings\Models\BookedDates::class,
     ],
 ];

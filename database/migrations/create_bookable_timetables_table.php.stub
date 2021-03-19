@@ -26,9 +26,9 @@ class CreateBookableTimetablesTable extends Migration
 
             $table->date('from_date')->nullable();
             $table->date('to_date')->nullable();
-
             $table->time('from_time')->nullable();
             $table->time('to_time')->nullable();
+            $table->string('timezone')->nullable();
 
             $table->timestamps();
         });

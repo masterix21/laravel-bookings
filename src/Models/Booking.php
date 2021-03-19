@@ -32,4 +32,9 @@ class Booking extends Model
     {
         return $this->hasMany(config('bookings.models.unbooked_period'), 'booking_id');
     }
+
+    public function bookedDates(): HasMany
+    {
+        return $this->hasMany(config('bookings.models.booked_dates'), 'booking_id');
+    }
 }

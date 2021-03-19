@@ -22,11 +22,11 @@ class BookedResource extends Model
 
     public function bookedPeriods(): HasMany
     {
-        return $this->hasMany(config('bookings.models.booked_period'), 'booking_id', 'booking_id');
+        return $this->hasMany(config('bookings.models.booked_period'), 'booked_resource_id');
     }
 
     public function unbookedPeriods(): HasMany
     {
-        return $this->hasMany(config('bookings.models.unbooked_period'), 'booking_id', 'booking_id');
+        return $this->hasMany(config('bookings.models.unbooked_period'), 'booked_resource_id');
     }
 }

@@ -3,6 +3,8 @@
 namespace Masterix21\Bookings\Tests\Feature\Actions;
 
 use Masterix21\Bookings\Actions\VerifyAvailability;
+use Masterix21\Bookings\Exceptions\VerifyAvailability\NoSeatsException;
+use Masterix21\Bookings\Exceptions\VerifyAvailability\OutOfTimetablesException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookableTimetable;
@@ -17,7 +19,7 @@ use Spatie\Period\PeriodCollection;
 class ResourceVerifyAvailabiltyTest extends TestCase
 {
     /** @test */
-    public function it_returns_false_because_the_period_has_bookings()
+    public function it_throws_unbookable_exception_because_the_period_has_bookings()
     {
         BookableArea::factory()
             ->count(1)
@@ -51,7 +53,9 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             )
             ->create();
 
-        $result = VerifyAvailability::run(
+        $this->expectException(NoSeatsException::class);
+
+        VerifyAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -60,12 +64,10 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             ),
             $bookableResource
         );
-
-        $this->assertFalse($result);
     }
 
     /** @test */
-    public function it_returns_true_because_the_period_has_no_bookings()
+    public function it_works_without_exception_because_the_period_has_no_bookings()
     {
         BookableArea::factory()
             ->count(1)
@@ -78,7 +80,7 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             ]))
             ->create();
 
-        $result = VerifyAvailability::run(
+        $return = VerifyAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -88,11 +90,11 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             BookableResource::first()
         );
 
-        $this->assertTrue($result);
+        $this->assertNull($return);
     }
 
     /** @test */
-    public function it_returns_true_because_the_period_is_in_the_available_timetable()
+    public function it_throws_out_of_time_exception_because_the_periods_are_out_of_timetable()
     {
         BookableArea::factory()
             ->count(1)
@@ -105,34 +107,9 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             ]))
             ->create();
 
-        $result = VerifyAvailability::run(
-            new PeriodCollection(
-                Period::make(
-                    now()->subWeek()->startOf('week')->addDays(2)->format('Y-m-d'),
-                    now()->subWeek()->endOf('week')->format('Y-m-d'),
-                )
-            ),
-            BookableResource::first()
-        );
+        $this->expectException(OutOfTimetablesException::class);
 
-        $this->assertTrue($result);
-    }
-
-    /** @test */
-    public function it_returns_false_because_the_periods_are_out_of_timetable()
-    {
-        BookableArea::factory()
-            ->count(1)
-            ->has(BookableResource::factory()->count(1))
-            ->has(BookableTimetable::factory()->count(1)->state([
-                'from_date' => now()->subWeek()->startOf('week')->format('Y-m-d'),
-                'to_date' => now()->subWeek()->endOf('week')->format('Y-m-d'),
-                'from_time' => '00:00:00',
-                'to_time' => '23:59:59',
-            ]))
-            ->create();
-
-        $result = VerifyAvailability::run(
+        VerifyAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->startOf('week')->format('Y-m-d'),
@@ -141,12 +118,10 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             ),
             BookableResource::first()
         );
-
-        $this->assertFalse($result);
     }
 
     /** @test */
-    public function it_returns_false_because_the_periods_is_within_timetable_but_monday_isnt_included()
+    public function it_throws_out_of_timetable_exception_because_the_periods_is_within_timetable_but_monday_isnt_included()
     {
         BookableArea::factory()
             ->count(1)
@@ -160,7 +135,9 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             ]))
             ->create();
 
-        $result = VerifyAvailability::run(
+        $this->expectException(OutOfTimetablesException::class);
+
+        VerifyAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -169,7 +146,5 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             ),
             BookableResource::first()
         );
-
-        $this->assertFalse($result);
     }
 }

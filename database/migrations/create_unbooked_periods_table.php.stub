@@ -10,7 +10,7 @@ class CreateUnbookedPeriodsTable extends Migration
     {
         Schema::create('unbooked_periods', function (Blueprint $table) {
             $table->id();
-            ;
+
             $table->foreignIdFor(config('bookings.models.booking'), 'booking_id')
                 ->constrained()->cascadeOnDelete();
 
@@ -21,9 +21,9 @@ class CreateUnbookedPeriodsTable extends Migration
 
             $table->date('from_date')->nullable();
             $table->date('to_date')->nullable();
-
             $table->time('from_time')->nullable();
             $table->time('to_time')->nullable();
+            $table->string('timezone')->nullable();
 
             $table->text('note')->nullable();
 

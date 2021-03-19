@@ -11,6 +11,6 @@ class BookingsFacade extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return 'laravel-bookings';
+        return 'bookings';
     }
 }

@@ -26,6 +26,12 @@ class BookingsServiceProvider extends PackageServiceProvider
                 "create_booked_resources_table",
                 "create_booked_periods_table",
                 "create_unbooked_periods_table",
+                "create_booked_dates_table",
             ]);
+    }
+
+    public function packageBooted()
+    {
+        $this->app->singleton('bookings', Bookings::class);
     }
 }
