@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Masterix21\Bookings\Models\Concerns\HasBookedPeriods;
 
 class Booking extends Model
 {
     use HasFactory;
+    use HasBookedPeriods;
 
     protected $guarded = [];
 
@@ -20,21 +22,11 @@ class Booking extends Model
 
     public function bookedResources(): HasMany
     {
-        return $this->hasMany(config('bookings.models.booked_resource'), 'booking_id');
+        return $this->hasMany(config('bookings.models.booked_resource'));
     }
 
-    public function bookedPeriods(): HasMany
+    public function bookingPlannings(): HasMany
     {
-        return $this->hasMany(config('bookings.models.booked_period'), 'booking_id');
-    }
-
-    public function unbookedPeriods(): HasMany
-    {
-        return $this->hasMany(config('bookings.models.unbooked_period'), 'booking_id');
-    }
-
-    public function bookedDates(): HasMany
-    {
-        return $this->hasMany(config('bookings.models.booked_dates'), 'booking_id');
+        return $this->hasMany(config('bookings.models.booking_planning'));
     }
 }

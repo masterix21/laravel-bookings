@@ -8,7 +8,7 @@ use Masterix21\Bookings\Models\Concerns\BelongsToBookedResource;
 use Masterix21\Bookings\Models\Concerns\BelongsToBooking;
 use Masterix21\Bookings\Models\Concerns\Scopes\HasWherePeriodFromDatesScope;
 
-class UnbookedPeriod extends Model
+class BookingPlanning extends Model
 {
     use HasFactory;
     use BelongsToBooking;
@@ -16,4 +16,8 @@ class UnbookedPeriod extends Model
     use HasWherePeriodFromDatesScope;
 
     protected $guarded = [];
+
+    protected $casts = [
+        'is_excluded' => 'boolean',
+    ];
 }

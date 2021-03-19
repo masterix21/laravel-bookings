@@ -6,18 +6,19 @@ use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
-use Masterix21\Bookings\Models\BookableTimetable;
+use Masterix21\Bookings\Models\BookablePlanning;
 
-class BookableHasValidTimetable
+class BookableHasValidPlannings
 {
     use AsAction;
 
     public function handle(
         Collection $dates,
-        BookableArea | BookableResource $bookable,
+        BookableArea|BookableResource $bookable,
         ?array $relations = null,
-    ): bool {
-        return BookableTimetable::query()
+    ): bool
+    {
+        return BookablePlanning::query()
             ->when($bookable instanceof BookableArea, fn ($query) => $query->where('bookable_area_id', $bookable->id))
             ->when($bookable instanceof BookableResource, fn ($query) => $query->where(function ($query) use ($bookable) {
                 $query->where('bookable_resource_id', $bookable->id)

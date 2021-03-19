@@ -11,7 +11,7 @@ use Masterix21\Bookings\Models\Concerns\BelongsToBookableArea;
 use Masterix21\Bookings\Models\Concerns\BelongsToBookableResource;
 use Masterix21\Bookings\Models\Concerns\Scopes\HasWherePeriodFromDatesScope;
 
-class BookableTimetable extends Model
+class BookablePlanning extends Model
 {
     use HasFactory;
     use BelongsToBookableArea;

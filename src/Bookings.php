@@ -2,8 +2,9 @@
 
 namespace Masterix21\Bookings;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
-use Masterix21\Bookings\Models\BookedPeriod;
+use Masterix21\Bookings\Models\BookingPlanning;
 use Masterix21\Bookings\Models\UnbookedPeriod;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
@@ -18,7 +19,7 @@ class Bookings
      * @param bool $removeDuplicates
      * @return Collection
      */
-    public function periodsToDates(PeriodCollection | Period $periods, bool $removeDuplicates = true): Collection
+    public function periodsToDates(PeriodCollection|Period $periods, bool $removeDuplicates = true): Collection
     {
         $dates = collect();
 
@@ -40,12 +41,12 @@ class Bookings
     }
 
     /**
-     * @param BookedPeriod[] $main
+     * @param BookingPlanning[] $main
      * @param UnbookedPeriod[]|null $others
      * @param Precision|null $precision
      * @return PeriodCollection
      */
-    public function periodsSubtractToDates(array $main, array | null $others, ?Precision $precision = null): PeriodCollection
+    public function periodsSubtractToDates(Arrayable $main, Arrayable|null $others, ?Precision $precision = null): PeriodCollection
     {
         $main = Collection::wrap($main);
 
@@ -58,9 +59,9 @@ class Bookings
         }
 
         $main = PeriodCollection::make(
-            ...$main->transform(fn (BookedPeriod $period) => Period::make(
-                start: $period->from_date .' '. $period->from_time,
-                end: $period->to_date .' '. $period->to_time,
+            ...$main->transform(fn ($period) => Period::make(
+                start: $period->from_date . ' ' . $period->from_time,
+                end: $period->to_date . ' ' . $period->to_time,
                 precision: $precision,
             ))->toArray()
         );

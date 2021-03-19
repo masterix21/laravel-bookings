@@ -10,22 +10,17 @@ class CreateBookedPeriodsTable extends Migration
     {
         Schema::create('booked_periods', function (Blueprint $table) {
             $table->id();
-;
-            $table->foreignIdFor(config('bookings.models.booking'), 'booking_id')
-                ->constrained()->cascadeOnDelete();
 
-            $table->foreignIdFor(config('bookings.models.booked_resource'), 'booked_resource_id')
-                ->nullable()->constrained()->cascadeOnDelete();
-
-            $table->string('label')->nullable();
+            $table->foreignIdFor(config('bookings.models.booking'), 'booking_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.booked_resource'), 'booked_resource_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_area'), 'bookable_area_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_resource'), 'bookable_resource_id')->constrained()->cascadeOnDelete();
 
             $table->date('from_date')->nullable();
             $table->date('to_date')->nullable();
             $table->time('from_time')->nullable();
             $table->time('to_time')->nullable();
             $table->string('timezone')->nullable();
-
-            $table->text('note')->nullable();
 
             $table->timestamps();
         });

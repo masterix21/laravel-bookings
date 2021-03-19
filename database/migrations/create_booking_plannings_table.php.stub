@@ -4,32 +4,37 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateBookedDatesTable extends Migration
+class CreateBookingPlanningsTable extends Migration
 {
     public function up()
     {
-        Schema::create('booked_dates', function (Blueprint $table) {
-            $table->uuid('uuid')->primary();
-
+        Schema::create('booking_plannings', function (Blueprint $table) {
+            $table->id();
+;
             $table->foreignIdFor(config('bookings.models.booking'), 'booking_id')
                 ->constrained()->cascadeOnDelete();
 
-            $table->foreignIdFor(config('bookings.models.bookable_area'), 'bookable_area_id')
+            $table->foreignIdFor(config('bookings.models.booked_resource'), 'booked_resource_id')
                 ->nullable()->constrained()->cascadeOnDelete();
 
-            $table->foreignIdFor(config('bookings.models.bookable_resource'), 'bookable_resource_id')
-                ->nullable()->constrained()->cascadeOnDelete();
+            $table->boolean('is_excluded')->default(false);
+
+            $table->string('label')->nullable();
 
             $table->date('from_date')->nullable();
             $table->date('to_date')->nullable();
             $table->time('from_time')->nullable();
             $table->time('to_time')->nullable();
             $table->string('timezone')->nullable();
+
+            $table->text('note')->nullable();
+
+            $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('booked_dates');
+        Schema::dropIfExists('booking_plannings');
     }
 }

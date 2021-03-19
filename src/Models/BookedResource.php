@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Masterix21\Bookings\Models\Concerns\BelongsToBookableArea;
 use Masterix21\Bookings\Models\Concerns\BelongsToBookableResource;
 use Masterix21\Bookings\Models\Concerns\BelongsToBooking;
+use Masterix21\Bookings\Models\Concerns\HasBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\HasParentAndChildren;
 
 class BookedResource extends Model
@@ -17,16 +18,12 @@ class BookedResource extends Model
     use HasParentAndChildren;
     use BelongsToBookableArea;
     use BelongsToBookableResource;
+    use HasBookedPeriods;
 
     protected $guarded = [];
 
-    public function bookedPeriods(): HasMany
+    public function bookingPlannings(): HasMany
     {
-        return $this->hasMany(config('bookings.models.booked_period'), 'booked_resource_id');
-    }
-
-    public function unbookedPeriods(): HasMany
-    {
-        return $this->hasMany(config('bookings.models.unbooked_period'), 'booked_resource_id');
+        return $this->hasMany(config('bookings.models.booking_planning'));
     }
 }
