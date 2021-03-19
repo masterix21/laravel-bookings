@@ -11,11 +11,8 @@ use Masterix21\Bookings\Events\Booking\RefreshingBookedPeriods;
 use Masterix21\Bookings\Events\Booking\RefreshingBooking;
 use Masterix21\Bookings\Exceptions\VerifyAvailability\NoSeatsException;
 use Masterix21\Bookings\Models\BookableArea;
-use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookablePlanning;
-use Masterix21\Bookings\Models\BookingPlanning;
-use Masterix21\Bookings\Models\BookedResource;
-use Masterix21\Bookings\Models\Booking;
+use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Tests\TestCase;
 use Masterix21\Bookings\Tests\TestClasses\User;
 use Spatie\Period\Period;
@@ -62,8 +59,9 @@ class AreaVerifyAvailabilityTest extends TestCase
 
                 CreateBooking::run(
                     user: $user,
-                    periods: new PeriodCollection(Period::make($startDate->format('Y-m-d') .' 00:00:00', $startDate->format('Y-m-d') . ' 23:59:59', Precision::SECOND())
-                ),
+                    periods: new PeriodCollection(
+                        Period::make($startDate->format('Y-m-d') .' 00:00:00', $startDate->format('Y-m-d') . ' 23:59:59', Precision::SECOND())
+                    ),
                     bookableResource: $bookableResource
                 );
 
@@ -91,8 +89,9 @@ class AreaVerifyAvailabilityTest extends TestCase
 
         CreateBooking::run(
             user: $user,
-            periods: new PeriodCollection(Period::make($startDate->format('Y-m-d') .' 00:00:00', $startDate->format('Y-m-d') . ' 23:59:59', Precision::SECOND())
-        ),
+            periods: new PeriodCollection(
+                Period::make($startDate->format('Y-m-d') .' 00:00:00', $startDate->format('Y-m-d') . ' 23:59:59', Precision::SECOND())
+            ),
             bookableResource: $resources->last()
         );
 
