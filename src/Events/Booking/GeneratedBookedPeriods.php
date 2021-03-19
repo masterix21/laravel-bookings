@@ -2,6 +2,6 @@
 
 namespace Masterix21\Bookings\Events\Booking;
 
-class RefreshingBookedPeriods extends Event
+class GeneratedBookedPeriods extends Event
 {
 }

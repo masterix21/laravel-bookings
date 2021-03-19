@@ -5,10 +5,10 @@ namespace Masterix21\Bookings\Tests\Feature\Actions;
 use Illuminate\Support\Facades\Event;
 use Masterix21\Bookings\Actions\CreateBooking;
 use Masterix21\Bookings\Actions\VerifyAvailability;
-use Masterix21\Bookings\Events\Booking\RefreshedBookedPeriods;
-use Masterix21\Bookings\Events\Booking\RefreshedBooking;
-use Masterix21\Bookings\Events\Booking\RefreshingBookedPeriods;
-use Masterix21\Bookings\Events\Booking\RefreshingBooking;
+use Masterix21\Bookings\Events\Booking\CreatedBooking;
+use Masterix21\Bookings\Events\Booking\CreatingBooking;
+use Masterix21\Bookings\Events\Booking\GeneratedBookedPeriods;
+use Masterix21\Bookings\Events\Booking\GeneratingBookedPeriods;
 use Masterix21\Bookings\Exceptions\VerifyAvailability\NoSeatsException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookablePlanning;
@@ -65,11 +65,6 @@ class AreaVerifyAvailabilityTest extends TestCase
                     bookableResource: $bookableResource
                 );
 
-                Event::assertDispatched(RefreshingBooking::class);
-                Event::assertDispatched(RefreshingBookedPeriods::class);
-                Event::assertDispatched(RefreshedBooking::class);
-                Event::assertDispatched(RefreshedBookedPeriods::class);
-
                 $startDate->addDay();
             });
 
@@ -95,10 +90,10 @@ class AreaVerifyAvailabilityTest extends TestCase
             bookableResource: $resources->last()
         );
 
-        Event::assertDispatched(RefreshingBooking::class);
-        Event::assertDispatched(RefreshingBookedPeriods::class);
-        Event::assertDispatched(RefreshedBooking::class);
-        Event::assertDispatched(RefreshedBookedPeriods::class);
+        Event::assertDispatchedTimes(CreatingBooking::class, 3);
+        Event::assertDispatchedTimes(GeneratingBookedPeriods::class, 3);
+        Event::assertDispatchedTimes(GeneratedBookedPeriods::class, 3);
+        Event::assertDispatchedTimes(CreatedBooking::class, 3);
 
         $this->expectException(NoSeatsException::class);
 

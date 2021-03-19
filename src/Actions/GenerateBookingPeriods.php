@@ -4,8 +4,8 @@ namespace Masterix21\Bookings\Actions;
 
 use Carbon\Carbon;
 use Lorisleiva\Actions\Concerns\AsAction;
-use Masterix21\Bookings\Events\Booking\RefreshedBookedPeriods;
-use Masterix21\Bookings\Events\Booking\RefreshingBookedPeriods;
+use Masterix21\Bookings\Events\Booking\GeneratedBookedPeriods;
+use Masterix21\Bookings\Events\Booking\GeneratingBookedPeriods;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\BookedResource;
 use Masterix21\Bookings\Models\Booking;
@@ -17,7 +17,7 @@ class GenerateBookingPeriods
 
     public function handle(Booking $booking)
     {
-        event(new RefreshingBookedPeriods($booking));
+        event(new GeneratingBookedPeriods($booking));
 
         $booking->bookedPeriods()->delete();
 
@@ -50,6 +50,6 @@ class GenerateBookingPeriods
             ])));
         });
 
-        event(new RefreshedBookedPeriods($booking));
+        event(new GeneratedBookedPeriods($booking));
     }
 }

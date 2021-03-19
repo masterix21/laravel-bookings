@@ -6,8 +6,8 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
-use Masterix21\Bookings\Events\Booking\RefreshedBooking;
-use Masterix21\Bookings\Events\Booking\RefreshingBooking;
+use Masterix21\Bookings\Events\Booking\CreatedBooking;
+use Masterix21\Bookings\Events\Booking\CreatingBooking;
 use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedResource;
@@ -29,7 +29,10 @@ class CreateBooking
         ?string $email = null,
         ?string $phone = null,
         ?string $note = null,
-    ) {
+    ): void
+    {
+        event(new CreatingBooking($bookableResource, $periods));
+
         /** @var Booking $booking */
         $booking = resolve(config('bookings.models.booking'));
         $booking->fill([
@@ -42,15 +45,14 @@ class CreateBooking
         ]);
         $booking->save();
 
-        event(new RefreshingBooking($booking));
-
-        $bookedResource = $this->createResource($booking, $bookableResource); // @TODO: quando gestiamo le relations, ci servirà...
+        // @TODO: quando gestiamo le relations, ci servirà...
+        $bookedResource = $this->createResource($booking, $bookableResource);
 
         $this->createPlannings($booking, $periods);
 
         GenerateBookingPeriods::run($booking);
 
-        event(new RefreshedBooking($booking));
+        event(new CreatedBooking($booking));
     }
 
     private function createResource(Booking $booking, BookableResource $bookableResource, ?BookedResource $parent = null, ?BookableRelation $bookableRelation = null): BookedResource
@@ -74,7 +76,7 @@ class CreateBooking
         return $mainResource;
     }
 
-    private function createPlannings(Booking $booking, PeriodCollection $periods, ?BookedResource $bookedResource = null, bool $isExcluded = false, ?string $label = null, ?string $note = null)
+    private function createPlannings(Booking $booking, PeriodCollection $periods, ?BookedResource $bookedResource = null, bool $isExcluded = false, ?string $label = null, ?string $note = null): void
     {
         collect($periods)->each(function (Period $period) use ($booking, $bookedResource, $isExcluded, $label, $note) {
             $bookingPlanning = resolve(config('bookings.models.booking_planning'));

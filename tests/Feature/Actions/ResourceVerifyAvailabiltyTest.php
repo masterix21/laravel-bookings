@@ -5,10 +5,10 @@ namespace Masterix21\Bookings\Tests\Feature\Actions;
 use Illuminate\Support\Facades\Event;
 use Masterix21\Bookings\Actions\CreateBooking;
 use Masterix21\Bookings\Actions\VerifyAvailability;
-use Masterix21\Bookings\Events\Booking\RefreshedBookedPeriods;
-use Masterix21\Bookings\Events\Booking\RefreshedBooking;
-use Masterix21\Bookings\Events\Booking\RefreshingBookedPeriods;
-use Masterix21\Bookings\Events\Booking\RefreshingBooking;
+use Masterix21\Bookings\Events\Booking\CreatedBooking;
+use Masterix21\Bookings\Events\Booking\CreatingBooking;
+use Masterix21\Bookings\Events\Booking\GeneratedBookedPeriods;
+use Masterix21\Bookings\Events\Booking\GeneratingBookedPeriods;
 use Masterix21\Bookings\Exceptions\VerifyAvailability\NoSeatsException;
 use Masterix21\Bookings\Exceptions\VerifyAvailability\OutOfPlanningsException;
 use Masterix21\Bookings\Models\BookableArea;
@@ -52,10 +52,10 @@ class ResourceVerifyAvailabiltyTest extends TestCase
             bookableResource: $bookableResource
         );
 
-        Event::assertDispatched(RefreshingBooking::class);
-        Event::assertDispatched(RefreshingBookedPeriods::class);
-        Event::assertDispatched(RefreshedBooking::class);
-        Event::assertDispatched(RefreshedBookedPeriods::class);
+        Event::assertDispatched(CreatingBooking::class);
+        Event::assertDispatched(GeneratingBookedPeriods::class);
+        Event::assertDispatched(GeneratedBookedPeriods::class);
+        Event::assertDispatched(CreatedBooking::class);
 
         $this->expectException(NoSeatsException::class);
 
