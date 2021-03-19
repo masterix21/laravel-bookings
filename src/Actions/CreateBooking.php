@@ -29,8 +29,7 @@ class CreateBooking
         ?string $email = null,
         ?string $phone = null,
         ?string $note = null,
-    ): void
-    {
+    ): void {
         event(new CreatingBooking($bookableResource, $periods));
 
         /** @var Booking $booking */
