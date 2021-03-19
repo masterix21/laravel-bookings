@@ -23,7 +23,7 @@ class VerifyAvailability
      */
     public function handle(
         PeriodCollection $periods,
-        BookableArea|BookableResource $bookable,
+        BookableArea | BookableResource $bookable,
         ?array $relations = null,
     ) {
         $dates = app('bookings')->periodsToDates($periods);

@@ -18,7 +18,7 @@ class Bookings
      * @param bool $removeDuplicates
      * @return Collection
      */
-    public function periodsToDates(PeriodCollection|Period $periods, bool $removeDuplicates = true): Collection
+    public function periodsToDates(PeriodCollection | Period $periods, bool $removeDuplicates = true): Collection
     {
         $dates = collect();
 
@@ -45,7 +45,7 @@ class Bookings
      * @param Precision|null $precision
      * @return PeriodCollection
      */
-    public function periodsSubtractToDates(array $main, array|null $others, ?Precision $precision = null): PeriodCollection
+    public function periodsSubtractToDates(array $main, array | null $others, ?Precision $precision = null): PeriodCollection
     {
         $main = Collection::wrap($main);
 

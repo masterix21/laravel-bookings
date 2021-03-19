@@ -7,7 +7,9 @@ use Masterix21\Bookings\Models\Booking;
 
 abstract class Event
 {
-    public function __construct(protected Booking $booking) { }
+    public function __construct(protected Booking $booking)
+    {
+    }
 
     public function getBooking(): Booking
     {

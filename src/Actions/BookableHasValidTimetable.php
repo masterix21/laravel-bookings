@@ -14,10 +14,9 @@ class BookableHasValidTimetable
 
     public function handle(
         Collection $dates,
-        BookableArea|BookableResource $bookable,
+        BookableArea | BookableResource $bookable,
         ?array $relations = null,
-    ): bool
-    {
+    ): bool {
         return BookableTimetable::query()
             ->when($bookable instanceof BookableArea, fn ($query) => $query->where('bookable_area_id', $bookable->id))
             ->when($bookable instanceof BookableResource, fn ($query) => $query->where(function ($query) use ($bookable) {

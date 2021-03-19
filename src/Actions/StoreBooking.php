@@ -10,6 +10,5 @@ class StoreBooking
 
     public function handle()
     {
-
     }
 }
