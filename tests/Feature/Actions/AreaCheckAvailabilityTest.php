@@ -4,12 +4,12 @@ namespace Masterix21\Bookings\Tests\Feature\Actions;
 
 use Illuminate\Support\Facades\Event;
 use Masterix21\Bookings\Actions\CreateBooking;
-use Masterix21\Bookings\Actions\VerifyAvailability;
+use Masterix21\Bookings\Actions\CheckAvailability;
 use Masterix21\Bookings\Events\Booking\CreatedBooking;
 use Masterix21\Bookings\Events\Booking\CreatingBooking;
 use Masterix21\Bookings\Events\Booking\GeneratedBookedPeriods;
 use Masterix21\Bookings\Events\Booking\GeneratingBookedPeriods;
-use Masterix21\Bookings\Exceptions\VerifyAvailability\NoSeatsException;
+use Masterix21\Bookings\Exceptions\CheckAvailability\NoSeatsException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
@@ -19,7 +19,7 @@ use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;
 
-class AreaVerifyAvailabilityTest extends TestCase
+class AreaCheckAvailabilityTest extends TestCase
 {
     use CreatesAreasAndResources;
 
@@ -30,7 +30,7 @@ class AreaVerifyAvailabilityTest extends TestCase
 
         $this->createsAreasAndResources();
 
-        $result = VerifyAvailability::run(
+        $result = CheckAvailability::run(
             periods: new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -61,7 +61,7 @@ class AreaVerifyAvailabilityTest extends TestCase
                 $startDate->addDay();
             });
 
-        $result = VerifyAvailability::run(
+        $result = CheckAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -85,7 +85,7 @@ class AreaVerifyAvailabilityTest extends TestCase
 
         $this->expectException(NoSeatsException::class);
 
-        VerifyAvailability::run(
+        CheckAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),

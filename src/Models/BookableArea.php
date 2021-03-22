@@ -23,4 +23,9 @@ class BookableArea extends Model
     {
         return $this->hasMany(config('bookings.models.bookable_planning'));
     }
+
+    public function bookableRelations(): HasMany
+    {
+        return $this->hasMany(config('bookings.models.bookable_relation'), 'parent_bookable_area_id');
+    }
 }

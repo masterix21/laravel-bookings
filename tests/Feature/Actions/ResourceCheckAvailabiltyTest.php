@@ -4,15 +4,13 @@ namespace Masterix21\Bookings\Tests\Feature\Actions;
 
 use Illuminate\Support\Facades\Event;
 use Masterix21\Bookings\Actions\CreateBooking;
-use Masterix21\Bookings\Actions\VerifyAvailability;
+use Masterix21\Bookings\Actions\CheckAvailability;
 use Masterix21\Bookings\Events\Booking\CreatedBooking;
 use Masterix21\Bookings\Events\Booking\CreatingBooking;
 use Masterix21\Bookings\Events\Booking\GeneratedBookedPeriods;
 use Masterix21\Bookings\Events\Booking\GeneratingBookedPeriods;
-use Masterix21\Bookings\Exceptions\VerifyAvailability\NoSeatsException;
-use Masterix21\Bookings\Exceptions\VerifyAvailability\OutOfPlanningsException;
-use Masterix21\Bookings\Models\BookableArea;
-use Masterix21\Bookings\Models\BookablePlanning;
+use Masterix21\Bookings\Exceptions\CheckAvailability\NoSeatsException;
+use Masterix21\Bookings\Exceptions\CheckAvailability\OutOfPlanningsException;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
 use Masterix21\Bookings\Tests\TestCase;
@@ -20,12 +18,12 @@ use Masterix21\Bookings\Tests\TestClasses\User;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 
-class ResourceVerifyAvailabiltyTest extends TestCase
+class ResourceCheckAvailabiltyTest extends TestCase
 {
     use CreatesAreasAndResources;
 
     /** @test */
-    public function it_throws_unbookable_exception_because_the_period_has_bookings()
+    public function it_throws_no_seats_exception_because_the_period_has_bookings()
     {
         $this->createsAreasAndResources();
 
@@ -53,7 +51,7 @@ class ResourceVerifyAvailabiltyTest extends TestCase
 
         $this->expectException(NoSeatsException::class);
 
-        VerifyAvailability::run(
+        CheckAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -69,7 +67,7 @@ class ResourceVerifyAvailabiltyTest extends TestCase
     {
         $this->createsAreasAndResources();
 
-        $return = VerifyAvailability::run(
+        $return = CheckAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -89,7 +87,7 @@ class ResourceVerifyAvailabiltyTest extends TestCase
 
         $this->expectException(OutOfPlanningsException::class);
 
-        VerifyAvailability::run(
+        CheckAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->startOf('week')->format('Y-m-d'),
@@ -103,11 +101,11 @@ class ResourceVerifyAvailabiltyTest extends TestCase
     /** @test */
     public function it_throws_out_of_bookable_plannings_exception_because_the_periods_is_within_bookable_plannings_but_monday_isnt_included()
     {
-        $this->createsAreasAndResources(planningStates: ['monday' => false]);
+        $this->createsAreasAndResources(planningsStates: ['monday' => false]);
 
         $this->expectException(OutOfPlanningsException::class);
 
-        VerifyAvailability::run(
+        CheckAvailability::run(
             new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week')->format('Y-m-d'),

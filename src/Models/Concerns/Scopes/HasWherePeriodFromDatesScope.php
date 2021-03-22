@@ -28,4 +28,11 @@ trait HasWherePeriodFromDatesScope
                 ->each(fn ($date) => $query->orWhereBetweenColumns(Carbon::parse($date)->format('Y-m-d'), ['from_date', 'to_date']));
         });
     }
+
+    public function scopeWhereDatesAreValids(Builder $builder, Collection | array | string $dates): Builder
+    {
+        return $builder
+            ->whereWeekdaysDates($dates)
+            ->whereAllDatesAreWithinPeriods($dates);
+    }
 }

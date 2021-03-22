@@ -18,7 +18,8 @@ trait CreatesAreasAndResources
         int $resourcesCount = 3,
         string $fromTime = '00:00:00',
         string $toTime = '23:59:59',
-        array $planningStates = [],
+        array $resourcesStates = [],
+        array $planningsStates = [],
     ): Collection|Model
     {
         if (! $fromDate) {
@@ -31,13 +32,16 @@ trait CreatesAreasAndResources
 
         return BookableArea::factory()
             ->count($areasCount)
-            ->has(BookableResource::factory()->count($resourcesCount))
+            ->has(BookableResource::factory()->count($resourcesCount)->state(array_merge([
+                'size' => 1,
+                'is_bookable' => true
+            ], $resourcesStates)))
             ->has(BookablePlanning::factory()->count(1)->state(array_merge([
                 'from_date' => $fromDate->format('Y-m-d'),
                 'to_date' => $toDate->format('Y-m-d'),
                 'from_time' => '00:00:00',
                 'to_time' => '23:59:59',
-            ], $planningStates)))
+            ], $planningsStates)))
             ->create();
     }
 }
