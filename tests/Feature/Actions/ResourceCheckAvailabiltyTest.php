@@ -3,8 +3,8 @@
 namespace Masterix21\Bookings\Tests\Feature\Actions;
 
 use Illuminate\Support\Facades\Event;
-use Masterix21\Bookings\Actions\CreateBooking;
 use Masterix21\Bookings\Actions\CheckAvailability;
+use Masterix21\Bookings\Actions\CreateBooking;
 use Masterix21\Bookings\Events\Booking\CreatedBooking;
 use Masterix21\Bookings\Events\Booking\CreatingBooking;
 use Masterix21\Bookings\Events\Booking\GeneratedBookedPeriods;

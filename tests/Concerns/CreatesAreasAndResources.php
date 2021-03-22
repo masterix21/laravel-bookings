@@ -20,8 +20,7 @@ trait CreatesAreasAndResources
         string $toTime = '23:59:59',
         array $resourcesStates = [],
         array $planningsStates = [],
-    ): Collection|Model
-    {
+    ): Collection | Model {
         if (! $fromDate) {
             $fromDate = now()->subWeek()->startOf('week');
         }
@@ -34,7 +33,7 @@ trait CreatesAreasAndResources
             ->count($areasCount)
             ->has(BookableResource::factory()->count($resourcesCount)->state(array_merge([
                 'size' => 1,
-                'is_bookable' => true
+                'is_bookable' => true,
             ], $resourcesStates)))
             ->has(BookablePlanning::factory()->count(1)->state(array_merge([
                 'from_date' => $fromDate->format('Y-m-d'),

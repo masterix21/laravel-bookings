@@ -2,7 +2,6 @@
 
 namespace Masterix21\Bookings\Tests\Feature\Actions\Checks;
 
-
 use Masterix21\Bookings\Actions\Checks\BookableHasValidPlannings;
 use Masterix21\Bookings\Exceptions\CheckAvailability\OutOfPlanningsException;
 use Masterix21\Bookings\Exceptions\CheckAvailability\RelationsHaveNoSeatsException;
@@ -170,16 +169,15 @@ class BookableHasValidPlanningsTest extends TestCase
 
         $result = BookableHasValidPlannings::run(
             dates: app('bookings')->periodsToDates(periods: new PeriodCollection(Period::make(
-            now()->subWeek()->startOf('week')->format('Y-m-d'),
-            now()->subWeek()->endOf('week')->format('Y-m-d'),
-        ))),
+                now()->subWeek()->startOf('week')->format('Y-m-d'),
+                now()->subWeek()->endOf('week')->format('Y-m-d'),
+            ))),
             bookable: $mainBookableArea->bookableResources()->first(),
             relations: collect([ $bookableArea ])
         );
 
         $this->assertNull($result);
     }
-
 
     /** @test */
     public function it_throws_an_exception_because_bookable_area_has_bookable_area_in_relations_with_invalid_planning()
@@ -217,9 +215,9 @@ class BookableHasValidPlanningsTest extends TestCase
 
         BookableHasValidPlannings::run(
             dates: app('bookings')->periodsToDates(periods: new PeriodCollection(Period::make(
-            now()->subWeek()->startOf('week')->format('Y-m-d'),
-            now()->subWeek()->endOf('week')->format('Y-m-d'),
-        ))),
+                now()->subWeek()->startOf('week')->format('Y-m-d'),
+                now()->subWeek()->endOf('week')->format('Y-m-d'),
+            ))),
             bookable: $mainBookableArea->bookableResources()->first(),
             relations: collect([ $bookableArea ])
         );
@@ -259,9 +257,9 @@ class BookableHasValidPlanningsTest extends TestCase
 
         $result = BookableHasValidPlannings::run(
             dates: app('bookings')->periodsToDates(periods: new PeriodCollection(Period::make(
-            now()->subWeek()->startOf('week')->format('Y-m-d'),
-            now()->subWeek()->endOf('week')->format('Y-m-d'),
-        ))),
+                now()->subWeek()->startOf('week')->format('Y-m-d'),
+                now()->subWeek()->endOf('week')->format('Y-m-d'),
+            ))),
             bookable: $mainBookableArea->bookableResources()->first(),
             relations: collect([ $bookableArea ])
         );

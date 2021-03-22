@@ -19,7 +19,7 @@ class BookableHasValidPlannings
     public function handle(
         Collection $dates,
         BookableArea | BookableResource $bookable,
-        Collection|EloquentCollection|null $relations = null,
+        Collection | EloquentCollection | null $relations = null,
     ) {
         $result = BookablePlanning::query()
             ->when($bookable instanceof BookableArea, fn ($query) => $query->where('bookable_area_id', $bookable->id))
@@ -46,12 +46,15 @@ class BookableHasValidPlannings
                 $query->when($bookableAreas->isNotEmpty(), fn ($q) => $q->orWhereIn('bookable_area_id', $bookableAreas->pluck('id')));
                 $query->when($bookableResources->isNotEmpty(), fn ($q) => $q->orWhereIn('id', $bookableResources->pluck('id')));
             })
-            ->where(fn (Builder $query) => $query
-                ->where(fn (Builder $query) => $query
+            ->where(
+                fn (Builder $query) => $query
+                ->where(
+                    fn (Builder $query) => $query
                     ->whereDoesntHave('bookablePlannings')
                     ->whereDoesntHave('bookableArea.bookablePlannings')
                 )
-                ->orWhere(fn (Builder $query) => $query
+                ->orWhere(
+                    fn (Builder $query) => $query
                     ->whereHas('bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
                     ->orWhereHas('bookableArea.bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
                 )

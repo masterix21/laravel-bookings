@@ -2,7 +2,6 @@
 
 namespace Masterix21\Bookings\Tests\Feature\Actions\Checks;
 
-
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
 use Masterix21\Bookings\Tests\TestCase;
 
