@@ -83,11 +83,6 @@ class AreaVerifyAvailabilityTest extends TestCase
             bookableResource: $resources->last()
         );
 
-        Event::assertDispatchedTimes(CreatingBooking::class, 3);
-        Event::assertDispatchedTimes(GeneratingBookedPeriods::class, 3);
-        Event::assertDispatchedTimes(GeneratedBookedPeriods::class, 3);
-        Event::assertDispatchedTimes(CreatedBooking::class, 3);
-
         $this->expectException(NoSeatsException::class);
 
         VerifyAvailability::run(
@@ -99,5 +94,10 @@ class AreaVerifyAvailabilityTest extends TestCase
             ),
             BookableArea::first()
         );
+
+        Event::assertDispatchedTimes(CreatingBooking::class, 3);
+        Event::assertDispatchedTimes(GeneratingBookedPeriods::class, 3);
+        Event::assertDispatchedTimes(GeneratedBookedPeriods::class, 3);
+        Event::assertDispatchedTimes(CreatedBooking::class, 3);
     }
 }
