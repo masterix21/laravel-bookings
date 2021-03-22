@@ -12,13 +12,13 @@ use Masterix21\Bookings\Models\BookableResource;
 trait CreatesAreasAndResources
 {
     protected function createsAreasAndResources(
-        ?Carbon $fromDate,
-        ?Carbon $toDate,
+        ?Carbon $fromDate = null,
+        ?Carbon $toDate = null,
         int $areasCount = 1,
         int $resourcesCount = 3,
-        int $planningsCount = 1,
         string $fromTime = '00:00:00',
-        string $toTime = '23:59:59'
+        string $toTime = '23:59:59',
+        array $planningStates = [],
     ): Collection|Model
     {
         if (! $fromDate) {
@@ -32,12 +32,12 @@ trait CreatesAreasAndResources
         return BookableArea::factory()
             ->count($areasCount)
             ->has(BookableResource::factory()->count($resourcesCount))
-            ->has(BookablePlanning::factory()->count($planningsCount)->state([
+            ->has(BookablePlanning::factory()->count(1)->state(array_merge([
                 'from_date' => $fromDate->format('Y-m-d'),
                 'to_date' => $toDate->format('Y-m-d'),
                 'from_time' => '00:00:00',
                 'to_time' => '23:59:59',
-            ]))
+            ], $planningStates)))
             ->create();
     }
 }

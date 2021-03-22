@@ -14,6 +14,7 @@ use Masterix21\Bookings\Exceptions\VerifyAvailability\OutOfPlanningsException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookablePlanning;
 use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
 use Masterix21\Bookings\Tests\TestCase;
 use Masterix21\Bookings\Tests\TestClasses\User;
 use Spatie\Period\Period;
@@ -21,19 +22,12 @@ use Spatie\Period\PeriodCollection;
 
 class ResourceVerifyAvailabiltyTest extends TestCase
 {
+    use CreatesAreasAndResources;
+
     /** @test */
     public function it_throws_unbookable_exception_because_the_period_has_bookings()
     {
-        BookableArea::factory()
-            ->count(1)
-            ->has(BookableResource::factory()->count(1))
-            ->has(BookablePlanning::factory()->count(1)->state([
-                'from_date' => now()->subWeek()->startOf('week')->format('Y-m-d'),
-                'to_date' => now()->subWeek()->endOf('week')->format('Y-m-d'),
-                'from_time' => '00:00:00',
-                'to_time' => '23:59:59',
-            ]))
-            ->create();
+        $this->createsAreasAndResources();
 
         $bookableResource = BookableResource::first();
 
@@ -73,16 +67,7 @@ class ResourceVerifyAvailabiltyTest extends TestCase
     /** @test */
     public function it_works_without_exception_because_the_period_has_no_bookings()
     {
-        BookableArea::factory()
-            ->count(1)
-            ->has(BookableResource::factory()->count(1))
-            ->has(BookablePlanning::factory()->count(1)->state([
-                'from_date' => now()->subWeek()->startOf('week')->format('Y-m-d'),
-                'to_date' => now()->subWeek()->endOf('week')->format('Y-m-d'),
-                'from_time' => '00:00:00',
-                'to_time' => '23:59:59',
-            ]))
-            ->create();
+        $this->createsAreasAndResources();
 
         $return = VerifyAvailability::run(
             new PeriodCollection(
@@ -100,16 +85,7 @@ class ResourceVerifyAvailabiltyTest extends TestCase
     /** @test */
     public function it_throws_out_of_time_exception_because_the_periods_are_out_of_bookable_plannings()
     {
-        BookableArea::factory()
-            ->count(1)
-            ->has(BookableResource::factory()->count(1))
-            ->has(BookablePlanning::factory()->count(1)->state([
-                'from_date' => now()->subWeek()->startOf('week')->format('Y-m-d'),
-                'to_date' => now()->subWeek()->endOf('week')->format('Y-m-d'),
-                'from_time' => '00:00:00',
-                'to_time' => '23:59:59',
-            ]))
-            ->create();
+        $this->createsAreasAndResources();
 
         $this->expectException(OutOfPlanningsException::class);
 
@@ -127,17 +103,7 @@ class ResourceVerifyAvailabiltyTest extends TestCase
     /** @test */
     public function it_throws_out_of_bookable_plannings_exception_because_the_periods_is_within_bookable_plannings_but_monday_isnt_included()
     {
-        BookableArea::factory()
-            ->count(1)
-            ->has(BookableResource::factory()->count(1))
-            ->has(BookablePlanning::factory()->count(1)->state([
-                'monday' => false,
-                'from_date' => now()->subWeek()->startOf('week')->format('Y-m-d'),
-                'to_date' => now()->subWeek()->endOf('week')->format('Y-m-d'),
-                'from_time' => '00:00:00',
-                'to_time' => '23:59:59',
-            ]))
-            ->create();
+        $this->createsAreasAndResources(planningStates: ['monday' => false]);
 
         $this->expectException(OutOfPlanningsException::class);
 
