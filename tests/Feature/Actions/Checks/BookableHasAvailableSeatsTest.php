@@ -78,7 +78,8 @@ class BookableHasAvailableSeatsTest extends TestCase
             periods: new PeriodCollection(
                 Period::make(
                     now()->subWeek()->startOf('week'),
-                    now()->subWeek()->endOf('week'), Precision::SECOND()
+                    now()->subWeek()->endOf('week'),
+                    Precision::SECOND()
                 )
             ),
             bookableResource: $mainBookableArea->bookableResources()->first(),

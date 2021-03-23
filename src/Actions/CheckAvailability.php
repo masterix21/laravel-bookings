@@ -7,9 +7,7 @@ use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Masterix21\Bookings\Actions\Checks\BookableHasAvailableSeats;
 use Masterix21\Bookings\Actions\Checks\BookableHasValidPlannings;
-use Masterix21\Bookings\Exceptions\CheckAvailability\UnbookableException;
 use Masterix21\Bookings\Models\BookableArea;
-use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
 use Spatie\Period\PeriodCollection;
 

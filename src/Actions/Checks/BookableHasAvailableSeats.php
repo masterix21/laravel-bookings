@@ -55,7 +55,7 @@ class BookableHasAvailableSeats
             $bookableAreasCheck = BookableArea::query()
                 ->select('id')
                 ->withSum(['bookableResources' => fn ($query) => $query
-                    ->when(! $ignoresUnbookableResources, fn ($query) => $query->where('is_bookable', true))
+                    ->when(! $ignoresUnbookableResources, fn ($query) => $query->where('is_bookable', true)),
                 ], 'size')
                 ->withCount([
                     'bookedPeriods' => fn (Builder $query) => $query
