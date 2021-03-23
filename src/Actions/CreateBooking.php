@@ -3,7 +3,9 @@
 namespace Masterix21\Bookings\Actions;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Auth\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Masterix21\Bookings\Events\Booking\CreatedBooking;
@@ -23,7 +25,7 @@ class CreateBooking
         User $user,
         PeriodCollection $periods,
         BookableResource $bookableResource,
-        ?array $bookableRelations = null,
+        Collection | EloquentCollection | null $relations = null,
         ?string $code = null,
         ?string $label = null,
         ?string $email = null,
@@ -44,8 +46,15 @@ class CreateBooking
         ]);
         $booking->save();
 
-        // @TODO: quando gestiamo le relations, ci servirà...
-        $bookedResource = $this->createResource($booking, $bookableResource);
+        $bookedResource = $this->createResource(booking: $booking, bookable: $bookableResource);
+
+        if ($relations?->isNotEmpty()) {
+            $relations->each(fn (BookableRelation $bookableRelation) => $this->createResource(
+                booking: $booking,
+                bookable: $bookableRelation,
+                parent: $bookedResource,
+            ));
+        }
 
         $this->createPlannings($booking, $periods);
 
@@ -54,25 +63,27 @@ class CreateBooking
         event(new CreatedBooking($booking));
     }
 
-    private function createResource(Booking $booking, BookableResource $bookableResource, ?BookedResource $parent = null, ?BookableRelation $bookableRelation = null): BookedResource
+    private function createResource(Booking $booking, BookableResource | BookableRelation $bookable, ?BookedResource $parent = null): BookedResource
     {
         /** @var BookedResource $mainResource */
-        $mainResource = resolve(config('bookings.models.booked_resource'));
+        $bookedResource = resolve(config('bookings.models.booked_resource'));
 
-        $mainResource->fill([
+        $bookedResource->fill([
             'booking_id' => $booking->id,
             'parent_id' => $parent?->id,
-            'bookable_area_id' => $bookableResource->bookable_area_id,
-            'bookable_resource_id' => $bookableResource->id,
-            'is_required' => $bookableRelation?->is_required ?? true,
-            'min' => $bookableRelation ? $bookableRelation->min : $bookableResource->min,
-            'max' => $bookableRelation ? $bookableRelation->max : $bookableResource->max,
-            'max_nested' => $bookableRelation ? null : $bookableResource->max_nested,
+            'bookable_area_id' => $bookable->bookable_area_id,
+            'bookable_resource_id' => $bookable instanceof BookableResource
+                ? $bookable->id
+                : $bookable->bookable_resource_id,
+            'is_required' => $bookable?->is_required ?? false,
+            'min' => $bookable->min,
+            'max' => $bookable->max,
+            'max_nested' => $bookable?->max_nested,
         ]);
 
-        $mainResource->save();
+        $bookedResource->save();
 
-        return $mainResource;
+        return $bookedResource;
     }
 
     private function createPlannings(Booking $booking, PeriodCollection $periods, ?BookedResource $bookedResource = null, bool $isExcluded = false, ?string $label = null, ?string $note = null): void

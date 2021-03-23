@@ -49,4 +49,11 @@ class BookablePlanning extends Model
                 }));
         });
     }
+
+    public function scopeWhereDatesAreValids(Builder $builder, Collection | array | string $dates): Builder
+    {
+        return $builder
+            ->whereWeekdaysDates($dates)
+            ->whereAllDatesAreWithinPeriods($dates);
+    }
 }

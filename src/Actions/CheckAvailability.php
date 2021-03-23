@@ -2,6 +2,8 @@
 
 namespace Masterix21\Bookings\Actions;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Collection;
 use Lorisleiva\Actions\Concerns\AsAction;
 use Masterix21\Bookings\Actions\Checks\BookableHasAvailableSeats;
 use Masterix21\Bookings\Actions\Checks\BookableHasValidPlannings;
@@ -15,18 +17,10 @@ class CheckAvailability
 {
     use AsAction;
 
-    /**
-     * @param PeriodCollection $periods
-     * @param BookableArea|BookableResource $bookable
-     * @param null|BookableRelation[] $relations
-     * @throws OutOfPlanningsException
-     * @throws UnbookableException
-     * @throws NoSeatsException
-     */
     public function handle(
         PeriodCollection $periods,
         BookableArea | BookableResource $bookable,
-        ?array $relations = null,
+        Collection | EloquentCollection | null $relations = null,
         bool $ignoresUnbookableResources = false
     ) {
         $dates = app('bookings')->periodsToDates($periods);
