@@ -23,8 +23,8 @@ trait HasSizeFeatures
      * @param Collection $dates
      * @param Collection|EloquentCollection|null $relations
      * @param bool $ignoresUnbookable
-     * @throws NoSeatsException
-     * @throws RelationsHaveNoSeatsException
+     * @throws NoFreeSizeException
+     * @throws RelationsHaveNoFreeSizeException
      * @throws UnbookableException
      */
     public function ensureHasFreeSize(
@@ -57,9 +57,9 @@ trait HasSizeFeatures
 
     /**
      * @param Collection $dates
-     * @param Collection|EloquentCollection $relations
+     * @param Collection|EloquentCollection|null $relations
      * @param bool $ignoresUnbookable
-     * @throws RelationsHaveNoSeatsException
+     * @throws RelationsHaveNoFreeSizeException
      */
     public function ensureRelationsHaveFreeSize(
         Collection $dates,

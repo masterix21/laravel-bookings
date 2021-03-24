@@ -4,6 +4,11 @@ namespace Masterix21\Bookings\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
+use Masterix21\Bookings\Exceptions\NoFreeSizeException;
+use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
+use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
+use Masterix21\Bookings\Exceptions\RelationsOutOfPlanningsException;
+use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Spatie\Period\PeriodCollection;
@@ -15,11 +20,11 @@ trait ImplementsEnsureIsAvailable
      * @param PeriodCollection $periods
      * @param Collection|EloquentCollection|null $relations
      * @param bool $ignoresUnbookable
-     * @throws \Masterix21\Bookings\Exceptions\NoSeatsException
-     * @throws \Masterix21\Bookings\Exceptions\OutOfPlanningsException
-     * @throws \Masterix21\Bookings\Exceptions\RelationsHaveNoSeatsException
-     * @throws \Masterix21\Bookings\Exceptions\RelationsOutOfPlanningsException
-     * @throws \Masterix21\Bookings\Exceptions\UnbookableException
+     * @throws NoFreeSizeException
+     * @throws OutOfPlanningsException
+     * @throws RelationsHaveNoFreeSizeException
+     * @throws RelationsOutOfPlanningsException
+     * @throws UnbookableException
      */
     public function ensureIsAvailable(
         PeriodCollection $periods,
