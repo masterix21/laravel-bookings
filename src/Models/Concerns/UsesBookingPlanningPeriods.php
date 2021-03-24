@@ -3,7 +3,6 @@
 namespace Masterix21\Bookings\Models\Concerns;
 
 use Masterix21\Bookings\Models\BookedResource;
-use Masterix21\Bookings\Models\BookingPlanning;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;

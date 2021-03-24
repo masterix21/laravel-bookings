@@ -7,7 +7,6 @@ use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
-use Masterix21\Bookings\Models\BookingPlanning;
 use Masterix21\Bookings\Period;
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
 use Masterix21\Bookings\Tests\TestCase;

@@ -8,10 +8,8 @@ use Masterix21\Bookings\Events\Booking\GeneratingBookedPeriods;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\BookedResource;
 use Masterix21\Bookings\Models\Booking;
-use Masterix21\Bookings\Models\BookingPlanning;
 use Spatie\Period\Period as SpatiePeriod;
 use Spatie\Period\PeriodCollection;
-use Spatie\Period\Precision;
 
 /** @mixin Booking */
 trait UsesGenerateBookedPeriods
