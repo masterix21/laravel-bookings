@@ -8,7 +8,10 @@ use Masterix21\Bookings\Events\Booking\GeneratingBookedPeriods;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\BookedResource;
 use Masterix21\Bookings\Models\Booking;
+use Masterix21\Bookings\Models\BookingPlanning;
 use Spatie\Period\Period as SpatiePeriod;
+use Spatie\Period\PeriodCollection;
+use Spatie\Period\Precision;
 
 /** @mixin Booking */
 trait UsesGenerateBookedPeriods
@@ -25,17 +28,19 @@ trait UsesGenerateBookedPeriods
             'bookedResources.bookingPlannings',
         ]);
 
-        $this->bookedResources->each(function (BookedResource $bookedResource) {
-            $plannings = $bookedResource->bookingPlannings;
+        $bookingPeriods = $this->getBookingPlanningPeriods();
+        $bookingPeriodsExcluded = $this->getBookingPlanningPeriods(isExcluded: true);
 
-            if ($plannings->isEmpty()) {
-                $plannings = $this->bookingPlannings;
+        $this->bookedResources->each(function (BookedResource $bookedResource) use ($bookingPeriods, $bookingPeriodsExcluded) {
+            $includedPeriods = $bookedResource->getBookingPlanningPeriods(fallbackPeriods: $bookingPeriods);
+
+            $excludedPeriods = $bookedResource->getBookingPlanningPeriods(isExcluded: true, mergePeriods: $bookingPeriodsExcluded);
+
+            $periods = PeriodCollection::make(...$includedPeriods);
+
+            if (! blank($excludedPeriods)) {
+                $periods = $periods->subtract(...$excludedPeriods);
             }
-
-            $periods = \Masterix21\Bookings\Period::periodsSubtractToDates(
-                main: $plannings->where('is_excluded', false),
-                others: $plannings->where('is_excluded', true)
-            );
 
             $this->bookedPeriods()->saveMany(
                 collect($periods)->map(fn (SpatiePeriod $period) => new BookedPeriod([

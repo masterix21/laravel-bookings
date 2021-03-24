@@ -6,6 +6,8 @@ use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\Booking;
+use Masterix21\Bookings\Models\BookingPlanning;
 use Masterix21\Bookings\Period;
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
 use Masterix21\Bookings\Tests\TestCase;
@@ -87,14 +89,13 @@ class SizesTest extends TestCase
             )
         );
 
-        tap(
-            $mainBookableArea->bookableResources()->first(),
-            fn (BookableResource $bookableResource) => $bookableResource->reserve(
-                user: $user,
-                periods: $bookingPeriods,
-                relations: BookableRelation::get()
-            )
+        $booking = $mainBookableArea->bookableResources()->first()->reserve(
+            user: $user,
+            periods: $bookingPeriods,
+            relations: BookableRelation::get()
         );
+
+        $this->assertEquals(Booking::class, $booking::class);
 
         $dates = Period::toDates(periods: SpatiePeriod::make(
             now()->subWeek()->startOf('week')->format('Y-m-d'),
