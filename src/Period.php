@@ -2,11 +2,9 @@
 
 namespace Masterix21\Bookings;
 
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use Spatie\Period\Period as SpatiePeriod;
 use Spatie\Period\PeriodCollection;
-use Spatie\Period\Precision;
 
 class Period
 {
