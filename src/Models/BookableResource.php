@@ -13,7 +13,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Masterix21\Bookings\Events\Booking\CreatingBooking;
-use Masterix21\Bookings\Events\Booking\GeneratedBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableArea;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
@@ -65,8 +64,7 @@ class BookableResource extends Model
         ?string $email = null,
         ?string $phone = null,
         ?string $note = null,
-    ): Booking
-    {
+    ): Booking {
         return DB::transaction(function () use ($user, $periods, $relations, $code, $label, $email, $phone, $note) {
             if (is_null($relations)) {
                 $relations = collect();

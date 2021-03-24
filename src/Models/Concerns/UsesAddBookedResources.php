@@ -39,7 +39,7 @@ trait UsesAddBookedResources
             'is_required' => $bookable?->is_required ?? false,
             'min' => $bookable->min,
             'max' => $bookable->max,
-            'max_nested' => $bookable?->max_nested
+            'max_nested' => $bookable?->max_nested,
         ]);
 
         $bookedResource->save();
