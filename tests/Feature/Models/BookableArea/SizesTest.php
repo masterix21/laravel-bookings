@@ -87,11 +87,13 @@ class SizesTest extends TestCase
             )
         );
 
-        app('bookings')->create(
-            user: $user,
-            periods: $bookingPeriods,
-            bookableResource: $mainBookableArea->bookableResources()->first(),
-            relations: BookableRelation::get(),
+        tap(
+            $mainBookableArea->bookableResources()->first(),
+            fn (BookableResource $bookableResource) => $bookableResource->reserve(
+                user: $user,
+                periods: $bookingPeriods,
+                relations: BookableRelation::get()
+            )
         );
 
         $dates = Period::toDates(periods: SpatiePeriod::make(
