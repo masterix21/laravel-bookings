@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use Masterix21\Bookings\Models\Concerns\BelongsToBookableArea;
-use Masterix21\Bookings\Models\Concerns\BelongsToBookableResource;
+use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableArea;
+use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableResource;
 use Masterix21\Bookings\Models\Concerns\Scopes\HasWherePeriodFromDatesScope;
 
 class BookablePlanning extends Model

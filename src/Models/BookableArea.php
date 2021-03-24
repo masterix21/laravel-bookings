@@ -5,12 +5,16 @@ namespace Masterix21\Bookings\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Masterix21\Bookings\Models\Concerns\HasBookedPeriods;
+use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
+use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
+use Masterix21\Bookings\Models\Concerns\UsesBookablePlannings;
 
 class BookableArea extends Model
 {
     use HasFactory;
     use HasBookedPeriods;
+    use UsesBookablePlannings;
+    use HasSizeFeatures;
 
     protected $guarded = [];
 
@@ -19,13 +23,16 @@ class BookableArea extends Model
         return $this->hasMany(config('bookings.models.bookable_resource'));
     }
 
-    public function bookablePlannings(): HasMany
-    {
-        return $this->hasMany(config('bookings.models.bookable_planning'));
-    }
-
     public function bookableRelations(): HasMany
     {
         return $this->hasMany(config('bookings.models.bookable_relation'), 'parent_bookable_area_id');
+    }
+
+    public function size(bool $ignoresUnbookable = false): int
+    {
+        return $this
+            ->bookableResources()
+            ->when(! $ignoresUnbookable, fn ($query) => $query->where('is_bookable', true))
+            ->sum('size');
     }
 }

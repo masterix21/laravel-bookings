@@ -5,11 +5,11 @@ namespace Masterix21\Bookings\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Masterix21\Bookings\Models\Concerns\BelongsToBookableArea;
-use Masterix21\Bookings\Models\Concerns\BelongsToBookableResource;
-use Masterix21\Bookings\Models\Concerns\BelongsToBooking;
-use Masterix21\Bookings\Models\Concerns\HasBookedPeriods;
-use Masterix21\Bookings\Models\Concerns\HasParentAndChildren;
+use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableArea;
+use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableResource;
+use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBooking;
+use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
+use Masterix21\Bookings\Models\Concerns\Relationships\HasParentAndChildren;
 
 class BookedResource extends Model
 {

@@ -1,29 +1,31 @@
 <?php
 
-namespace Masterix21\Bookings\Tests\Feature\Actions\Checks;
+namespace Masterix21\Bookings\Tests\Feature\Models\BookableArea;
 
-use Masterix21\Bookings\Actions\Checks\BookableHasAvailableSeats;
 use Masterix21\Bookings\Actions\CreateBooking;
-use Masterix21\Bookings\Exceptions\CheckAvailability\RelationsHaveNoSeatsException;
+use Masterix21\Bookings\Bookings;
+use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Period;
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
 use Masterix21\Bookings\Tests\TestCase;
 use Masterix21\Bookings\Tests\TestClasses\User;
-use Spatie\Period\Period;
+use Spatie\Period\Period as SpatiePeriod;
 use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;
 
-class BookableHasAvailableSeatsTest extends TestCase
+class SizesTest extends TestCase
 {
     use CreatesAreasAndResources;
 
     /** @test */
-    public function it_works_because_bookable_area_has_bookable_area_relations_with_available_seats()
+    public function it_works_because_has_bookable_area_relations_with_free_size()
     {
         $this->createsAreasAndResources();
 
+        /** @var BookableArea $mainBookableArea */
         $mainBookableArea = BookableArea::first();
 
         /** @var BookableArea $bookableArea */
@@ -34,23 +36,29 @@ class BookableHasAvailableSeatsTest extends TestCase
             ->create()
             ->first();
 
-        $result = BookableHasAvailableSeats::run(
-            dates: app('bookings')->periodsToDates(periods: new PeriodCollection(Period::make(
-                now()->subWeek()->startOf('week')->format('Y-m-d'),
-                now()->subWeek()->endOf('week')->format('Y-m-d'),
-            ))),
-            bookable: $mainBookableArea,
-            relations: collect([ $bookableArea ])
-        );
+        $dates = Period::toDates(periods: SpatiePeriod::make(
+            now()->subWeek()->startOf('week')->format('Y-m-d'),
+            now()->subWeek()->endOf('week')->format('Y-m-d'),
+        ));
 
-        $this->assertNull($result);
+        try {
+            $mainBookableArea->ensureHasFreeSize(
+                dates: $dates,
+                relations: collect([$bookableArea])
+            );
+
+            $this->assertTrue(true);
+        } catch (\Exception $e) {
+            $this->fail($e->getMessage());
+        }
     }
 
     /** @test */
-    public function it_throw_exception_because_bookable_area_has_bookable_area_with_no_seats()
+    public function it_throw_exception_because_has_bookable_area_without_free_size()
     {
         $this->createsAreasAndResources();
 
+        /** @var BookableArea $mainBookableArea */
         $mainBookableArea = BookableArea::first();
 
         /** @var BookableArea $bookableArea */
@@ -73,36 +81,39 @@ class BookableHasAvailableSeatsTest extends TestCase
 
         $user = User::factory()->count(1)->create()->first();
 
-        CreateBooking::run(
+        $bookingPeriods = new PeriodCollection(
+            SpatiePeriod::make(
+                now()->subWeek()->startOf('week'),
+                now()->subWeek()->endOf('week'), Precision::SECOND()
+            )
+        );
+
+        app('bookings')->create(
             user: $user,
-            periods: new PeriodCollection(
-                Period::make(
-                    now()->subWeek()->startOf('week'),
-                    now()->subWeek()->endOf('week'),
-                    Precision::SECOND()
-                )
-            ),
+            periods: $bookingPeriods,
             bookableResource: $mainBookableArea->bookableResources()->first(),
             relations: BookableRelation::get(),
         );
 
-        $this->expectException(RelationsHaveNoSeatsException::class);
+        $dates = Period::toDates(periods: SpatiePeriod::make(
+            now()->subWeek()->startOf('week')->format('Y-m-d'),
+            now()->subWeek()->endOf('week')->format('Y-m-d'),
+        ));
 
-        BookableHasAvailableSeats::run(
-            dates: app('bookings')->periodsToDates(periods: new PeriodCollection(Period::make(
-                now()->subWeek()->startOf('week')->format('Y-m-d'),
-                now()->subWeek()->endOf('week')->format('Y-m-d'),
-            ))),
-            bookable: $mainBookableArea,
+        $this->expectException(RelationsHaveNoFreeSizeException::class);
+
+        $mainBookableArea->ensureHasFreeSize(
+            dates: $dates,
             relations: collect([ $bookableArea ])
         );
     }
 
     /** @test */
-    public function it_works_because_bookable_area_has_bookable_resources_relations_with_available_seats()
+    public function it_works_because_has_bookable_resources_relations_with_free_size()
     {
         $this->createsAreasAndResources();
 
+        /** @var BookableArea $mainBookableArea */
         $mainBookableArea = BookableArea::first();
 
         /** @var BookableArea $bookableArea */
@@ -113,17 +124,22 @@ class BookableHasAvailableSeatsTest extends TestCase
             ->create()
             ->first();
 
+        $dates = Period::toDates(periods: SpatiePeriod::make(
+            now()->subWeek()->startOf('week')->format('Y-m-d'),
+            now()->subWeek()->endOf('week')->format('Y-m-d'),
+        ));
+
         $bookableResource = $bookableArea->bookableResources()->first();
 
-        $result = BookableHasAvailableSeats::run(
-            dates: app('bookings')->periodsToDates(periods: new PeriodCollection(Period::make(
-                now()->subWeek()->startOf('week')->format('Y-m-d'),
-                now()->subWeek()->endOf('week')->format('Y-m-d'),
-            ))),
-            bookable: $mainBookableArea,
-            relations: collect([ $bookableResource ])
-        );
+        try {
+            $mainBookableArea->ensureHasFreeSize(
+                dates: $dates,
+                relations: collect([$bookableResource])
+            );
 
-        $this->assertNull($result);
+            $this->assertTrue(true);
+        } catch (\Exception $e) {
+            $this->fail($e->getMessage());
+        }
     }
 }

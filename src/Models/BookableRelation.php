@@ -5,8 +5,8 @@ namespace Masterix21\Bookings\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Masterix21\Bookings\Models\Concerns\BelongsToBookableArea;
-use Masterix21\Bookings\Models\Concerns\BelongsToBookableResource;
+use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableArea;
+use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableResource;
 
 class BookableRelation extends Model
 {

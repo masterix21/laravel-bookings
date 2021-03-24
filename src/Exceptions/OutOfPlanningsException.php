@@ -1,6 +1,6 @@
 <?php
 
-namespace Masterix21\Bookings\Exceptions\CheckAvailability;
+namespace Masterix21\Bookings\Exceptions;
 
 use Exception;
 
