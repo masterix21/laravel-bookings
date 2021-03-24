@@ -56,14 +56,13 @@ class Period
             $precision = Precision::SECOND();
         }
 
-        $main = PeriodCollection::make(
-            ...$main
-            ->transform(fn ($period) => SpatiePeriod::make(
-                start: $period->from_date . ' ' . $period->from_time,
-                end: $period->to_date . ' ' . $period->to_time,
-                precision: $precision,
-            ))->toArray()
-        );
+        $mainPeriods = $main->transform(fn ($period) => SpatiePeriod::make(
+            start: $period->from_date . ' ' . $period->from_time,
+            end: $period->to_date . ' ' . $period->to_time,
+            precision: $precision,
+        ))->toArray();
+
+        $main = PeriodCollection::make(...$mainPeriods);
 
         $others = Collection::wrap($others);
 
@@ -80,12 +79,6 @@ class Period
             ))->toArray()
         );
 
-        /** @TODO: Cambiare con $main->subtract($others) appena Spatie aggiorna il pacchetto (se) */
-        return new PeriodCollection(
-            ...collect($main)
-            ->map(fn ($period) => collect($period->subtract(...$others)))
-            ->flatten()
-            ->toArray()
-        );
+        return $main->subtract($others);
     }
 }
