@@ -36,10 +36,10 @@ trait UsesAddBookedResources
             'bookable_resource_id' => get_class($bookable) !== config('bookings.models.booked_resource')
                 ? $bookable->id
                 : $bookable->bookable_resource_id,
-            'is_required' => $bookable?->is_required ?? false,
+            'is_required' => $bookable->is_required ?? false,
             'min' => $bookable->min,
             'max' => $bookable->max,
-            'max_nested' => $bookable?->max_nested,
+            'max_nested' => $bookable->max_nested,
         ]);
 
         $bookedResource->save();

@@ -29,11 +29,13 @@ trait HasWherePeriodFromDatesScope
         return $builder->where(function ($query) use ($dates) {
             Collection::wrap($dates)
                 ->unique()
-                ->each(fn ($date) => $query->orWhere(
-                    fn ($query) => $query
-                    ->whereBetweenColumns(Carbon::parse($date)->format('Y-m-d'), ['from_date', 'to_date'])
-                    ->whereBetweenColumns(Carbon::parse($date)->format('H:i:s'), ['from_time', 'to_time'])
-                ));
+                ->each(function ($date) use ($query) {
+                    $query->orWhere(function ($query) use ($date) {
+                        $query
+                            ->whereBetweenColumns(Carbon::parse($date)->format('Y-m-d'), ['from_date', 'to_date'])
+                            ->whereBetweenColumns(Carbon::parse($date)->format('H:i:s'), ['from_time', 'to_time']);
+                    });
+                });
         });
     }
 }

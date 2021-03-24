@@ -99,7 +99,7 @@ trait HasSizeFeatures
 
         if ($bookableResources->isNotEmpty()) {
             $bookableResourcesCheck = BookableResource::query()
-                ->select('id', 'size')
+                ->select(['id', 'size'])
                 ->withCount([
                     'bookedPeriods' => fn (Builder $query) => $query
                         ->whereDatesAreWithinPeriods($dates)

@@ -44,8 +44,11 @@ class Period
      * @param Precision|null $precision
      * @return PeriodCollection
      */
-    public static function periodsSubtractToDates(Arrayable $main, Arrayable | null $others, ?Precision $precision = null): PeriodCollection
-    {
+    public static function periodsSubtractToDates(
+        Arrayable $main,
+        Arrayable | null $others,
+        ?Precision $precision = null
+    ): PeriodCollection {
         $main = Collection::wrap($main);
 
         if ($main->isEmpty()) {
@@ -70,14 +73,13 @@ class Period
             return $main;
         }
 
-        $others = PeriodCollection::make(
-            ...$others
-            ->transform(fn (UnbookedPeriod $period) => SpatiePeriod::make(
-                start: $period->from_date .' '. $period->from_time,
-                end: $period->to_date .' '. $period->to_time,
-                precision: $precision,
-            ))->toArray()
-        );
+        $otherPeriods = $others->transform(fn ($period) => SpatiePeriod::make(
+            start: $period->from_date . ' ' . $period->from_time,
+            end: $period->to_date . ' ' . $period->to_time,
+            precision: $precision,
+        ))->toArray();
+
+        $others = PeriodCollection::make(...$otherPeriods);
 
         return $main->subtract($others);
     }
