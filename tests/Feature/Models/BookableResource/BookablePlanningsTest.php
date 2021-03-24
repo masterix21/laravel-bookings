@@ -9,7 +9,6 @@ use Masterix21\Bookings\Period;
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
 use Masterix21\Bookings\Tests\TestCase;
 use Spatie\Period\Period as SpatiePeriod;
-use Spatie\Period\PeriodCollection;
 
 class BookablePlanningsTest extends TestCase
 {

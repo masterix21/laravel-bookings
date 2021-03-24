@@ -2,8 +2,6 @@
 
 namespace Masterix21\Bookings\Tests\Feature\Models\BookableArea;
 
-use Masterix21\Bookings\Actions\CreateBooking;
-use Masterix21\Bookings\Bookings;
 use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableRelation;
@@ -84,7 +82,8 @@ class SizesTest extends TestCase
         $bookingPeriods = new PeriodCollection(
             SpatiePeriod::make(
                 now()->subWeek()->startOf('week'),
-                now()->subWeek()->endOf('week'), Precision::SECOND()
+                now()->subWeek()->endOf('week'),
+                Precision::SECOND()
             )
         );
 

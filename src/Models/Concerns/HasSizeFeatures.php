@@ -76,7 +76,7 @@ trait HasSizeFeatures
             $bookableAreasCheck = BookableArea::query()
                 ->select('id')
                 ->withSum(['bookableResources' => fn ($query) => $query
-                    ->when(! $ignoresUnbookable, fn ($query) => $query->where('is_bookable', true))
+                    ->when(! $ignoresUnbookable, fn ($query) => $query->where('is_bookable', true)),
                 ], 'size')
                 ->withCount([
                     'bookedPeriods' => fn (Builder $query) => $query

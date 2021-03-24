@@ -4,7 +4,6 @@ namespace Masterix21\Bookings;
 
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
-use Masterix21\Bookings\Models\BookingPlanning;
 use Spatie\Period\Period as SpatiePeriod;
 use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;
@@ -57,7 +56,8 @@ class Period
             $precision = Precision::SECOND();
         }
 
-        $main = PeriodCollection::make(...$main
+        $main = PeriodCollection::make(
+            ...$main
             ->transform(fn ($period) => SpatiePeriod::make(
                 start: $period->from_date . ' ' . $period->from_time,
                 end: $period->to_date . ' ' . $period->to_time,
@@ -71,7 +71,8 @@ class Period
             return $main;
         }
 
-        $others = PeriodCollection::make(...$others
+        $others = PeriodCollection::make(
+            ...$others
             ->transform(fn (UnbookedPeriod $period) => SpatiePeriod::make(
                 start: $period->from_date .' '. $period->from_time,
                 end: $period->to_date .' '. $period->to_time,

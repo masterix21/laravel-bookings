@@ -16,7 +16,6 @@ use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\BookedResource;
 use Masterix21\Bookings\Models\Booking;
-use Masterix21\Bookings\Models\UnbookedPeriod;
 use Spatie\Period\Period;
 use Spatie\Period\Period as SpatiePeriod;
 use Spatie\Period\PeriodCollection;

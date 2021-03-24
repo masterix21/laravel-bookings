@@ -3,7 +3,6 @@
 namespace Masterix21\Bookings\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;

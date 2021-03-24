@@ -3,7 +3,6 @@
 
 namespace Masterix21\Bookings\Models\Concerns;
 
-
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -46,7 +45,6 @@ trait UsesBookablePlannings
 
         $this->ensureRelationsHaveValidPlannings(dates: $dates, relations: $relations);
     }
-
 
     /**
      * @param Collection $dates
