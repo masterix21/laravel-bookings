@@ -2,25 +2,20 @@
 
 namespace Masterix21\Bookings;
 
+use Masterix21\Bookings\Models\BookableResource;
+use Spatie\Period\PeriodCollection;
+
 class Bookings
 {
-    public function checksum()
-    {
-        throw new \Exception('Not implemented');
-    }
+    public function checksum(
+        BookableResource $bookableResource,
+        PeriodCollection $periods,
+    ): string {
+        $checksumData = [
+            'bookable_resource_id' => $bookableResource->id,
+            'periods' => $periods,
+        ];
 
-    public function freeze()
-    {
-        throw new \Exception('Not implemented');
-    }
-
-    public function unfreeze()
-    {
-        throw new \Exception('Not implemented');
-    }
-
-    public function isFreezed()
-    {
-        throw new \Exception('Not implemented');
+        return md5(json_encode($checksumData));
     }
 }
