@@ -20,13 +20,12 @@ class BookingsServiceProvider extends PackageServiceProvider
             ->hasMigrations([
                 "create_bookable_areas_table",
                 "create_bookable_resources_table",
-                "create_bookable_timetables_table",
+                "create_bookable_plannings_table",
                 "create_bookable_relations_table",
                 "create_bookings_table",
                 "create_booked_resources_table",
+                "create_booking_plannings_table",
                 "create_booked_periods_table",
-                "create_unbooked_periods_table",
-                "create_booked_dates_table",
             ]);
     }
 

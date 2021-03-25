@@ -30,7 +30,7 @@ class CreateBookedResourcesTable extends Migration
             $table->after('booking_id', function ($table) {
                 $table->foreignIdFor(config('bookings.models.booked_resource'), 'parent_id')
                     ->nullable()
-                    ->constrained()->cascadeOnDelete();
+                    ->references('id')->on('booked_resources')->cascadeOnDelete();
             });
         });
     }
