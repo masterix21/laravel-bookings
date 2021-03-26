@@ -10,7 +10,7 @@ class CreateBookingPlanningsTable extends Migration
     {
         Schema::create('booking_plannings', function (Blueprint $table) {
             $table->id();
-;
+
             $table->foreignIdFor(config('bookings.models.booking'), 'booking_id')
                 ->constrained()->cascadeOnDelete();
 
