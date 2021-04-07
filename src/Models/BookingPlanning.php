@@ -4,6 +4,7 @@ namespace Masterix21\Bookings\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookedResource;
 use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBooking;
 use Masterix21\Bookings\Models\Concerns\Scopes\HasWherePeriodFromDatesScope;
@@ -11,6 +12,7 @@ use Masterix21\Bookings\Models\Concerns\Scopes\HasWherePeriodFromDatesScope;
 class BookingPlanning extends Model
 {
     use HasFactory;
+    use PowerJoins;
     use BelongsToBooking;
     use BelongsToBookedResource;
     use HasWherePeriodFromDatesScope;

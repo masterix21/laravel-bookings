@@ -12,6 +12,7 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Events\Booking\CreatingBooking;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableArea;
@@ -24,6 +25,7 @@ use Spatie\Period\PeriodCollection;
 class BookableResource extends Model
 {
     use HasFactory;
+    use PowerJoins;
     use BelongsToBookableArea;
     use HasBookedPeriods;
     use UsesBookablePlannings;

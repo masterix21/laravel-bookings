@@ -5,6 +5,7 @@ namespace Masterix21\Bookings\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
@@ -14,6 +15,7 @@ use Masterix21\Bookings\Models\Concerns\UsesBookablePlannings;
 class BookableArea extends Model
 {
     use HasFactory;
+    use PowerJoins;
     use HasBookedPeriods;
     use UsesBookablePlannings;
     use HasSizeFeatures;
