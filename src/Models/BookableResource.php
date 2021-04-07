@@ -16,6 +16,8 @@ use Masterix21\Bookings\Events\Booking\CreatingBooking;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableArea;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
+use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
+use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsVisibleScopes;
 use Masterix21\Bookings\Models\Concerns\UsesBookablePlannings;
 use Spatie\Period\PeriodCollection;
 
@@ -26,6 +28,8 @@ class BookableResource extends Model
     use HasBookedPeriods;
     use UsesBookablePlannings;
     use HasSizeFeatures;
+    use ImplementsVisibleScopes;
+    use ImplementsBookableScopes;
 
     protected $guarded = [];
 

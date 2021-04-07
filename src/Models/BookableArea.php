@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
+use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
+use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsVisibleScopes;
 use Masterix21\Bookings\Models\Concerns\UsesBookablePlannings;
 
 class BookableArea extends Model
@@ -15,6 +17,8 @@ class BookableArea extends Model
     use HasBookedPeriods;
     use UsesBookablePlannings;
     use HasSizeFeatures;
+    use ImplementsVisibleScopes;
+    use ImplementsBookableScopes;
 
     protected $guarded = [];
 
