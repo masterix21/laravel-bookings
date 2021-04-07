@@ -9,12 +9,12 @@ use Kirschbaum\PowerJoins\PowerJoinClause;
 /** @mixin Model */
 trait ImplementsVisibleScopes
 {
-    public function scopeVisible(Builder|PowerJoinClause $builder): Builder|PowerJoinClause
+    public function scopeVisible(Builder | PowerJoinClause $builder): Builder | PowerJoinClause
     {
         return $builder->where($this->getTable() .'.is_visible', true);
     }
 
-    public function scopeHidden(Builder|PowerJoinClause $builder): Builder|PowerJoinClause
+    public function scopeHidden(Builder | PowerJoinClause $builder): Builder | PowerJoinClause
     {
         return $builder->where($this->getTable() .'.is_visible', false);
     }
