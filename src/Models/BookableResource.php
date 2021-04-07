@@ -38,11 +38,11 @@ class BookableResource extends Model
     {
         return $this->hasMany(
             config('bookings.models.bookable_relation'),
-            'bookable_area_id',
+            'parent_bookable_area_id',
             'bookable_area_id'
         )->where(function (Builder $query) {
-            $query->whereNull('bookable_resource_id')
-                ->orWhereColumn('bookable_resource_id', 'bookable_resources.id');
+            $query->whereNull('parent_bookable_resource_id')
+                ->orWhere('parent_bookable_resource_id', 'bookable_resources.id');
         });
     }
 
