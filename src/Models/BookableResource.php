@@ -35,6 +35,11 @@ class BookableResource extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'is_visible' => 'bool',
+        'is_bookable' => 'bool',
+    ];
+
     public function model(): MorphTo
     {
         return $this->morphTo();
