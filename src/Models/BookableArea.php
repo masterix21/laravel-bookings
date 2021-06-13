@@ -41,4 +41,21 @@ class BookableArea extends Model
             ->when(! $ignoresUnbookable, fn ($query) => $query->where('is_bookable', true))
             ->sum('size');
     }
+
+    public function firstAvailableResource(int $quantity, Model $model): Collection
+    {
+        return $this->bookableResources()
+            ->select(['bookable_resources.*'])
+            ->leftJoin(
+                'booked_resources',
+                fn (JoinClause $join) => $join
+                    ->whereColumn('bookable_resources.id', 'booked_resources.bookable_resource_id')
+            )
+            ->whereNull('booked_resources.bookable_resource_id')
+            ->where('model_id', $model->getKey())
+            ->where('model_type', get_class($model))
+            ->limit($quantity)
+            ->get();
+    }
+
 }
