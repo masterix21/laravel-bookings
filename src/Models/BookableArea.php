@@ -57,5 +57,4 @@ class BookableArea extends Model
             ->limit($quantity)
             ->get();
     }
-
 }
