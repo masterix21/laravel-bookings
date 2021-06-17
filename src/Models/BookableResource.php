@@ -67,7 +67,7 @@ class BookableResource extends Model
     }
 
     public function reserve(
-        User $user,
+        ?User $user = null,
         PeriodCollection $periods,
         Collection | EloquentCollection | null $relations = null,
         ?string $code = null,
@@ -90,11 +90,11 @@ class BookableResource extends Model
 
             $booking->fill([
                 'code' => $code ?? (string) Str::uuid(),
-                'user_id' => $user->id,
+                'user_id' => $user->id ?? null,
                 'label' => $label,
                 'email' => $email ?? $user->email,
                 'phone' => $phone,
-                'tax_code' => $tax_code,
+                'tax_code' => Str::upper($tax_code),
                 'address' => $address,
                 'note' => $note,
             ]);

@@ -2,9 +2,11 @@
 
 namespace Masterix21\Bookings\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Query\JoinClause;
 use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
@@ -57,4 +59,5 @@ class BookableArea extends Model
             ->limit($quantity)
             ->get();
     }
+
 }
