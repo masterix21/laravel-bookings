@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\UsesAddBookedResources;
@@ -38,5 +39,10 @@ class Booking extends Model
     public function bookingPlannings(): HasMany
     {
         return $this->hasMany(config('bookings.models.booking_planning'));
+    }
+
+    public function model(): MorphTo
+    {
+        return $this->morphTo();
     }
 }
