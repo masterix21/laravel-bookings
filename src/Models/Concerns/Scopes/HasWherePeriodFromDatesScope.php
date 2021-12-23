@@ -7,7 +7,6 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 /** @mixin Model */
 trait HasWherePeriodFromDatesScope
@@ -35,8 +34,8 @@ trait HasWherePeriodFromDatesScope
                         $query
                             ->where('from_date', '<=', Carbon::parse($date)->format('Y-m-d'))
                             ->where('to_date', '>=', Carbon::parse($date)->format('Y-m-d'));
-                            /*->whereBetweenColumns(Carbon::parse($date)->format('Y-m-d'), ['from_date', 'to_date'])
-                            ->whereBetweenColumns(Carbon::parse($date)->format('H:i:s'), ['from_time', 'to_time']);*/
+                        /*->whereBetweenColumns(Carbon::parse($date)->format('Y-m-d'), ['from_date', 'to_date'])
+                        ->whereBetweenColumns(Carbon::parse($date)->format('H:i:s'), ['from_time', 'to_time']);*/
                     });
                 });
         });

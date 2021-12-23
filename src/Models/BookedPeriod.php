@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableArea;
 use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookableResource;
+use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookedResource;
 use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBooking;
 use Masterix21\Bookings\Models\Concerns\Scopes\HasWherePeriodFromDatesScope;
-use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBookedResource;
 
 class BookedPeriod extends Model
 {
