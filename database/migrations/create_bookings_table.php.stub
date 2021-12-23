@@ -11,8 +11,6 @@ class CreateBookingsTable extends Migration
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
 
-            $table->nullableMorphs('model');
-
             $table->string('code', 64)->index();
 
             $table->foreignIdFor(config('bookings.models.user'), 'user_id')->nullable()->constrained()->restrictOnDelete();
