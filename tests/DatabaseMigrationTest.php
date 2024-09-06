@@ -1,10 +1,9 @@
 <?php
-namespace Masterix21\Bookings\Tests\database;
+namespace Masterix21\Bookings\Tests;
 
 use Illuminate\Support\Facades\Schema;
-use Masterix21\Bookings\Tests\TestCase;
 
-class MigrationTest extends TestCase
+class DatabaseMigrationTest extends TestCase
 {
     /** @test */
     public function assert_migrations_are_up()

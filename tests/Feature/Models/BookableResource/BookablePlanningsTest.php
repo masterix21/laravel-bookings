@@ -1,49 +1,38 @@
 <?php
 
-namespace Masterix21\Bookings\Tests\Feature\Models\BookableResource;
-
 use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Period;
-use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
-use Masterix21\Bookings\Tests\TestCase;
 use Spatie\Period\Period as SpatiePeriod;
+use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
 
-class BookablePlanningsTest extends TestCase
-{
-    use CreatesAreasAndResources;
+uses(CreatesAreasAndResources::class);
 
-    /** @test */
-    public function it_throws_an_exception_because_has_no_plannings()
-    {
-        BookableArea::factory()->count(1)
-            ->has(BookableResource::factory()->count(1))
-            ->create();
+it('throws an exception because it has no plannings', function () {
+    BookableArea::factory()->count(1)
+        ->has(BookableResource::factory()->count(1))
+        ->create();
 
-        $this->expectException(OutOfPlanningsException::class);
+    $bookableResource = BookableResource::first();
 
-        /** @var BookableResource $bookableResource */
-        $bookableResource = BookableResource::first();
+    expect(fn() => $bookableResource->ensureHasValidPlannings(dates: collect([now()])))
+        ->toThrow(OutOfPlanningsException::class);
+});
 
-        $bookableResource->ensureHasValidPlannings(dates: collect([now()]));
-    }
+it('works because it has a valid planning', function () {
+    $this->createsAreasAndResources();
 
-    /** @test */
-    public function it_works_because_has_a_valid_planning()
-    {
-        $this->createsAreasAndResources();
+    $bookableResource = BookableResource::first();
 
-        /** @var BookableResource $bookableResource */
-        $bookableResource = BookableResource::first();
-
-        $dates = Period::toDates(periods: SpatiePeriod::make(
+    $dates = Period::toDates(
+        SpatiePeriod::make(
             now()->subWeek()->startOf('week')->format('Y-m-d'),
-            now()->subWeek()->endOf('week')->format('Y-m-d'),
-        ));
+            now()->subWeek()->endOf('week')->format('Y-m-d')
+        )
+    );
 
-        $bookableResource->ensureHasValidPlannings(dates: $dates);
+    $bookableResource->ensureHasValidPlannings(dates: $dates);
 
-        $this->assertTrue(true);
-    }
-}
+    expect(true)->toBeTrue();
+});

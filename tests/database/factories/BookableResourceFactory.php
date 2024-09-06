@@ -9,7 +9,7 @@ use Masterix21\Bookings\Tests\TestClasses\User;
 
 class BookableResourceFactory extends Factory
 {
-    public function modelName()
+    public function modelName(): string
     {
         return config('bookings.models.bookable_resource');
     }
