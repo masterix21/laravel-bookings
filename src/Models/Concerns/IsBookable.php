@@ -12,8 +12,15 @@ trait IsBookable
     use ImplementsEnsureIsAvailable;
     use UsesBookablePlannings;
 
+    public static function bootIsBookable(): void
+    {
+        static::deleting(function (Bookable $model) {
+            $model->bookableResource()->delete();
+        });
+    }
+
     public function bookableResource(): MorphOne
     {
-        return $this->morphOne(BookableResource::class, 'bookable');
+        return $this->morphOne(BookableResource::class, 'model');
     }
 }
