@@ -4,8 +4,8 @@ use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Period;
-use Spatie\Period\Period as SpatiePeriod;
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
+use Spatie\Period\Period as SpatiePeriod;
 
 uses(CreatesAreasAndResources::class);
 
@@ -16,7 +16,7 @@ it('throws an exception because it has no plannings', function () {
 
     $bookableResource = BookableResource::first();
 
-    expect(fn() => $bookableResource->ensureHasValidPlannings(dates: collect([now()])))
+    expect(fn () => $bookableResource->ensureHasValidPlannings(dates: collect([now()])))
         ->toThrow(OutOfPlanningsException::class);
 });
 

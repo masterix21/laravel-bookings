@@ -7,8 +7,8 @@ use Masterix21\Bookings\Models\BookablePlanning;
 use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Period;
-use Spatie\Period\Period as SpatiePeriod;
 use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
+use Spatie\Period\Period as SpatiePeriod;
 
 uses(CreatesAreasAndResources::class);
 
@@ -18,7 +18,7 @@ it('throws an exception because it has no plannings', function () {
         ->create()
         ->first();
 
-    expect(fn() => $bookableArea->ensureHasValidPlannings(dates: collect([now()])))
+    expect(fn () => $bookableArea->ensureHasValidPlannings(dates: collect([now()])))
         ->toThrow(OutOfPlanningsException::class);
 });
 
@@ -77,10 +77,10 @@ it('throws an exception because it has relations with invalid planning', functio
         now()->subWeek()->endOf('week')->format('Y-m-d'),
     ));
 
-    expect(fn() => $mainBookableArea->ensureHasValidPlannings(dates: $dates, relations: collect([$bookableArea])))
+    expect(fn () => $mainBookableArea->ensureHasValidPlannings(dates: $dates, relations: collect([$bookableArea])))
         ->toThrow(RelationsOutOfPlanningsException::class);
 
-    expect(fn() => $mainBookableArea->ensureHasValidPlannings(dates: $dates, relations: $bookableArea->bookableResources))
+    expect(fn () => $mainBookableArea->ensureHasValidPlannings(dates: $dates, relations: $bookableArea->bookableResources))
         ->toThrow(RelationsOutOfPlanningsException::class);
 });
 
