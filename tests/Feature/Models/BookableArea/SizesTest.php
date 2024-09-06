@@ -92,7 +92,7 @@ it('throws exception because bookable area has no free size', function () {
         )
     );
 
-    expect(fn() => $mainBookableArea->ensureHasFreeSize(
+    expect(fn () => $mainBookableArea->ensureHasFreeSize(
         dates: $dates,
         relations: collect([$bookableArea])
     ))->toThrow(RelationsHaveNoFreeSizeException::class);
