@@ -13,7 +13,7 @@ class CreateBookingsTable extends Migration
 
             $table->string('code', 64)->index();
 
-            $table->foreignIdFor(config('bookings.models.user'), 'user_id')->nullable()->constrained()->restrictOnDelete();
+            $table->morphs('booker');
 
             $table->string('label')->nullable();
 

@@ -10,6 +10,6 @@ trait HasBookings
 {
     public function bookings(): HasMany
     {
-        return $this->hasMany(config('bookings.models.booking'), 'user_id');
+        return $this->morphMany(config('bookings.models.booking'), 'booker');
     }
 }

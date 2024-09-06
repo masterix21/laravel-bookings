@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -68,7 +67,7 @@ class BookableResource extends Model
 
     public function reserve(
         PeriodCollection $periods,
-        ?User $user = null,
+        ?Model $booker = null,
         Collection | EloquentCollection | null $relations = null,
         ?string $code = null,
         ?string $label = null,
@@ -78,7 +77,7 @@ class BookableResource extends Model
         ?string $address = null,
         ?string $note = null,
     ): Booking {
-        return DB::transaction(function () use ($user, $periods, $relations, $code, $label, $email, $phone, $tax_code, $address, $note) {
+        return DB::transaction(function () use ($booker, $periods, $relations, $code, $label, $email, $phone, $tax_code, $address, $note) {
             if (is_null($relations)) {
                 $relations = collect();
             }
@@ -90,9 +89,10 @@ class BookableResource extends Model
 
             $booking->fill([
                 'code' => $code ?? (string) Str::uuid(),
-                'user_id' => $user?->id,
+                'booker_type' => $booker ? $booker::class : null,
+                'booker_id' => $booker?->getKey(),
                 'label' => $label,
-                'email' => $email ?? $user->email,
+                'email' => $email,
                 'phone' => $phone,
                 'tax_code' => Str::upper($tax_code),
                 'address' => $address,

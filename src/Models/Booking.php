@@ -4,7 +4,6 @@ namespace Masterix21\Bookings\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Kirschbaum\PowerJoins\PowerJoins;
@@ -26,9 +25,9 @@ class Booking extends Model
 
     protected $guarded = [];
 
-    public function user(): BelongsTo
+    public function booker(): MorphTo
     {
-        return $this->belongsTo(config('bookings.models.user'), 'user_id');
+        return $this->morphTo();
     }
 
     public function bookedResources(): HasMany

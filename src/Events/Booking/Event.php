@@ -3,7 +3,6 @@
 namespace Masterix21\Bookings\Events\Booking;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Auth\User;
 use Illuminate\Queue\InteractsWithQueue;
 use Masterix21\Bookings\Models\Booking;
 
@@ -13,20 +12,7 @@ abstract class Event implements ShouldQueue
 
     public $afterCommit = true;
 
-    public function __construct(protected Booking $booking)
+    public function __construct(public Booking $booking)
     {
-    }
-
-    public function getBooking(): Booking
-    {
-        return $this->booking;
-    }
-
-    /**
-     * @return User
-     */
-    public function getUser(): User
-    {
-        return $this->booking->user;
     }
 }

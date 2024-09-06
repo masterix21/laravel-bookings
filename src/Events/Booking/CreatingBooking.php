@@ -14,18 +14,8 @@ class CreatingBooking implements ShouldQueue
     public $afterCommit = true;
 
     public function __construct(
-        protected BookableResource $bookableResource,
-        protected PeriodCollection $periods
+        public BookableResource $bookableResource,
+        public PeriodCollection $periods
     ) {
-    }
-
-    public function getBookableResource(): BookableResource
-    {
-        return $this->bookableResource;
-    }
-
-    public function getPeriods(): PeriodCollection
-    {
-        return $this->periods;
     }
 }
