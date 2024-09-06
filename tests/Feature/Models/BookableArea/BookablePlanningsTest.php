@@ -18,7 +18,7 @@ class BookablePlanningsTest extends TestCase
     use CreatesAreasAndResources;
 
     /** @test */
-    public function it_throws_an_exception_because_has_no_plannings()
+    public function it_throws_an_exception_because_has_no_plannings(): void
     {
         /** @var BookableArea $bookableArea */
         $bookableArea = BookableArea::factory()->count(1)
@@ -32,7 +32,7 @@ class BookablePlanningsTest extends TestCase
     }
 
     /** @test */
-    public function it_works_because_has_a_valid_planning()
+    public function it_works_because_has_a_valid_planning(): void
     {
         $this->createsAreasAndResources();
 
@@ -54,7 +54,7 @@ class BookablePlanningsTest extends TestCase
     }
 
     /** @test */
-    public function it_throws_an_exception_because_has_relations_with_invalid_planning()
+    public function it_throws_an_exception_because_has_relations_with_invalid_planning(): void
     {
         $this->createsAreasAndResources();
 
@@ -109,7 +109,7 @@ class BookablePlanningsTest extends TestCase
     }
 
     /** @test */
-    public function it_works_because_has_relations_with_valid_planning()
+    public function it_works_because_has_relations_with_valid_planning(): void
     {
         $this->createsAreasAndResources();
 

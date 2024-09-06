@@ -17,19 +17,19 @@
     ],
     "require": {
         "php": "^8.0",
-        "illuminate/contracts": "^8.0",
-        "kirschbaum-development/eloquent-power-joins": "^2.3",
-        "lorisleiva/laravel-actions": "^2.0",
-        "nesbot/carbon": "^2.45",
-        "spatie/laravel-package-tools": "^1.1",
-        "spatie/period": "^2.0",
-        "staudenmeir/belongs-to-through": "^2.11"
+        "illuminate/contracts": "^11.22",
+        "kirschbaum-development/eloquent-power-joins": "^3.5",
+        "lorisleiva/laravel-actions": "^2.8",
+        "nesbot/carbon": "^3.8",
+        "spatie/laravel-package-tools": "^1.16",
+        "spatie/period": "^2.4",
+        "staudenmeir/belongs-to-through": "^2.15"
     },
     "require-dev": {
-        "orchestra/testbench": "^6.0",
-        "phpunit/phpunit": "^9.3",
-        "spatie/laravel-ray": "^1.17",
-        "vimeo/psalm": "^4.6.4"
+        "orchestra/testbench": "^9.4",
+        "phpunit/phpunit": "^11.3",
+        "spatie/laravel-ray": "^1.37",
+        "vimeo/psalm": "^6.0@dev"
     },
     "autoload": {
         "psr-4": {
