@@ -68,7 +68,6 @@ class BookableResource extends Model
 
     public function reserve(
         PeriodCollection $periods,
-        // ?Model $model = null,
         ?User $user = null,
         Collection | EloquentCollection | null $relations = null,
         ?string $code = null,
@@ -79,7 +78,7 @@ class BookableResource extends Model
         ?string $address = null,
         ?string $note = null,
     ): Booking {
-        return DB::transaction(function () use (/*$model,*/ $user, $periods, $relations, $code, $label, $email, $phone, $tax_code, $address, $note) {
+        return DB::transaction(function () use ($user, $periods, $relations, $code, $label, $email, $phone, $tax_code, $address, $note) {
             if (is_null($relations)) {
                 $relations = collect();
             }
@@ -90,8 +89,6 @@ class BookableResource extends Model
             $booking = resolve(config('bookings.models.booking'));
 
             $booking->fill([
-                /*'model_type' => $model ? $model::class : null,
-                'model_id' => $model?->id,*/
                 'code' => $code ?? (string) Str::uuid(),
                 'user_id' => $user?->id,
                 'label' => $label,
