@@ -25,7 +25,7 @@ abstract class Event implements ShouldQueue
     /**
      * @return User
      */
-    public function getUser()
+    public function getUser(): User
     {
         return $this->booking->user;
     }
