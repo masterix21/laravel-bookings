@@ -4,7 +4,6 @@
 namespace Masterix21\Bookings\Models\Concerns\Scopes;
 
 use Carbon\Carbon;
-use DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -23,13 +22,13 @@ trait HasWherePeriodFromDatesScope
                     return $query
                         ->where(function ($query) use ($date) {
                             $query
-                                ->where(fn($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
-                                ->where(fn($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
+                                ->where(fn ($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
+                                ->where(fn ($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
                         })
                         ->where(function ($query) use ($date) {
                             $query
-                                ->where(fn($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
-                                ->where(fn($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
+                                ->where(fn ($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
+                                ->where(fn ($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
                         });
                 });
         });
@@ -47,13 +46,13 @@ trait HasWherePeriodFromDatesScope
                         $query
                             ->where(function ($query) use ($date) {
                                 $query
-                                    ->where(fn($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
-                                    ->where(fn($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
+                                    ->where(fn ($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
+                                    ->where(fn ($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
                             })
                             ->where(function ($query) use ($date) {
                                 $query
-                                    ->where(fn($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
-                                    ->where(fn($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
+                                    ->where(fn ($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
+                                    ->where(fn ($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
                             });
                     });
                 });
