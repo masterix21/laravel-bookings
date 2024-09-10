@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Query\JoinClause;
 use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
@@ -25,6 +26,11 @@ class BookableArea extends Model
     use ImplementsBookableScopes;
 
     protected $guarded = [];
+
+    public function area(): MorphTo
+    {
+        return $this->morphTo();
+    }
 
     public function bookableResources(): HasMany
     {

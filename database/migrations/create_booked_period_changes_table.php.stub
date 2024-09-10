@@ -8,16 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('booked_periods', function (Blueprint $table) {
+        Schema::create('booked_period_changes', function (Blueprint $table) {
             $table->id();
 
             $table->foreignIdFor(config('bookings.models.booking'))->constrained()->cascadeOnDelete();
-
-            $table->foreignIdFor(config('bookings.models.booked_resource'))->nullable()->constrained()->cascadeOnDelete();
-
-            $table->boolean('is_excluded')->default(false);
-
-            $table->string('label')->nullable();
+            $table->foreignIdFor(config('bookings.models.booked_resource'))->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_area'))->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_resource'))->constrained()->cascadeOnDelete();
 
             $table->date('from_date')->nullable();
             $table->date('to_date')->nullable();
@@ -25,14 +22,12 @@ return new class extends Migration
             $table->time('to_time')->nullable();
             $table->string('timezone')->nullable();
 
-            $table->text('note')->nullable();
-
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('booked_periods');
+        Schema::dropIfExists('booked_period_changes');
     }
 };

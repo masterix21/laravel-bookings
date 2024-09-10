@@ -9,7 +9,7 @@ return [
         'bookable_relation' => \Masterix21\Bookings\Models\BookableRelation::class,
         'booking' => \Masterix21\Bookings\Models\Booking::class,
         'booked_resource' => \Masterix21\Bookings\Models\BookedResource::class,
-        'booking_planning' => \Masterix21\Bookings\Models\BookingPlanning::class,
         'booked_period' => \Masterix21\Bookings\Models\BookedPeriod::class,
+        'booked_period_change' => \Masterix21\Bookings\Models\BookedPeriodChange::class,
     ],
 ];

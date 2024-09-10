@@ -4,14 +4,14 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateBookableAreasTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('bookable_areas', function (Blueprint $table) {
             $table->id();
 
-            $table->string('name');
+            $table->morphs('area');
 
             $table->string('prefix', 15)->nullable();
             $table->string('suffix', 15)->nullable();
@@ -23,8 +23,8 @@ class CreateBookableAreasTable extends Migration
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('bookable_areas');
     }
-}
+};

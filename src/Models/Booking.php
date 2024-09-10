@@ -39,9 +39,4 @@ class Booking extends Model
     {
         return $this->hasMany(config('bookings.models.booking_planning'));
     }
-
-    public function model(): MorphTo
-    {
-        return $this->morphTo();
-    }
 }

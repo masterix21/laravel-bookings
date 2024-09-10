@@ -4,16 +4,16 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateBookedResourcesTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('booked_resources', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignIdFor(config('bookings.models.booking'), 'booking_id')->constrained()->cascadeOnDelete();
-            $table->foreignIdFor(config('bookings.models.bookable_area'), 'bookable_area_id')->constrained()->restrictOnDelete();
-            $table->foreignIdFor(config('bookings.models.bookable_resource'), 'bookable_resource_id')->constrained()->restrictOnDelete();
+            $table->foreignIdFor(config('bookings.models.booking'))->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_area'))->constrained()->restrictOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_resource'))->constrained()->restrictOnDelete();
 
             $table->string('label')->nullable();
 
@@ -35,8 +35,8 @@ class CreateBookedResourcesTable extends Migration
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('booked_resources');
     }
-}
+};

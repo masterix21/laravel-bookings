@@ -4,6 +4,7 @@
 namespace Masterix21\Bookings\Models\Concerns\Scopes;
 
 use Carbon\Carbon;
+use DB;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -16,26 +17,44 @@ trait HasWherePeriodFromDatesScope
         return $builder->where(function ($query) use ($dates) {
             Collection::wrap($dates)
                 ->unique()
-                ->each(
-                    fn ($date) => $query
-                        ->whereBetweenColumns(Carbon::parse($date)->format('Y-m-d'), ['from_date', 'to_date'])
-                        ->whereBetweenColumns(Carbon::parse($date)->format('H:i:s'), ['from_time', 'to_time'])
-                );
+                ->each(function ($date) use ($query) {
+                    $date = Carbon::parse($date);
+
+                    return $query
+                        ->where(function ($query) use ($date) {
+                            $query
+                                ->where(fn($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
+                                ->where(fn($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
+                        })
+                        ->where(function ($query) use ($date) {
+                            $query
+                                ->where(fn($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
+                                ->where(fn($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
+                        });
+                });
         });
     }
 
     public function scopeWhereDatesAreWithinPeriods(Builder $builder, Collection | array | string $dates): Builder
     {
-        return $builder->where(function ($query) use ($dates) {
+        return $builder->where(function (Builder $builder) use ($dates) {
             Collection::wrap($dates)
                 ->unique()
-                ->each(function ($date) use ($query) {
-                    $query->orWhere(function ($query) use ($date) {
+                ->each(function ($date) use ($builder) {
+                    $builder->orWhere(function (Builder $query) use ($date) {
+                        $date = Carbon::parse($date);
+
                         $query
-                            ->where('from_date', '<=', Carbon::parse($date)->format('Y-m-d'))
-                            ->where('to_date', '>=', Carbon::parse($date)->format('Y-m-d'));
-                        /*->whereBetweenColumns(Carbon::parse($date)->format('Y-m-d'), ['from_date', 'to_date'])
-                        ->whereBetweenColumns(Carbon::parse($date)->format('H:i:s'), ['from_time', 'to_time']);*/
+                            ->where(function ($query) use ($date) {
+                                $query
+                                    ->where(fn($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
+                                    ->where(fn($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
+                            })
+                            ->where(function ($query) use ($date) {
+                                $query
+                                    ->where(fn($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
+                                    ->where(fn($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
+                            });
                     });
                 });
         });

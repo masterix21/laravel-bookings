@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,7 @@ class BookableResource extends Model
         'is_bookable' => 'bool',
     ];
 
-    public function model(): MorphTo
+    public function resource(): MorphTo
     {
         return $this->morphTo();
     }
@@ -54,6 +55,16 @@ class BookableResource extends Model
             $query->whereNull('parent_bookable_resource_id')
                 ->orWhere('parent_bookable_resource_id', 'bookable_resources.id');
         });
+    }
+
+    public function bookedResource(): HasMany
+    {
+        return $this->hasMany(config('bookings.models.booked_resource'));
+    }
+
+    public function bookingPlannings(): HasManyThrough
+    {
+        return $this->hasManyThrough(BookedPeriod::class, BookedResource::class);
     }
 
     public function size(bool $ignoresUnbookable = false): int

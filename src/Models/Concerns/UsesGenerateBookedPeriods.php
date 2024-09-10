@@ -5,7 +5,7 @@ namespace Masterix21\Bookings\Models\Concerns;
 use Carbon\Carbon;
 use Masterix21\Bookings\Events\Booking\GeneratedBookedPeriods;
 use Masterix21\Bookings\Events\Booking\GeneratingBookedPeriods;
-use Masterix21\Bookings\Models\BookedPeriod;
+use Masterix21\Bookings\Models\BookedPeriodChange;
 use Masterix21\Bookings\Models\BookedResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\Period as SpatiePeriod;
@@ -41,7 +41,7 @@ trait UsesGenerateBookedPeriods
             }
 
             $this->bookedPeriods()->saveMany(
-                collect($periods)->map(fn (SpatiePeriod $period) => new BookedPeriod([
+                collect($periods)->map(fn (SpatiePeriod $period) => new BookedPeriodChange([
                     'booking_id' => $this->id,
                     'booked_resource_id' => $bookedResource->id,
                     'bookable_area_id' => $bookedResource->bookable_area_id,

@@ -12,7 +12,7 @@ use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
-use Masterix21\Bookings\Models\BookedPeriod;
+use Masterix21\Bookings\Models\BookedPeriodChange;
 
 /** @mixin Model */
 trait HasSizeFeatures
@@ -38,7 +38,7 @@ trait HasSizeFeatures
             throw new UnbookableException();
         }
 
-        $bookingsCount = BookedPeriod::query()
+        $bookingsCount = BookedPeriodChange::query()
             ->whereDatesAreWithinPeriods($dates)
             ->when($this instanceof BookableResource, fn ($q) => $q->where('bookable_resource_id', $this->id))
             ->when($this instanceof BookableArea, fn ($q) => $q->where('bookable_area_id', $this->id))
