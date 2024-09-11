@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignIdFor(config('bookings.models.booking'))->constrained()->cascadeOnDelete();
-            $table->foreignIdFor(config('bookings.models.bookable_area'))->constrained()->restrictOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_area'))->nullable()->constrained()->restrictOnDelete();
             $table->foreignIdFor(config('bookings.models.bookable_resource'))->constrained()->restrictOnDelete();
 
             $table->string('label')->nullable();

@@ -12,9 +12,10 @@ use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\BookedPeriodChange;
 
-/** @mixin Model */
+/** @mixin IsBookable */
 trait HasSizeFeatures
 {
     abstract public function size(bool $ignoresUnbookable = false): int;
@@ -38,7 +39,7 @@ trait HasSizeFeatures
             throw new UnbookableException();
         }
 
-        $bookingsCount = BookedPeriodChange::query()
+        $bookingsCount = $this->bookedPeriods()
             ->whereDatesAreWithinPeriods($dates)
             ->when($this instanceof BookableResource, fn ($q) => $q->where('bookable_resource_id', $this->id))
             ->when($this instanceof BookableArea, fn ($q) => $q->where('bookable_area_id', $this->id))
@@ -89,7 +90,7 @@ trait HasSizeFeatures
 
             if (
                 $bookableAreasCheck->filter(fn ($bookable) =>
-                    (int) $bookable->bookable_resources_sum_size > (int) $bookable->booked_periods_count)->isEmpty()
+                    (int) $bookable->bookable_resources_sum_size > (int) $bookable->booked_period_changes_count)->isEmpty()
             ) {
                 throw new RelationsHaveNoFreeSizeException();
             }
@@ -111,7 +112,7 @@ trait HasSizeFeatures
 
             if (
                 $bookableResourcesCheck->filter(fn ($bookable) =>
-                    (int) $bookable->size > (int) $bookable->booked_periods_count)->isEmpty()
+                    (int) $bookable->size > (int) $bookable->booked_period_changes_count)->isEmpty()
             ) {
                 throw new RelationsHaveNoFreeSizeException();
             }

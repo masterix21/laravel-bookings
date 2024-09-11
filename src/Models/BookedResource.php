@@ -12,8 +12,8 @@ use Masterix21\Bookings\Models\Concerns\Relationships\BelongsToBooking;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasParentAndChildren;
 use Masterix21\Bookings\Models\Concerns\UsesAddBookedResources;
-use Masterix21\Bookings\Models\Concerns\UsesBookingPlanningPeriods;
-use Masterix21\Bookings\Models\Concerns\UsesGenerateBookingPlannings;
+use Masterix21\Bookings\Models\Concerns\UsesBookedPeriods;
+use Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriods;
 
 class BookedResource extends Model
 {
@@ -25,13 +25,8 @@ class BookedResource extends Model
     use BelongsToBookableResource;
     use HasBookedPeriods;
     use UsesAddBookedResources;
-    use UsesGenerateBookingPlannings;
-    use UsesBookingPlanningPeriods;
+    use UsesGenerateBookedPeriods;
+    use UsesBookedPeriods;
 
     protected $guarded = [];
-
-    public function bookingPlannings(): HasMany
-    {
-        return $this->hasMany(config('bookings.models.booking_planning'));
-    }
 }

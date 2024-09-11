@@ -8,14 +8,14 @@ use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;
 
 /** @mixin Booking | BookedResource */
-trait UsesBookingPlanningPeriods
+trait UsesBookedPeriods
 {
-    public function getBookingPlanningPeriods(
+    public function getBookedPeriods(
         $isExcluded = false,
         PeriodCollection $mergePeriods = null,
         PeriodCollection $fallbackPeriods = null
     ): PeriodCollection {
-        $periods = $this->bookingPlannings
+        $periods = $this->bookedPeriods
             ->where('is_excluded', $isExcluded)
             ->transform(fn ($planning) => Period::make(
                 $planning->from_date,

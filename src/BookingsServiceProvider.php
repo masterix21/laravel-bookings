@@ -25,7 +25,6 @@ class BookingsServiceProvider extends PackageServiceProvider
                 "create_bookings_table",
                 "create_booked_resources_table",
                 "create_booked_periods_table",
-                "create_booked_period_changes_table",
             ]);
     }
 

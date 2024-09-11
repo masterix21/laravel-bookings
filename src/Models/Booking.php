@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\Relationships\HasBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\UsesAddBookedResources;
-use Masterix21\Bookings\Models\Concerns\UsesBookingPlanningPeriods;
+use Masterix21\Bookings\Models\Concerns\UsesBookedPeriods;
+use Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriodChanges;
 use Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriods;
-use Masterix21\Bookings\Models\Concerns\UsesGenerateBookingPlannings;
 
 class Booking extends Model
 {
@@ -19,9 +19,9 @@ class Booking extends Model
     use PowerJoins;
     use HasBookedPeriods;
     use UsesAddBookedResources;
-    use UsesGenerateBookingPlannings;
     use UsesGenerateBookedPeriods;
-    use UsesBookingPlanningPeriods;
+    use UsesGenerateBookedPeriodChanges;
+    use UsesBookedPeriods;
 
     protected $guarded = [];
 
@@ -33,10 +33,5 @@ class Booking extends Model
     public function bookedResources(): HasMany
     {
         return $this->hasMany(config('bookings.models.booked_resource'));
-    }
-
-    public function bookingPlannings(): HasMany
-    {
-        return $this->hasMany(config('bookings.models.booking_planning'));
     }
 }

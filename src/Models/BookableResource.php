@@ -87,7 +87,8 @@ class BookableResource extends Model
         ?string $tax_code = null,
         ?string $address = null,
         ?string $note = null,
-    ): Booking {
+    ): Booking
+    {
         return DB::transaction(function () use ($booker, $periods, $relations, $code, $label, $email, $phone, $tax_code, $address, $note) {
             if (is_null($relations)) {
                 $relations = collect();
@@ -96,28 +97,25 @@ class BookableResource extends Model
             event(new CreatingBooking($this, $periods));
 
             /** @var Booking $booking */
-            $booking = resolve(config('bookings.models.booking'));
-
-            $booking->fill([
-                'code' => $code ?? (string) Str::uuid(),
-                'booker_type' => $booker ? $booker::class : null,
-                'booker_id' => $booker?->getKey(),
-                'label' => $label,
-                'email' => $email,
-                'phone' => $phone,
-                'tax_code' => Str::upper($tax_code),
-                'address' => $address,
-                'note' => $note,
-            ]);
+            $booking = resolve(config('bookings.models.booking'))
+                ->fill([
+                    'code' => $code ?: (string) Str::uuid(),
+                    'booker_type' => $booker ? $booker::class : null,
+                    'booker_id' => $booker?->getKey(),
+                    'label' => $label,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'tax_code' => Str::upper($tax_code ?: '') ?: null,
+                    'address' => $address,
+                    'note' => $note,
+                ]);
 
             $booking->save();
 
             $booking
-                ->addBookingPlannings(periods: $periods)
+                ->addBookedPeriods(periods: $periods)
                 ->addBookedResource(bookable: $this)
                 ->addBookedResources(relations: $relations);
-
-            $booking->generateBookedPeriods();
 
             event(new CreatingBooking($this, $periods));
 

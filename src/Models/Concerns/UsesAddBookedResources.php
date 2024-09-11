@@ -45,7 +45,7 @@ trait UsesAddBookedResources
         $bookedResource->save();
 
         if (! blank($periods)) {
-            $this->addBookingPlannings($periods);
+            $this->addBookedPeriods($periods);
         }
 
         return $bookedResource;
