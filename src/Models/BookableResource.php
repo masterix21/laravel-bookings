@@ -87,8 +87,7 @@ class BookableResource extends Model
         ?string $tax_code = null,
         ?string $address = null,
         ?string $note = null,
-    ): Booking
-    {
+    ): Booking {
         return DB::transaction(function () use ($booker, $periods, $relations, $code, $label, $email, $phone, $tax_code, $address, $note) {
             if (is_null($relations)) {
                 $relations = collect();

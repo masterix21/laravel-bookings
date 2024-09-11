@@ -4,7 +4,6 @@ namespace Masterix21\Bookings\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Masterix21\Bookings\Exceptions\NoFreeSizeException;
@@ -12,8 +11,6 @@ use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
-use Masterix21\Bookings\Models\BookedPeriod;
-use Masterix21\Bookings\Models\BookedPeriodChange;
 
 /** @mixin IsBookable */
 trait HasSizeFeatures
