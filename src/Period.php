@@ -10,12 +10,8 @@ class Period
 {
     /**
      * Transform periods to dates collection
-     *
-     * @param PeriodCollection|SpatiePeriod $periods
-     * @param bool $removeDuplicates
-     * @return Collection
      */
-    public static function toDates(PeriodCollection | SpatiePeriod $periods, bool $removeDuplicates = true): Collection
+    public static function toDates(PeriodCollection|SpatiePeriod $periods, bool $removeDuplicates = true): Collection
     {
         $dates = collect();
 

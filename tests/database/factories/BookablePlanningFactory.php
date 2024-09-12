@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class BookablePlanningFactory extends Factory
 {
-    public function modelName()
+    public function modelName(): string
     {
         return config('bookings.models.bookable_planning');
     }
 
-    public function definition()
+    public function definition(): array
     {
         $fromDay = $this->faker->boolean(25) ? $this->faker->dateTimeThisYear : null;
         $fromTime = $this->faker->dateTime;

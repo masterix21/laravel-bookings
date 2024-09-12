@@ -4,7 +4,6 @@ namespace Masterix21\Bookings\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Masterix21\Bookings\Exceptions\NoFreeSizeException;
@@ -12,8 +11,6 @@ use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
-use Masterix21\Bookings\Models\BookedPeriod;
-use Masterix21\Bookings\Models\BookedPeriodChange;
 
 /** @mixin IsBookable */
 trait HasSizeFeatures
@@ -21,22 +18,19 @@ trait HasSizeFeatures
     abstract public function size(bool $ignoresUnbookable = false): int;
 
     /**
-     * @param Collection $dates
-     * @param Collection|EloquentCollection|null $relations
-     * @param bool $ignoresUnbookable
      * @throws NoFreeSizeException
      * @throws RelationsHaveNoFreeSizeException
      * @throws UnbookableException
      */
     public function ensureHasFreeSize(
         Collection $dates,
-        Collection | EloquentCollection | null $relations = null,
+        Collection|EloquentCollection|null $relations = null,
         bool $ignoresUnbookable = false
     ): void {
         $size = $this->size($ignoresUnbookable);
 
         if ($size === 0) {
-            throw new UnbookableException();
+            throw new UnbookableException;
         }
 
         $bookingsCount = $this->bookedPeriods()
@@ -46,7 +40,7 @@ trait HasSizeFeatures
             ->count(DB::raw('DISTINCT booking_id'));
 
         if ($size <= $bookingsCount) {
-            throw new NoFreeSizeException();
+            throw new NoFreeSizeException;
         }
 
         $this->ensureRelationsHaveFreeSize(
@@ -57,14 +51,11 @@ trait HasSizeFeatures
     }
 
     /**
-     * @param Collection $dates
-     * @param Collection|EloquentCollection|null $relations
-     * @param bool $ignoresUnbookable
      * @throws RelationsHaveNoFreeSizeException
      */
     public function ensureRelationsHaveFreeSize(
         Collection $dates,
-        Collection | EloquentCollection | null $relations = null,
+        Collection|EloquentCollection|null $relations = null,
         bool $ignoresUnbookable = false
     ): void {
         if (($relations ?? collect())->isEmpty()) {
@@ -89,10 +80,9 @@ trait HasSizeFeatures
                 ->get();
 
             if (
-                $bookableAreasCheck->filter(fn ($bookable) =>
-                    (int) $bookable->bookable_resources_sum_size > (int) $bookable->booked_period_changes_count)->isEmpty()
+                $bookableAreasCheck->filter(fn ($bookable) => (int) $bookable->bookable_resources_sum_size > (int) $bookable->booked_period_changes_count)->isEmpty()
             ) {
-                throw new RelationsHaveNoFreeSizeException();
+                throw new RelationsHaveNoFreeSizeException;
             }
         }
 
@@ -111,10 +101,9 @@ trait HasSizeFeatures
                 ->get();
 
             if (
-                $bookableResourcesCheck->filter(fn ($bookable) =>
-                    (int) $bookable->size > (int) $bookable->booked_period_changes_count)->isEmpty()
+                $bookableResourcesCheck->filter(fn ($bookable) => (int) $bookable->size > (int) $bookable->booked_period_changes_count)->isEmpty()
             ) {
-                throw new RelationsHaveNoFreeSizeException();
+                throw new RelationsHaveNoFreeSizeException;
             }
         }
     }

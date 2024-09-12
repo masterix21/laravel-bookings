@@ -12,17 +12,10 @@ return new class extends Migration
             $table->id();
 
             $table->string('code', 64)->index();
-
             $table->morphs('booker');
-
             $table->string('label')->nullable();
-
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('tax_code')->nullable();
-            $table->string('address')->nullable();
-
             $table->text('note')->nullable();
+            $table->json('meta')->nullable();
 
             $table->timestamps();
         });

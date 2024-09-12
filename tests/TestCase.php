@@ -5,10 +5,7 @@ namespace Masterix21\Bookings\Tests;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Masterix21\Bookings\BookingsServiceProvider;
-use Masterix21\Bookings\Tests\Database\Migrations\CreateProductsTable;
-use Masterix21\Bookings\Tests\Database\Migrations\CreateUsersTable;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
@@ -42,18 +39,17 @@ class TestCase extends Orchestra
 
         Schema::disableForeignKeyConstraints();
 
-        collect(File::files(__DIR__ .'/../database/migrations'))
-           ->each(function ($file) {
-               include_once $file->getRealPath();
-               $class = Str::of($file->getFilename())->before('.php')->studly();
-               resolve((string) $class)->up();
-           });
+        collect(File::files(__DIR__.'/../database/migrations'))
+            ->each(function ($file) {
+                $migration = include $file;
+                $migration->up();
+            });
 
-        include_once __DIR__ .'/database/migrations/2014_10_12_000000_create_users_table.php';
-        (new CreateUsersTable())->up();
+        $migration = include __DIR__.'/database/migrations/2014_10_12_000000_create_users_table.php';
+        ($migration)->up();
 
-        include_once __DIR__ .'/database/migrations/2014_10_12_000001_create_products_table.php';
-        (new CreateProductsTable())->up();
+        $migration = include __DIR__.'/database/migrations/2014_10_12_000001_create_products_table.php';
+        ($migration)->up();
 
         Schema::enableForeignKeyConstraints();
     }

@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class BookableRelationFactory extends Factory
 {
-    public function modelName()
+    public function modelName(): string
     {
         return config('bookings.models.bookable_relation');
     }
 
-    public function definition()
+    public function definition(): array
     {
         return [
             'is_required' => $this->faker->boolean(),

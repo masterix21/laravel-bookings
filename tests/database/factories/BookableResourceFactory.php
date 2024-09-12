@@ -14,7 +14,7 @@ class BookableResourceFactory extends Factory
         return config('bookings.models.bookable_resource');
     }
 
-    public function definition()
+    public function definition(): array
     {
         /** @var Model $modelClass */
         $modelClass = $this->faker->randomElement([User::class, Product::class]);
@@ -23,8 +23,8 @@ class BookableResourceFactory extends Factory
 
         return [
             'code' => $this->faker->randomNumber(),
-            'model_id' => $modelClass::query()->select('id')->inRandomOrder()->first()->id,
-            'model_type' => $modelClass,
+            'resource_id' => $modelClass::query()->select('id')->inRandomOrder()->first()->id,
+            'resource_type' => $modelClass,
             'min' => 1,
             'max' => $this->faker->numberBetween(1, 10),
             'max_nested' => $this->faker->numberBetween(1, 10),

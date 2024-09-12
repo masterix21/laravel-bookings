@@ -2,42 +2,38 @@
 
 namespace Masterix21\Bookings\Models\Concerns;
 
-use Carbon\Carbon;
-use Masterix21\Bookings\Models\BookedResource;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Collection;
+use Masterix21\Bookings\Models\BookableArea;
+use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
 
-/** @mixin Booking | BookedResource */
+/** @mixin Booking */
 trait UsesGenerateBookedPeriods
 {
-    public function addBookedPeriods(PeriodCollection $periods, bool $isExcluded = false, ?string $label = null, ?string $note = null): self
-    {
-        return tap($this, function () use ($periods, $isExcluded, $label, $note) {
+    public function addBookedPeriods(
+        PeriodCollection $periods,
+        ?BookableResource $bookableResource = null,
+        bool $isExcluded = false,
+        ?string $label = null,
+        ?string $note = null
+    ): static {
+        return tap($this, function () use ($periods, $bookableResource, $isExcluded, $label, $note) {
             foreach ($periods as $period) {
-                $from = Carbon::parse($period->start());
-                $to = Carbon::parse($period->end());
-
                 $bookedPeriod = resolve(config('bookings.models.booked_period'))
                     ->fill([
-                        'booking_id' => $this instanceof BookedResource
-                            ? $this->booking_id
-                            : $this->id,
-                        'booked_resource_id' => $this instanceof BookedResource
-                            ? $this->id
-                            : null,
+                        'booking_id' => $this->id,
+                        'bookable_area_id' => $bookableResource?->bookable_area_id,
+                        'bookable_resource_id' => $bookableResource?->getKey(),
                         'is_excluded' => $isExcluded,
                         'label' => $label,
-                        'from_date' => $from->format('Y-m-d'),
-                        'to_date' => $to->format('Y-m-d'),
-                        'from_time' => $from->format('H:i:s'),
-                        'to_time' => $to->format('H:i:s'),
-                        'timezone' => $from->tzName,
+                        'starts_at' => $period->start(),
+                        'ends_at' => $period->end(),
                         'note' => $note,
                     ]);
 
                 $bookedPeriod->save();
-
-                unset($bookedPeriod);
             }
         });
     }

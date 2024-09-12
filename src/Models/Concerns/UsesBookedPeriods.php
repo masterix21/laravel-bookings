@@ -12,8 +12,8 @@ trait UsesBookedPeriods
 {
     public function getBookedPeriods(
         $isExcluded = false,
-        PeriodCollection $mergePeriods = null,
-        PeriodCollection $fallbackPeriods = null
+        ?PeriodCollection $mergePeriods = null,
+        ?PeriodCollection $fallbackPeriods = null
     ): PeriodCollection {
         $periods = $this->bookedPeriods
             ->where('is_excluded', $isExcluded)

@@ -17,9 +17,6 @@ use Spatie\Period\PeriodCollection;
 trait ImplementsEnsureIsAvailable
 {
     /**
-     * @param PeriodCollection $periods
-     * @param Collection|EloquentCollection|null $relations
-     * @param bool $ignoresUnbookable
      * @throws NoFreeSizeException
      * @throws OutOfPlanningsException
      * @throws RelationsHaveNoFreeSizeException
@@ -28,7 +25,7 @@ trait ImplementsEnsureIsAvailable
      */
     public function ensureIsAvailable(
         PeriodCollection $periods,
-        Collection | EloquentCollection | null $relations = null,
+        Collection|EloquentCollection|null $relations = null,
         bool $ignoresUnbookable = false
     ): void {
         $dates = app('bookings')->periodsToDates($periods);

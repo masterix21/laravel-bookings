@@ -7,6 +7,6 @@ use Masterix21\Bookings\Models\Concerns\HasBookings;
 
 class User extends \Illuminate\Foundation\Auth\User
 {
-    use HasFactory;
     use HasBookings;
+    use HasFactory;
 }

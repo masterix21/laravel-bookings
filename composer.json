@@ -16,7 +16,7 @@
         }
     ],
     "require": {
-        "php": "^8.0",
+        "php": "^8.3",
         "illuminate/contracts": "^11.22",
         "kirschbaum-development/eloquent-power-joins": "^3.5",
         "lorisleiva/laravel-actions": "^2.8",
@@ -27,11 +27,15 @@
         "staudenmeir/eloquent-has-many-deep": "^1.20"
     },
     "require-dev": {
+        "larastan/larastan": "^2.9",
+        "laravel/pint": "^1.17",
         "orchestra/testbench": "^9.4",
-        "pestphp/pest": "^2.35",
-        "pestphp/pest-plugin-laravel": "^2.4",
-        "spatie/laravel-ray": "^1.37",
-        "vimeo/psalm": "^6.0@dev"
+        "pestphp/pest": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan-deprecation-rules": "^1.2",
+        "phpstan/phpstan-phpunit": "^1.4",
+        "spatie/laravel-ray": "^1.37"
     },
     "autoload": {
         "psr-4": {
@@ -45,14 +49,25 @@
         }
     },
     "scripts": {
-        "psalm": "vendor/bin/psalm",
-        "test": "vendor/bin/phpunit --colors=always",
-        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+        "build": [
+            "@composer run prepare",
+            "@php vendor/bin/testbench workbench:build --ansi"
+        ],
+        "start": [
+            "Composer\\Config::disableProcessTimeout",
+            "@composer run build",
+            "@php vendor/bin/testbench serve"
+        ],
+        "analyse": "vendor/bin/phpstan analyse",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
     },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
-            "pestphp/pest-plugin": true
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
         }
     },
     "extra": {

@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Masterix21\Bookings\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -23,67 +22,67 @@ trait UsesBookablePlannings
     }
 
     /**
-     * @param Collection $dates
-     * @param Collection|EloquentCollection $relations
+     * @param  Collection|EloquentCollection  $relations
+     *
      * @throws OutOfPlanningsException
      * @throws RelationsOutOfPlanningsException
      */
-    public function ensureHasValidPlannings(Collection $dates, Collection | EloquentCollection | null $relations = null): void
+    public function ensureHasValidPlannings(Collection $dates, Collection|EloquentCollection|null $relations = null): void
     {
         $result = BookablePlanning::query()
-                ->when($this instanceof BookableArea, fn ($query) => $query->where('bookable_area_id', $this->id))
-                ->when($this instanceof BookableResource, fn ($query) => $query->where(function ($query) {
-                    $query->where('bookable_resource_id', $this->id)
-                        ->orWhere('bookable_area_id', $this->bookable_area_id);
-                }))
-                ->whereDatesAreValids($dates)
-                ->count() > 0;
+            ->when($this instanceof BookableArea, fn ($query) => $query->where('bookable_area_id', $this->id))
+            ->when($this instanceof BookableResource, fn ($query) => $query->where(function ($query) {
+                $query->where('bookable_resource_id', $this->id)
+                    ->orWhere('bookable_area_id', $this->bookable_area_id);
+            }))
+            ->whereDatesAreValids($dates)
+            ->count() > 0;
 
         if (! $result) {
-            throw new OutOfPlanningsException();
+            throw new OutOfPlanningsException;
         }
 
         $this->ensureRelationsHaveValidPlannings(dates: $dates, relations: $relations);
     }
 
     /**
-     * @param Collection $dates
-     * @param Collection|EloquentCollection $relations
+     * @param  Collection|EloquentCollection  $relations
+     *
      * @throws RelationsOutOfPlanningsException
      */
     public function ensureRelationsHaveValidPlannings(
         Collection $dates,
-        Collection | EloquentCollection | null $relations = null,
+        Collection|EloquentCollection|null $relations = null,
     ): void {
         if (($relations ?? collect())->isEmpty()) {
             return;
         }
 
         $result = BookableResource::query()
-                ->where(function (Builder $query) use ($relations) {
-                    $bookableAreas = $relations->filter(fn ($bookable) => $bookable instanceof BookableArea);
-                    $bookableResources = $relations->filter(fn ($bookable) => $bookable instanceof BookableResource);
+            ->where(function (Builder $query) use ($relations) {
+                $bookableAreas = $relations->filter(fn ($bookable) => $bookable instanceof BookableArea);
+                $bookableResources = $relations->filter(fn ($bookable) => $bookable instanceof BookableResource);
 
-                    $query->when($bookableAreas->isNotEmpty(), fn ($q) => $q->orWhereIn('bookable_area_id', $bookableAreas->pluck('id')));
-                    $query->when($bookableResources->isNotEmpty(), fn ($q) => $q->orWhereIn('id', $bookableResources->pluck('id')));
-                })
-                ->where(
-                    fn (Builder $query) => $query
-                        ->where(
-                            fn (Builder $query) => $query
-                                ->whereDoesntHave('bookablePlannings')
-                                ->whereDoesntHave('bookableArea.bookablePlannings')
-                        )
-                        ->orWhere(
-                            fn (Builder $query) => $query
-                                ->whereHas('bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
-                                ->orWhereHas('bookableArea.bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
-                        )
-                )
-                ->count() > 0;
+                $query->when($bookableAreas->isNotEmpty(), fn ($q) => $q->orWhereIn('bookable_area_id', $bookableAreas->pluck('id')));
+                $query->when($bookableResources->isNotEmpty(), fn ($q) => $q->orWhereIn('id', $bookableResources->pluck('id')));
+            })
+            ->where(
+                fn (Builder $query) => $query
+                    ->where(
+                        fn (Builder $query) => $query
+                            ->whereDoesntHave('bookablePlannings')
+                            ->whereDoesntHave('bookableArea.bookablePlannings')
+                    )
+                    ->orWhere(
+                        fn (Builder $query) => $query
+                            ->whereHas('bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
+                            ->orWhereHas('bookableArea.bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
+                    )
+            )
+            ->count() > 0;
 
         if (! $result) {
-            throw new RelationsOutOfPlanningsException();
+            throw new RelationsOutOfPlanningsException;
         }
     }
 }

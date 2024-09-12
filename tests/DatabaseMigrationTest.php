@@ -1,4 +1,5 @@
 <?php
+
 namespace Masterix21\Bookings\Tests;
 
 use Illuminate\Support\Facades\Schema;

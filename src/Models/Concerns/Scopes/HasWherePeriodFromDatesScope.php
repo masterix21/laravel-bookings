@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Masterix21\Bookings\Models\Concerns\Scopes;
 
 use Carbon\Carbon;
@@ -11,7 +10,7 @@ use Illuminate\Support\Collection;
 /** @mixin Model */
 trait HasWherePeriodFromDatesScope
 {
-    public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, Collection | array | string $dates): Builder
+    public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
     {
         return $builder->where(function ($query) use ($dates) {
             Collection::wrap($dates)
@@ -34,7 +33,7 @@ trait HasWherePeriodFromDatesScope
         });
     }
 
-    public function scopeWhereDatesAreWithinPeriods(Builder $builder, Collection | array | string $dates): Builder
+    public function scopeWhereDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
     {
         return $builder->where(function (Builder $builder) use ($dates) {
             Collection::wrap($dates)
@@ -44,16 +43,8 @@ trait HasWherePeriodFromDatesScope
                         $date = Carbon::parse($date);
 
                         $query
-                            ->where(function ($query) use ($date) {
-                                $query
-                                    ->where(fn ($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
-                                    ->where(fn ($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
-                            })
-                            ->where(function ($query) use ($date) {
-                                $query
-                                    ->where(fn ($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
-                                    ->where(fn ($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
-                            });
+                            ->where('starts_at', '<=', $date)
+                            ->where('ends_at', '>=', $date);
                     });
                 });
         });

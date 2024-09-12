@@ -79,7 +79,7 @@ it('throws exception because bookable area has no free size', function () {
 
     $booking = $mainBookableArea->bookableResources()->first()->reserve(
         periods: $bookingPeriods,
-        user: $user,
+        booker: $user,
         relations: BookableRelation::get()
     );
 

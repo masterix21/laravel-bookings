@@ -9,10 +9,10 @@ class UserFactory extends Factory
 {
     protected $model = User::class;
 
-    public function definition()
+    public function definition(): array
     {
         return [
-            'name' => $this->faker->firstName .' '. $this->faker->lastName,
+            'name' => $this->faker->firstName.' '.$this->faker->lastName,
             'email' => $this->faker->email,
             'password' => bcrypt('password'),
         ];

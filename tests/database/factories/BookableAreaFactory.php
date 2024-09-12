@@ -6,15 +6,15 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class BookableAreaFactory extends Factory
 {
-    public function modelName()
+    public function modelName(): string
     {
         return config('bookings.models.bookable_area');
     }
 
-    public function definition()
+    public function definition(): array
     {
         return [
-            'name' => $this->faker->text(50),
+            'name' => $this->faker->company,
             'prefix' => $this->faker->randomElement([null, $this->faker->randomLetter, $this->faker->randomDigit]),
             'suffix' => $this->faker->randomElement([null, $this->faker->randomLetter, $this->faker->randomDigit]),
             'is_visible' => $this->faker->boolean(70),

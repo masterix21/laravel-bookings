@@ -6,18 +6,16 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 class BookingFactory extends Factory
 {
-    public function modelName()
+    public function modelName(): string
     {
         return config('bookings.models.booking');
     }
 
-    public function definition()
+    public function definition(): array
     {
         return [
             'code' => $this->faker->firstName,
             'label' => $this->faker->lastName,
-            'email' => $this->faker->email,
-            'phone' => $this->faker->phoneNumber,
             'note' => $this->faker->boolean(60) ? null : $this->faker->realText(180),
         ];
     }
