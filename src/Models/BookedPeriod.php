@@ -2,17 +2,21 @@
 
 namespace Masterix21\Bookings\Models;
 
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Kirschbaum\PowerJoins\PowerJoins;
-use Masterix21\Bookings\Models\Concerns\Scopes\HasWherePeriodFromDatesScope;
+use Spatie\Period\Period;
+use Spatie\Period\PeriodCollection;
 
 class BookedPeriod extends Model
 {
     use HasFactory;
-    use HasWherePeriodFromDatesScope;
     use PowerJoins;
 
     protected $guarded = [];
@@ -22,6 +26,11 @@ class BookedPeriod extends Model
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
     ];
+
+    public function period(): Attribute
+    {
+        return Attribute::get(fn () => Period::make($this->starts_at, $this->ends_at));
+    }
 
     public function booking(): BelongsTo
     {
@@ -36,5 +45,39 @@ class BookedPeriod extends Model
     public function children(): HasMany
     {
         return $this->hasMany(static::class, 'parent_id');
+    }
+
+    public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, PeriodCollection $periods, bool $excluded = false): Builder
+    {
+        return $builder->where(function (Builder $builder) use ($periods, $excluded) {
+            $periods = $periods->unique()->sort();
+
+            $builder->where('is_excluded', $excluded);
+
+            foreach ($periods as $period) {
+                $builder->where(fn ($query) => $query
+                    ->where('starts_at', '<=', $period->end())
+                    ->where('ends_at', '>=', $period->start())
+                );
+            }
+        });
+    }
+
+    public function scopeWhereDatesAreWithinPeriods(Builder $builder, PeriodCollection $periods, bool $excluded = false): Builder
+    {
+        return $builder->where(function (Builder $builder) use ($periods, $excluded) {
+            $periods = $periods->unique()->sort();
+
+            $builder
+                ->where('is_excluded', $excluded)
+                ->where(function (Builder $builder) use ($periods) {
+                    foreach ($periods as $period) {
+                        $builder->orWhere(fn ($query) => $query
+                            ->where('starts_at', '<=', $period->end())
+                            ->where('ends_at', '>=', $period->start())
+                        );
+                    }
+                });
+        });
     }
 }

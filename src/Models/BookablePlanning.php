@@ -9,12 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
 use Kirschbaum\PowerJoins\PowerJoins;
-use Masterix21\Bookings\Models\Concerns\Scopes\HasWherePeriodFromDatesScope;
 
 class BookablePlanning extends Model
 {
     use HasFactory;
-    use HasWherePeriodFromDatesScope;
     use PowerJoins;
 
     protected $guarded = [];
@@ -58,6 +56,50 @@ class BookablePlanning extends Model
                         ->when($date->isSaturday(), fn ($q) => $q->where('saturday', 1))
                         ->when($date->isSunday(), fn ($q) => $q->where('sunday', 1));
                 }));
+        });
+    }
+
+    public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
+    {
+        return $builder->where(function ($query) use ($dates) {
+            Collection::wrap($dates)
+                ->unique()
+                ->each(function ($date) use ($query) {
+                    $date = Carbon::parse($date);
+
+                    $query
+                        ->where(function ($query) use ($date) {
+                            $query
+                                ->where(fn ($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
+                                ->where(fn ($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
+                        })
+                        ->where(function ($query) use ($date) {
+                            $query
+                                ->where(fn ($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
+                                ->where(fn ($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
+                        });
+                });
+        });
+    }
+
+    public function scopeWhereDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
+    {
+        return $builder->where(function (Builder $builder) use ($dates) {
+            Collection::wrap($dates)
+                ->unique()
+                ->each(function ($date) use ($builder) {
+                    $builder
+                        ->orWhere(function ($query) use ($date) {
+                            $query
+                                ->where(fn ($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
+                                ->where(fn ($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
+                        })
+                        ->orWhere(function ($query) use ($date) {
+                            $query
+                                ->where(fn ($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
+                                ->where(fn ($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
+                        });
+                });
         });
     }
 
