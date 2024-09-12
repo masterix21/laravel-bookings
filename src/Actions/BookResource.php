@@ -11,7 +11,6 @@ use Masterix21\Bookings\Events\BookingCompleted;
 use Masterix21\Bookings\Events\BookingFailed;
 use Masterix21\Bookings\Events\BookingInProgress;
 use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
-use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;

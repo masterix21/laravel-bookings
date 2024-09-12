@@ -2,9 +2,6 @@
 
 namespace Masterix21\Bookings\Models\Concerns;
 
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Collection;
-use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
