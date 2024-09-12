@@ -16,7 +16,8 @@ class BookingCompleted implements ShouldBroadcast
     public function __construct(
         public Booking $booking,
         public PeriodCollection $periods,
-    ) {}
+    ) {
+    }
 
     public function broadcastOn(): array
     {
