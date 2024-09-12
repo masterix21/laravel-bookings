@@ -16,7 +16,8 @@ class BookingInProgress implements ShouldBroadcast
     public function __construct(
         public BookableResource $bookableResource,
         public PeriodCollection $periods,
-    ) {}
+    ) {
+    }
 
     public function broadcastOn(): array
     {

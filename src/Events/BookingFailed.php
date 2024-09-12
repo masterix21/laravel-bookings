@@ -20,7 +20,8 @@ class BookingFailed implements ShouldBroadcast
         public PeriodCollection $periods,
         public ?string $message = null,
         public ?string $stackTrace = null,
-    ) {}
+    ) {
+    }
 
     public function broadcastOn(): array
     {
