@@ -2,8 +2,6 @@
 
 namespace Masterix21\Bookings\Models;
 
-use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -55,7 +53,8 @@ class BookedPeriod extends Model
             $builder->where('is_excluded', $excluded);
 
             foreach ($periods as $period) {
-                $builder->where(fn ($query) => $query
+                $builder->where(
+                    fn ($query) => $query
                     ->where('starts_at', '<=', $period->end())
                     ->where('ends_at', '>=', $period->start())
                 );
@@ -72,7 +71,8 @@ class BookedPeriod extends Model
                 ->where('is_excluded', $excluded)
                 ->where(function (Builder $builder) use ($periods) {
                     foreach ($periods as $period) {
-                        $builder->orWhere(fn ($query) => $query
+                        $builder->orWhere(
+                            fn ($query) => $query
                             ->where('starts_at', '<=', $period->end())
                             ->where('ends_at', '>=', $period->start())
                         );
