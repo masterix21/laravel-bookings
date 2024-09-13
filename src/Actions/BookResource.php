@@ -20,7 +20,7 @@ class BookResource
     public function run(
         Model $booker,
         PeriodCollection $periods,
-        ?BookableResource $bookableResource = null,
+        BookableResource $bookableResource,
         ?User $creator = null,
         ?string $code = null,
         ?string $label = null,
@@ -34,11 +34,11 @@ class BookResource
 
             event(new BookingInProgress($bookableResource, $periods));
 
-            $this->preventsOverlapping($periods, $bookableResource);
+            (new CheckBookingOverlaps())->run($periods, $bookableResource, emitEvent: true, throw: true);
 
             $booking
                 ->fill([
-                    'code' => $code ?: $this->generateRandomUniqueBookingCode(),
+                    'code' => $code ?: (new RandomBookingCode())->generate(),
                     'booker_type' => $booker ? $booker::class : null,
                     'booker_id' => $booker?->getKey(),
                     'label' => $label,
@@ -72,48 +72,5 @@ class BookResource
         }
 
         return null;
-    }
-
-    protected function preventsOverlapping(
-        PeriodCollection $periods,
-        ?BookableResource $bookableResource = null,
-    ): void {
-        if (blank($bookableResource)) {
-            return;
-        }
-
-        $overlaps = collect();
-
-        foreach ($periods as $period) {
-            $count = $bookableResource
-                ->bookedPeriods()
-                ->where('starts_at', '<=', $period->end())
-                ->where('ends_at', '>=', $period->start())
-                ->lockForUpdate()
-                ->count();
-
-            if ($count >= $bookableResource->max) {
-                $overlaps->add([
-                    'starts_at' => $period->start(),
-                    'ends_at' => $period->end(),
-                    'overlaps_count' => $count,
-                ]);
-            }
-        }
-
-        if ($overlaps->isEmpty()) {
-            return;
-        }
-
-        event(new BookingFailed(UnbookableReason::PERIOD_OVERLAP, $bookableResource, $periods));
-
-        throw new BookingResourceOverlappingException;
-    }
-
-    protected function generateRandomUniqueBookingCode(): string
-    {
-        $ulid = Str::ulid();
-
-        return $ulid.str(Str::random(64 - strlen($ulid)))->upper();
     }
 }
