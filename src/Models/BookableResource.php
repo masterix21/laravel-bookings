@@ -13,7 +13,6 @@ use Masterix21\Bookings\Models\Concerns\ImplementsBook;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsVisibleScopes;
 use Masterix21\Bookings\Models\Concerns\UsesBookablePlannings;
-use Spatie\Period\PeriodCollection;
 
 class BookableResource extends Model
 {
