@@ -28,6 +28,8 @@ return new class extends Migration
             $table->text('note')->nullable();
 
             $table->timestamps();
+
+            $table->softDeletes();
         });
 
         Schema::table('booked_periods', function (Blueprint $table) {

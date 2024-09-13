@@ -3,9 +3,11 @@
 namespace Masterix21\Bookings\Actions;
 
 use Masterix21\Bookings\Enums\UnbookableReason;
+use Masterix21\Bookings\Events\BookingChangeFailed;
 use Masterix21\Bookings\Events\BookingFailed;
 use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
 
 class CheckBookingOverlaps
@@ -15,12 +17,14 @@ class CheckBookingOverlaps
         BookableResource $bookableResource,
         bool $emitEvent = false,
         bool $throw = false,
+        ?Booking $ignoreBooking = null,
     ): bool {
         $overlaps = collect();
 
         foreach ($periods as $period) {
             $count = $bookableResource
                 ->bookedPeriods()
+                ->when($ignoreBooking, fn ($query) => $query->whereNot('booking_id', $ignoreBooking->getKey()))
                 ->where('starts_at', '<=', $period->end())
                 ->where('ends_at', '>=', $period->start())
                 ->lockForUpdate()
@@ -40,7 +44,11 @@ class CheckBookingOverlaps
         }
 
         if ($emitEvent) {
-            event(new BookingFailed(UnbookableReason::PERIOD_OVERLAP, $bookableResource, $periods));
+            if  ($ignoreBooking) {
+                event(new BookingChangeFailed($ignoreBooking, UnbookableReason::PERIOD_OVERLAP, $bookableResource, $periods));
+            } else {
+                event(new BookingFailed(UnbookableReason::PERIOD_OVERLAP, $bookableResource, $periods));
+            }
         }
 
         if ($throw) {

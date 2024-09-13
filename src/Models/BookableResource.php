@@ -51,7 +51,7 @@ class BookableResource extends Model
 
     public function bookedPeriods(): HasMany
     {
-        return $this->hasMany(config('bookings.models.booked_period'));
+        return $this->hasMany(config('bookings.models.booked_period'))->chaperone();
     }
 
     public function size(bool $ignoresUnbookable = false): int

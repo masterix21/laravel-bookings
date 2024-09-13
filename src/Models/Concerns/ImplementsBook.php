@@ -13,6 +13,7 @@ trait ImplementsBook
 {
     public function book(
         PeriodCollection $periods,
+        ?Booking $booking = null,
         ?Model $booker = null,
         Collection|EloquentCollection|null $relations = null,
         ?string $code = null,
@@ -23,6 +24,7 @@ trait ImplementsBook
             booker: $booker,
             periods: $periods,
             bookableResource: $this,
+            booking: $booking,
             creator: auth()->user(),
             code: $code,
             label: $label,

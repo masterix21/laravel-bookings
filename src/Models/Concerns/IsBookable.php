@@ -26,12 +26,12 @@ trait IsBookable
 
     public function bookableResources(): MorphMany
     {
-        return $this->morphMany(config('bookings.models.bookable_resource'), 'resource');
+        return $this->morphMany(config('bookings.models.bookable_resource'), 'resource')->chaperone();
     }
 
     public function bookableResource(): MorphOne
     {
-        return $this->morphOne(config('bookings.models.bookable_resource'), 'resource');
+        return $this->morphOne(config('bookings.models.bookable_resource'), 'resource')->chaperone();
     }
 
     public function bookedPeriods(): HasManyDeep

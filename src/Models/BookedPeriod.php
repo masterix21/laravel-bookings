@@ -2,14 +2,13 @@
 
 namespace Masterix21\Bookings\Models;
 
-use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Kirschbaum\PowerJoins\PowerJoins;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
@@ -17,6 +16,7 @@ use Spatie\Period\PeriodCollection;
 class BookedPeriod extends Model
 {
     use HasFactory;
+    use SoftDeletes;
     use PowerJoins;
 
     protected $guarded = [];
@@ -45,6 +45,16 @@ class BookedPeriod extends Model
     public function children(): HasMany
     {
         return $this->hasMany(static::class, 'parent_id');
+    }
+
+    public function bookableArea(): BelongsTo
+    {
+        return $this->belongsTo(config('bookings.models.bookable_area'));
+    }
+
+    public function bookableResource(): BelongsTo
+    {
+        return $this->belongsTo(config('bookings.models.bookable_resource'));
     }
 
     public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, PeriodCollection $periods, bool $excluded = false): Builder
