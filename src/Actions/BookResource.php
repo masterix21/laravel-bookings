@@ -25,6 +25,8 @@ class BookResource
         ?Booking $booking = null,
         ?User $creator = null,
         ?string $code = null,
+        ?string $codePrefix = null,
+        ?string $codeSuffix = null,
         ?string $label = null,
         ?string $note = null,
     ): ?Booking {
@@ -38,6 +40,8 @@ class BookResource
                 periods: $periods,
                 bookableResource: $bookableResource,
                 code: $code,
+                codePrefix: $codePrefix,
+                codeSuffix: $codeSuffix,
                 label: $label,
                 note: $note,
             );
@@ -50,6 +54,8 @@ class BookResource
             bookableResource: $bookableResource,
             creator: $creator,
             code: $code,
+            codePrefix: $codePrefix,
+            codeSuffix: $codeSuffix,
             label: $label,
             note: $note,
         );
@@ -62,6 +68,8 @@ class BookResource
         BookableResource $bookableResource,
         ?User $creator,
         ?string $code,
+        ?string $codePrefix,
+        ?string $codeSuffix,
         ?string $label,
         ?string $note
     ): ?Booking {
@@ -74,7 +82,7 @@ class BookResource
 
             $booking
                 ->fill([
-                    'code' => $code ?: (new RandomBookingCode())->generate(),
+                    'code' => $code ?: (new RandomBookingCode())->generate(prefix: $codePrefix, suffix: $codeSuffix),
                     'booker_type' => $booker ? $booker::class : null,
                     'booker_id' => $booker?->getKey(),
                     'label' => $label,

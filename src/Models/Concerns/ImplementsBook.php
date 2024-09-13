@@ -17,6 +17,8 @@ trait ImplementsBook
         ?Model $booker = null,
         Collection|EloquentCollection|null $relations = null,
         ?string $code = null,
+        ?string $codePrefix = null,
+        ?string $codeSuffix = null,
         ?string $label = null,
         ?string $note = null,
     ): ?Booking {
@@ -27,6 +29,8 @@ trait ImplementsBook
             booking: $booking,
             creator: auth()->user(),
             code: $code,
+            codePrefix: $codePrefix,
+            codeSuffix: $codeSuffix,
             label: $label,
             note: $note
         );
