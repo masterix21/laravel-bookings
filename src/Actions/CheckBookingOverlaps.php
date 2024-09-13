@@ -44,7 +44,7 @@ class CheckBookingOverlaps
         }
 
         if ($emitEvent) {
-            if  ($ignoreBooking) {
+            if ($ignoreBooking) {
                 event(new BookingChangeFailed($ignoreBooking, UnbookableReason::PERIOD_OVERLAP, $bookableResource, $periods));
             } else {
                 event(new BookingFailed(UnbookableReason::PERIOD_OVERLAP, $bookableResource, $periods));
