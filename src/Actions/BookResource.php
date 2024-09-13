@@ -124,6 +124,8 @@ class BookResource
         PeriodCollection $periods,
         BookableResource $bookableResource,
         ?string $code,
+        ?string $codePrefix,
+        ?string $codeSuffix,
         ?string $label,
         ?string $note
     ): ?Booking {
@@ -142,7 +144,7 @@ class BookResource
 
             $booking
                 ->fill([
-                    'code' => $code ?: $booking->code ?: (new RandomBookingCode())->generate(),
+                    'code' => $code ?: $booking->code ?: (new RandomBookingCode())->generate(prefix: $codePrefix, suffix: $codeSuffix),
                     'booker_type' => $booker ? $booker::class : $booking->booker_type,
                     'booker_id' => $booker?->getKey() ?: $booking->booker_id,
                     'label' => $label,
