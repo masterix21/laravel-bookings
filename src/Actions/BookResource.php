@@ -19,9 +19,9 @@ use Spatie\Period\PeriodCollection;
 class BookResource
 {
     public function run(
-        Model $booker,
         PeriodCollection $periods,
         BookableResource $bookableResource,
+        ?Model $booker,
         ?Booking $booking = null,
         ?User $creator = null,
         ?string $code = null,
@@ -63,9 +63,9 @@ class BookResource
 
     protected function create(
         Booking $booking,
-        Model $booker,
         PeriodCollection $periods,
         BookableResource $bookableResource,
+        ?Model $booker,
         ?User $creator,
         ?string $code,
         ?string $codePrefix,
@@ -120,9 +120,9 @@ class BookResource
 
     protected function update(
         Booking $booking,
-        Model $booker,
         PeriodCollection $periods,
         BookableResource $bookableResource,
+        ?Model $booker,
         ?string $code,
         ?string $codePrefix,
         ?string $codeSuffix,
