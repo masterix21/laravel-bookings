@@ -32,7 +32,7 @@ trait ImplementsBook
             codePrefix: $codePrefix,
             codeSuffix: $codeSuffix,
             label: $label,
-            note: $note
+            note: $note,
         );
     }
 }

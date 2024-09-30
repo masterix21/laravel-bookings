@@ -62,4 +62,9 @@ trait IsBookable
         return $this->bookedPeriods
             ->where(fn (BookedPeriod $bookedPeriod) => $bookedPeriod->period->contains($date));
     }
+
+    public function bookings(): HasManyDeep
+    {
+        return $this->hasManyDeepFromRelations($this->bookedPeriods(), (new BookedPeriod())->booking());
+    }
 }
