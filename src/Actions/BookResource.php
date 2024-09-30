@@ -29,6 +29,7 @@ class BookResource
         ?string $codeSuffix = null,
         ?string $label = null,
         ?string $note = null,
+        ?array $meta = null,
     ): ?Booking {
         /** @var Booking $booking */
         $booking ??= resolve(config('bookings.models.booking'));
@@ -44,6 +45,7 @@ class BookResource
                 codeSuffix: $codeSuffix,
                 label: $label,
                 note: $note,
+                meta: $meta,
             );
         }
 
@@ -58,6 +60,7 @@ class BookResource
             codeSuffix: $codeSuffix,
             label: $label,
             note: $note,
+            meta: $meta,
         );
     }
 
@@ -71,7 +74,8 @@ class BookResource
         ?string $codePrefix,
         ?string $codeSuffix,
         ?string $label,
-        ?string $note
+        ?string $note,
+        ?array $meta,
     ): ?Booking {
         try {
             $booking->getConnection()->beginTransaction();
@@ -87,6 +91,7 @@ class BookResource
                     'booker_id' => $booker?->getKey(),
                     'label' => $label,
                     'note' => $note,
+                    'meta' => $meta,
                 ])
                 ->save();
 
@@ -127,7 +132,8 @@ class BookResource
         ?string $codePrefix,
         ?string $codeSuffix,
         ?string $label,
-        ?string $note
+        ?string $note,
+        ?array $meta,
     ): ?Booking {
         try {
             $booking->getConnection()->beginTransaction();
@@ -149,6 +155,7 @@ class BookResource
                     'booker_id' => $booker?->getKey() ?: $booking->booker_id,
                     'label' => $label,
                     'note' => $note,
+                    'meta' => $meta,
                 ])
                 ->save();
 

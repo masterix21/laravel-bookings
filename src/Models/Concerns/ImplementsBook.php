@@ -21,6 +21,7 @@ trait ImplementsBook
         ?string $codeSuffix = null,
         ?string $label = null,
         ?string $note = null,
+        ?array $meta = null,
     ): ?Booking {
         return (new BookResource)->run(
             booker: $booker,
@@ -33,6 +34,7 @@ trait ImplementsBook
             codeSuffix: $codeSuffix,
             label: $label,
             note: $note,
+            meta: $meta,
         );
     }
 }
