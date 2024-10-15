@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Kirschbaum\PowerJoins\PowerJoins;
 use Spatie\Period\Period;
@@ -55,6 +56,11 @@ class BookedPeriod extends Model
     public function bookableResource(): BelongsTo
     {
         return $this->belongsTo(config('bookings.models.bookable_resource'));
+    }
+
+    public function relatable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, PeriodCollection $periods, bool $excluded = false): Builder

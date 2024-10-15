@@ -24,6 +24,7 @@ class BookResource
         ?Model $booker,
         ?Booking $booking = null,
         ?User $creator = null,
+        ?Model $relatable = null,
         ?string $code = null,
         ?string $codePrefix = null,
         ?string $codeSuffix = null,
@@ -38,6 +39,7 @@ class BookResource
             return $this->update(
                 booking: $booking,
                 booker: $booker,
+                relatable: $relatable,
                 periods: $periods,
                 bookableResource: $bookableResource,
                 code: $code,
@@ -55,6 +57,7 @@ class BookResource
             periods: $periods,
             bookableResource: $bookableResource,
             creator: $creator,
+            relatable: $relatable,
             code: $code,
             codePrefix: $codePrefix,
             codeSuffix: $codeSuffix,
@@ -68,6 +71,7 @@ class BookResource
         Booking $booking,
         PeriodCollection $periods,
         BookableResource $bookableResource,
+        ?Model $relatable,
         ?Model $booker,
         ?User $creator,
         ?string $code,
@@ -98,7 +102,8 @@ class BookResource
             $booking
                 ->addBookedPeriods(
                     periods: $periods,
-                    bookableResource: $bookableResource
+                    bookableResource: $bookableResource,
+                    relatable: $relatable,
                 );
 
             event(new BookingCompleted($booking, $periods));
@@ -127,6 +132,7 @@ class BookResource
         Booking $booking,
         PeriodCollection $periods,
         BookableResource $bookableResource,
+        ?Model $relatable,
         ?Model $booker,
         ?string $code,
         ?string $codePrefix,
@@ -159,12 +165,13 @@ class BookResource
                 ])
                 ->save();
 
-            $booking->bookedPeriods()->delete();
+            $booking->bookedPeriods()->forceDelete();
 
             $booking
                 ->addBookedPeriods(
                     periods: $periods,
-                    bookableResource: $bookableResource
+                    bookableResource: $bookableResource,
+                    relatable: $relatable,
                 );
 
             event(new BookingChanged($booking, $periods));
