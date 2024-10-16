@@ -12,6 +12,7 @@ use Masterix21\Bookings\Events\BookingChanging;
 use Masterix21\Bookings\Events\BookingCompleted;
 use Masterix21\Bookings\Events\BookingFailed;
 use Masterix21\Bookings\Events\BookingInProgress;
+use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
@@ -112,7 +113,9 @@ class BookResource
 
             return $booking;
         } catch (\Exception $e) {
-            Log::error($e);
+            if (! $e instanceof BookingResourceOverlappingException) {
+                Log::error($e);
+            }
 
             event(new BookingFailed(
                 UnbookableReason::EXCEPTION,
@@ -123,6 +126,8 @@ class BookResource
             ));
 
             $booking->getConnection()->rollBack();
+
+            throw $e;
         }
 
         return null;
@@ -180,7 +185,9 @@ class BookResource
 
             return $booking;
         } catch (\Exception $e) {
-            Log::error($e);
+            if (! $e instanceof BookingResourceOverlappingException) {
+                Log::error($e);
+            }
 
             event(new BookingChangeFailed(
                 $booking,
@@ -192,6 +199,8 @@ class BookResource
             ));
 
             $booking->getConnection()->rollBack();
+
+            throw $e;
         }
 
         return null;
