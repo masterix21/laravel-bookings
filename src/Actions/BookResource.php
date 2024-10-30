@@ -13,6 +13,8 @@ use Masterix21\Bookings\Events\BookingCompleted;
 use Masterix21\Bookings\Events\BookingFailed;
 use Masterix21\Bookings\Events\BookingInProgress;
 use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
+use Masterix21\Bookings\Generators\Contracts\BookingCodeGenerator;
+use Masterix21\Bookings\Generators\RandomBookingCode;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
@@ -91,7 +93,7 @@ class BookResource
 
             $booking
                 ->fill([
-                    'code' => $code ?: (new RandomBookingCode())->generate(prefix: $codePrefix, suffix: $codeSuffix),
+                    'code' => $code ?: app(BookingCodeGenerator::class)->run(prefix: $codePrefix, suffix: $codeSuffix),
                     'booker_type' => $booker ? $booker::class : null,
                     'booker_id' => $booker?->getKey(),
                     'label' => $label,
@@ -161,8 +163,12 @@ class BookResource
 
             $booking
                 ->fill([
-                    'code' => $code ?: $booking->code ?: (new RandomBookingCode())->generate(prefix: $codePrefix, suffix: $codeSuffix),
-                    'booker_type' => $booker ? $booker::class : $booking->booker_type,
+                    'code' => $code
+                        ?: $booking->code
+                            ?: app(BookingCodeGenerator::class)->run(prefix: $codePrefix, suffix: $codeSuffix),
+                    'booker_type' => $booker
+                        ? $booker::class
+                        : $booking->booker_type,
                     'booker_id' => $booker?->getKey() ?: $booking->booker_id,
                     'label' => $label,
                     'note' => $note,

@@ -2,6 +2,7 @@
 
 namespace Masterix21\Bookings;
 
+use Masterix21\Bookings\Generators\Contracts\BookingCodeGenerator;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -9,11 +10,6 @@ class BookingsServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {
-        /*
-         * This class is a Package Service Provider.
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
         $package
             ->name('laravel-bookings')
             ->hasConfigFile()
@@ -28,8 +24,10 @@ class BookingsServiceProvider extends PackageServiceProvider
             ]);
     }
 
-    public function packageBooted()
+    public function packageBooted(): void
     {
+        $this->app->bind(BookingCodeGenerator::class, config('bookings.generators.booking_code'));
+
         $this->app->singleton('bookings', Bookings::class);
     }
 }

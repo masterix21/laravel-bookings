@@ -1,12 +1,13 @@
 <?php
 
-namespace Masterix21\Bookings\Actions;
+namespace Masterix21\Bookings\Generators;
 
 use Illuminate\Support\Str;
+use Masterix21\Bookings\Generators\Contracts\BookingCodeGenerator;
 
-class RandomBookingCode
+class RandomBookingCode implements BookingCodeGenerator
 {
-    public function generate(
+    public function run(
         ?string $prefix = null,
         ?string $suffix = null,
     ): string {

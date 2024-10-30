@@ -10,4 +10,8 @@ return [
         'booking' => \Masterix21\Bookings\Models\Booking::class,
         'booked_period' => \Masterix21\Bookings\Models\BookedPeriod::class,
     ],
+
+    'generators' => [
+        'booking_code' => \Masterix21\Bookings\Generators\RandomBookingCode::class,
+    ],
 ];
