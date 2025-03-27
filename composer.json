@@ -16,20 +16,19 @@
         }
     ],
     "require": {
-        "php": "^8.3",
-        "illuminate/contracts": "^11.22",
-        "kirschbaum-development/eloquent-power-joins": "^3.5",
-        "lorisleiva/laravel-actions": "^2.8",
+        "php": "^8.3|^8.4",
+        "illuminate/contracts": "^11.22|^12.0",
+        "kirschbaum-development/eloquent-power-joins": "^3.5|^4.2",
         "nesbot/carbon": "^3.8",
-        "spatie/laravel-package-tools": "^1.16",
+        "spatie/laravel-package-tools": "^1.92",
         "spatie/period": "^2.4",
         "staudenmeir/belongs-to-through": "^2.16",
         "staudenmeir/eloquent-has-many-deep": "^1.20"
     },
     "require-dev": {
-        "larastan/larastan": "^2.9",
+        "larastan/larastan": "^2.9|^3.2",
         "laravel/pint": "^1.17",
-        "orchestra/testbench": "^9.4",
+        "orchestra/testbench": "^9.4|^10.1",
         "pestphp/pest": "^3.0",
         "pestphp/pest-plugin-laravel": "^3.0",
         "phpstan/extension-installer": "^1.4",
