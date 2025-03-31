@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\ImplementsBook;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
@@ -21,7 +20,6 @@ class BookableResource extends Model
     use ImplementsBook;
     use ImplementsBookableScopes;
     use ImplementsVisibleScopes;
-    use PowerJoins;
     use UsesBookablePlannings;
 
     protected $guarded = [];

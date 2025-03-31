@@ -5,12 +5,10 @@ namespace Masterix21\Bookings\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Kirschbaum\PowerJoins\PowerJoins;
 
 class BookableRelation extends Model
 {
     use HasFactory;
-    use PowerJoins;
 
     protected $guarded = [];
 

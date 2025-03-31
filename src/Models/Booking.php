@@ -8,14 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Kirschbaum\PowerJoins\PowerJoins;
 use Masterix21\Bookings\Models\Concerns\UsesBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriods;
 
 class Booking extends Model
 {
     use HasFactory;
-    use PowerJoins;
     use UsesBookedPeriods;
     use UsesGenerateBookedPeriods;
 

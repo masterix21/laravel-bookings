@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Kirschbaum\PowerJoins\PowerJoins;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 
@@ -18,7 +17,6 @@ class BookedPeriod extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    use PowerJoins;
 
     protected $guarded = [];
 
