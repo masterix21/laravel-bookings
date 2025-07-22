@@ -3,7 +3,6 @@
 namespace Masterix21\Bookings\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Masterix21\Bookings\Models\Booking;

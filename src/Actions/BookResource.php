@@ -4,7 +4,6 @@ namespace Masterix21\Bookings\Actions;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
-use Illuminate\Support\Facades\Log;
 use Masterix21\Bookings\Enums\UnbookableReason;
 use Masterix21\Bookings\Events\BookingChanged;
 use Masterix21\Bookings\Events\BookingChangeFailed;
@@ -12,7 +11,6 @@ use Masterix21\Bookings\Events\BookingChanging;
 use Masterix21\Bookings\Events\BookingCompleted;
 use Masterix21\Bookings\Events\BookingFailed;
 use Masterix21\Bookings\Events\BookingInProgress;
-use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 use Masterix21\Bookings\Generators\Contracts\BookingCodeGenerator;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
