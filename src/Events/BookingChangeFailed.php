@@ -3,7 +3,6 @@
 namespace Masterix21\Bookings\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Masterix21\Bookings\Enums\UnbookableReason;
@@ -11,7 +10,7 @@ use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
 
-class BookingChangeFailed implements ShouldBroadcast
+class BookingChangeFailed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -23,12 +22,5 @@ class BookingChangeFailed implements ShouldBroadcast
         public ?string $message = null,
         public ?string $stackTrace = null,
     ) {
-    }
-
-    public function broadcastOn(): array
-    {
-        return [
-
-        ];
     }
 }

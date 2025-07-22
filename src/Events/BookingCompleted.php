@@ -9,7 +9,7 @@ use Illuminate\Queue\SerializesModels;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
 
-class BookingCompleted implements ShouldBroadcast
+class BookingCompleted
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -17,12 +17,5 @@ class BookingCompleted implements ShouldBroadcast
         public Booking $booking,
         public PeriodCollection $periods,
     ) {
-    }
-
-    public function broadcastOn(): array
-    {
-        return [
-
-        ];
     }
 }

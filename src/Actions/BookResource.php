@@ -114,10 +114,6 @@ class BookResource
 
             return $booking;
         } catch (\Exception $e) {
-            if (! $e instanceof BookingResourceOverlappingException) {
-                Log::error($e);
-            }
-
             event(new BookingFailed(
                 UnbookableReason::EXCEPTION,
                 $bookableResource,
@@ -190,10 +186,6 @@ class BookResource
 
             return $booking;
         } catch (\Exception $e) {
-            if (! $e instanceof BookingResourceOverlappingException) {
-                Log::error($e);
-            }
-
             event(new BookingChangeFailed(
                 $booking,
                 UnbookableReason::EXCEPTION,
@@ -207,7 +199,5 @@ class BookResource
 
             throw $e;
         }
-
-        return null;
     }
 }

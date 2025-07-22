@@ -346,3 +346,96 @@ it('handles transaction rollback on failure', function () {
     expect($bookingsCountAfter)->toBe($bookingsCountBefore)
         ->and($bookedPeriodsCountAfter)->toBe($bookedPeriodsCountBefore);
 });
+
+it('handles exception and rolls back transaction when changing booking', function () {
+    // Create a bookable resource with max=1
+    $resource = $this->createsResources(
+        fromDate: now()->startOfDay(),
+        toDate: now()->addDays(7)->endOfDay(),
+        resourcesCount: 1,
+        resourcesStates: ['max' => 1]
+    )->first();
+
+    // Create users
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+
+    // Create initial periods for first booking
+    $initialPeriods = PeriodCollection::make(
+        SpatiePeriod::make(
+            now()->addDay()->format('Y-m-d'),
+            now()->addDays(2)->format('Y-m-d')
+        )
+    );
+
+    // Create initial booking
+    $booking = (new BookResource())->run(
+        periods: $initialPeriods,
+        bookableResource: $resource,
+        booker: $user1,
+        label: 'Initial Booking'
+    );
+
+    // Store the original booking data for comparison
+    $originalBookingData = $booking->toArray();
+    $originalPeriodsCount = $booking->bookedPeriods()->count();
+
+    // Create a second booking with non-overlapping period
+    $secondPeriods = PeriodCollection::make(
+        SpatiePeriod::make(
+            now()->addDays(3)->format('Y-m-d'),
+            now()->addDays(4)->format('Y-m-d')
+        )
+    );
+
+    $secondBooking = (new BookResource())->run(
+        periods: $secondPeriods,
+        bookableResource: $resource,
+        booker: $user2,
+        label: 'Second Booking'
+    );
+
+    // Clear events
+    Event::fake();
+
+    // Now try to update the first booking to overlap with the second booking
+    // This should cause an exception due to the overlap
+    $overlappingPeriods = PeriodCollection::make(
+        SpatiePeriod::make(
+            now()->addDays(3)->format('Y-m-d'),
+            now()->addDays(4)->format('Y-m-d')
+        )
+    );
+
+    // Try to update the booking (should fail due to overlap)
+    try {
+        (new BookResource())->run(
+            booking: $booking,
+            periods: $overlappingPeriods,
+            bookableResource: $resource,
+            booker: $user1,
+            label: 'Updated Booking'
+        );
+
+        $this->fail('Expected exception was not thrown');
+    } catch (BookingResourceOverlappingException $e) {
+        // Expected exception
+    }
+
+    // Refresh the booking from the database
+    $booking->refresh();
+
+    // Assert the booking was not changed (transaction was rolled back)
+    expect($booking->label)->toBe('Initial Booking')
+        ->and($booking->bookedPeriods()->count())->toBe($originalPeriodsCount)
+        ->and($booking->bookedPeriods->first()->starts_at->format('Y-m-d'))->toBe(now()->addDay()->format('Y-m-d'))
+        ->and($booking->bookedPeriods->first()->ends_at->format('Y-m-d'))->toBe(now()->addDays(2)->format('Y-m-d'));
+
+    // Assert events were dispatched
+    Event::assertDispatched(BookingChanging::class);
+    Event::assertDispatched(BookingChangeFailed::class, function ($event) use ($booking, $resource) {
+        return $event->booking->id === $booking->id
+            && $event->reason === UnbookableReason::EXCEPTION
+            && $event->bookableResource->id === $resource->id;
+    });
+});

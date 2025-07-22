@@ -3,14 +3,13 @@
 namespace Masterix21\Bookings\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
 
-class BookingChanging implements ShouldBroadcast
+class BookingChanging
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,12 +18,5 @@ class BookingChanging implements ShouldBroadcast
         public BookableResource $bookableResource,
         public PeriodCollection $periods,
     ) {
-    }
-
-    public function broadcastOn(): array
-    {
-        return [
-
-        ];
     }
 }
