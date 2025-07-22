@@ -12,19 +12,9 @@ class BookableRelation extends Model
 
     protected $guarded = [];
 
-    public function parentBookableArea(): BelongsTo
-    {
-        return $this->belongsTo(config('bookings.models.bookable_area'), 'parent_bookable_area_id');
-    }
-
     public function parentBookableResource(): BelongsTo
     {
         return $this->belongsTo(config('bookings.models.bookable_resource'), 'parent_bookable_resource_id');
-    }
-
-    public function bookableArea(): BelongsTo
-    {
-        return $this->belongsTo(config('bookings.models.bookable_area'));
     }
 
     public function bookableResource(): BelongsTo

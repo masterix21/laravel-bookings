@@ -11,15 +11,9 @@ return new class extends Migration
         Schema::create('bookable_relations', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignIdFor(config('bookings.models.bookable_area'), 'parent_bookable_area_id')
-                ->references('id')->on('bookable_areas')->cascadeOnDelete();
-
             $table->foreignIdFor(config('bookings.models.bookable_resource'), 'parent_bookable_resource_id')
                 ->nullable()
                 ->references('id')->on('bookable_resources')->cascadeOnDelete();
-
-            $table->foreignIdFor(config('bookings.models.bookable_area'), 'bookable_area_id')
-                ->constrained()->cascadeOnDelete();
 
             $table->foreignIdFor(config('bookings.models.bookable_resource'), 'bookable_resource_id')
                 ->nullable()

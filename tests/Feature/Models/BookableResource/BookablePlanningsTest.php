@@ -1,18 +1,15 @@
 <?php
 
 use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
-use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Period;
-use Masterix21\Bookings\Tests\Concerns\CreatesAreasAndResources;
+use Masterix21\Bookings\Tests\Concerns\CreatesResources;
 use Spatie\Period\Period as SpatiePeriod;
 
-uses(CreatesAreasAndResources::class);
+uses(CreatesResources::class);
 
 it('throws an exception because it has no plannings', function () {
-    BookableArea::factory()->count(1)
-        ->has(BookableResource::factory()->count(1))
-        ->create();
+    BookableResource::factory()->count(1)->create();
 
     $bookableResource = BookableResource::first();
 
@@ -21,7 +18,7 @@ it('throws an exception because it has no plannings', function () {
 });
 
 it('works because it has a valid planning', function () {
-    $this->createsAreasAndResources();
+    $this->createsResources();
 
     $bookableResource = BookableResource::first();
 

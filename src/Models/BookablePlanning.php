@@ -29,11 +29,6 @@ class BookablePlanning extends Model
         'to_time' => 'datetime:H:i',
     ];
 
-    public function bookableArea(): BelongsTo
-    {
-        return $this->belongsTo(config('bookings.models.bookable_area'));
-    }
-
     public function bookableResource(): BelongsTo
     {
         return $this->belongsTo(config('bookings.models.bookable_resource'));

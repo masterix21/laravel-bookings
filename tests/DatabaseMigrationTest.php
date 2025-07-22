@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 class DatabaseMigrationTest extends TestCase
 {
     /** @test */
-    public function assert_migrations_are_up()
+    public function assert_migrations_are_up(): void
     {
         collect(config('bookings.models'))->each(function ($model) {
             $this->assertTrue(Schema::hasTable(resolve($model)->getTable()));

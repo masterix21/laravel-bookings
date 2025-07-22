@@ -9,7 +9,6 @@ use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
 use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\RelationsOutOfPlanningsException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
-use Masterix21\Bookings\Models\BookableArea;
 use Masterix21\Bookings\Models\BookableResource;
 use Spatie\Period\PeriodCollection;
 

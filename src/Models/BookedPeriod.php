@@ -46,11 +46,6 @@ class BookedPeriod extends Model
         return $this->hasMany(static::class, 'parent_id');
     }
 
-    public function bookableArea(): BelongsTo
-    {
-        return $this->belongsTo(config('bookings.models.bookable_area'));
-    }
-
     public function bookableResource(): BelongsTo
     {
         return $this->belongsTo(config('bookings.models.bookable_resource'));

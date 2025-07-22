@@ -11,8 +11,6 @@ return new class extends Migration
         Schema::create('bookable_resources', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignIdFor(config('bookings.models.bookable_area'))->constrained()->cascadeOnDelete();
-
             $table->string('code', 60)->nullable();
 
             $table->morphs('resource');

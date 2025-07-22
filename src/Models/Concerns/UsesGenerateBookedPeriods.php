@@ -23,7 +23,6 @@ trait UsesGenerateBookedPeriods
                 $bookedPeriod = resolve(config('bookings.models.booked_period'))
                     ->fill([
                         'booking_id' => $this->id,
-                        'bookable_area_id' => $bookableResource?->bookable_area_id,
                         'bookable_resource_id' => $bookableResource?->getKey(),
                         'is_excluded' => $isExcluded,
                         'label' => $label,
