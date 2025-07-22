@@ -11,7 +11,6 @@ use Masterix21\Bookings\Events\BookingFailed;
 use Masterix21\Bookings\Events\BookingInProgress;
 use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 use Masterix21\Bookings\Models\Booking;
-use Masterix21\Bookings\Period;
 use Masterix21\Bookings\Tests\Concerns\CreatesResources;
 use Masterix21\Bookings\Tests\TestClasses\Product;
 use Masterix21\Bookings\Tests\TestClasses\User;
