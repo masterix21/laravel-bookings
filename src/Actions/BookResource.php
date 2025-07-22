@@ -146,13 +146,31 @@ class BookResource
 
             event(new BookingChanging($booking, $bookableResource, $periods));
 
-            (new CheckBookingOverlaps())->run(
-                periods: $periods,
-                bookableResource: $bookableResource,
-                emitEvent: true,
-                throw: true,
-                ignoreBooking: $booking
-            );
+            try {
+                (new CheckBookingOverlaps())->run(
+                    periods: $periods,
+                    bookableResource: $bookableResource,
+                    emitEvent: false, // Don't emit event here, we'll emit it in the catch block
+                    throw: true,
+                    ignoreBooking: $booking
+                );
+            } catch (BookingResourceOverlappingException $e) {
+                // Dispatch the BookingChangeFailed event before re-throwing the exception
+                event(new BookingChangeFailed(
+                    $booking,
+                    UnbookableReason::EXCEPTION,
+                    $bookableResource,
+                    $periods,
+                    $e->getMessage(),
+                    $e->getTraceAsString()
+                ));
+
+                // Roll back the transaction
+                $booking->getConnection()->rollBack();
+
+                // Re-throw the exception
+                throw $e;
+            }
 
             $booking
                 ->fill([
