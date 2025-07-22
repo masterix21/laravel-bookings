@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Carbon;
 use Masterix21\Bookings\Period;
 use Spatie\Period\Period as SpatiePeriod;
 use Spatie\Period\PeriodCollection;
