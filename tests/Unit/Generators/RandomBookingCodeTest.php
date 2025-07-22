@@ -14,6 +14,6 @@ it('throws an exception when prefix and suffix are too long', function () {
 
     // The combined length is 38, which should trigger the exception
     // Call the run method and expect an exception
-    expect(fn() => $generator->run($prefix, $suffix))
+    expect(fn () => $generator->run($prefix, $suffix))
         ->toThrow(\Exception::class, 'Please keep your prefix and suffix below 26 characters.');
 });
