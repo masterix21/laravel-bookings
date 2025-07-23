@@ -18,5 +18,6 @@ class PlanningValidationFailed
         public readonly Collection $dates,
         public readonly Collection|EloquentCollection|null $relations,
         public readonly Exception $exception,
-    ) {}
+    ) {
+    }
 }

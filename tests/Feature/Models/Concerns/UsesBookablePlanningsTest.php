@@ -252,7 +252,7 @@ it('converts non-Carbon dates to Carbon instances automatically', function () {
     // Use string dates that match the planning period (last week)
     $dates = collect([
         now()->subWeek()->startOf('week')->format('Y-m-d'),
-        now()->subWeek()->startOf('week')->addDay()->format('Y-m-d')
+        now()->subWeek()->startOf('week')->addDay()->format('Y-m-d'),
     ]);
     
     // This should work because the method converts strings to Carbon instances

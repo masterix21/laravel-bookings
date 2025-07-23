@@ -16,5 +16,6 @@ class PlanningValidationPassed
         public readonly Model $resource,
         public readonly Collection $dates,
         public readonly Collection|EloquentCollection|null $relations = null,
-    ) {}
+    ) {
+    }
 }
