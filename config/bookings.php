@@ -13,4 +13,8 @@ return [
     'generators' => [
         'booking_code' => \Masterix21\Bookings\Generators\RandomBookingCode::class,
     ],
+
+    'planning_validation' => [
+        'batch_size' => 100,
+    ],
 ];

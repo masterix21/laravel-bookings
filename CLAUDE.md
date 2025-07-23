@@ -126,3 +126,8 @@ The package works with Carbon/PHP DateTime objects. Ensure proper timezone handl
 When extending functionality, leverage the comprehensive event system rather than modifying core actions directly.
 ## Coding Standards
 When working on this Laravel/PHP project, first read the coding guidelines at @laravel-php-guidelines.md
+
+## Development Principles
+
+### Date and Time Management
+- We must use Carbon for date and datetime.
