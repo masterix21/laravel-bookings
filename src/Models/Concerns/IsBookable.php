@@ -45,22 +45,28 @@ trait IsBookable
 
     public function isBookedAt(Carbon $date): bool
     {
-        if (! $this->relationLoaded('bookedPeriods')) {
-            throw new \Exception('Relation "bookedPeriods" not loaded.');
+        if ($this->relationLoaded('bookedPeriods')) {
+            return $this->bookedPeriods
+                ->contains(fn (BookedPeriod $bookedPeriod) => $bookedPeriod->period->contains($date));
         }
 
-        return $this->bookedPeriods
-            ->contains(fn (BookedPeriod $bookedPeriod) => $bookedPeriod->period->contains($date));
+        return $this->bookedPeriods()
+            ->where('starts_at', '<=', $date)
+            ->where('ends_at', '>=', $date)
+            ->exists();
     }
 
     public function bookedPeriodsOfDate(Carbon $date): Collection
     {
-        if (! $this->relationLoaded('bookedPeriods')) {
-            throw new \Exception('Relation "bookedPeriods" not loaded.');
+        if ($this->relationLoaded('bookedPeriods')) {
+            return $this->bookedPeriods
+                ->filter(fn (BookedPeriod $bookedPeriod) => $bookedPeriod->period->contains($date));
         }
 
-        return $this->bookedPeriods
-            ->where(fn (BookedPeriod $bookedPeriod) => $bookedPeriod->period->contains($date));
+        return $this->bookedPeriods()
+            ->where('starts_at', '<=', $date)
+            ->where('ends_at', '>=', $date)
+            ->get();
     }
 
     public function bookings(): HasManyDeep

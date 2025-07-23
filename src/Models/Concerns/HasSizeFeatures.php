@@ -63,20 +63,21 @@ trait HasSizeFeatures
         $bookableResources = $relations->filter(fn ($bookable) => $bookable instanceof BookableResource);
 
         if ($bookableResources->isNotEmpty()) {
-            $bookableResourcesCheck = BookableResource::query()
+            $resourceIds = $bookableResources->pluck('id');
+            
+            $hasAvailableResources = BookableResource::query()
                 ->select(['id', 'size'])
                 ->withCount([
                     'bookedPeriods' => fn (Builder $query) => $query
                         ->whereDatesAreWithinPeriods($dates)
                         ->distinct('booking_id'),
                 ])
-                ->whereIn('id', $bookableResources->pluck('id'))
+                ->whereIn('id', $resourceIds)
                 ->when(! $ignoresUnbookable, fn ($query) => $query->where('is_bookable', true))
-                ->get();
+                ->havingRaw('size > booked_periods_count')
+                ->exists();
 
-            if (
-                $bookableResourcesCheck->filter(fn ($bookable) => (int) $bookable->size > (int) $bookable->booked_period_changes_count)->isEmpty()
-            ) {
+            if (! $hasAvailableResources) {
                 throw new RelationsHaveNoFreeSizeException;
             }
         }

@@ -22,6 +22,7 @@ it('has booked periods relationship', function () {
 
 it('returns empty period collection when no booked periods exist', function () {
     $booking = BookingFactory::new()->create();
+    $booking->load('bookedPeriods');
 
     $result = $booking->getBookedPeriods();
 
@@ -37,6 +38,8 @@ it('returns booked periods filtered by is_excluded status', function () {
 
     // Create excluded periods
     BookedPeriodFactory::new()->count(3)->excluded()->create(['booking_id' => $booking->id]);
+
+    $booking->load('bookedPeriods');
 
     // Get included periods (default behavior)
     $includedPeriods = $booking->getBookedPeriods();
@@ -57,6 +60,8 @@ it('transforms database periods to spatie period objects with day precision', fu
         ->withDates($startDate, $endDate)
         ->included()
         ->create(['booking_id' => $booking->id]);
+
+    $booking->load('bookedPeriods');
 
     $result = $booking->getBookedPeriods();
 
@@ -85,6 +90,8 @@ it('merges additional periods when provided', function () {
         Period::make('2024-02-10', '2024-02-15', Precision::DAY())
     );
 
+    $booking->load('bookedPeriods');
+
     $result = $booking->getBookedPeriods(mergePeriods: $additionalPeriods);
 
     expect($result)->toHaveCount(3);
@@ -100,6 +107,8 @@ it('does not merge empty additional periods', function () {
 
     $emptyPeriods = new PeriodCollection();
 
+    $booking->load('bookedPeriods');
+
     $result = $booking->getBookedPeriods(mergePeriods: $emptyPeriods);
 
     expect($result)->toHaveCount(1);
@@ -112,6 +121,8 @@ it('returns fallback periods when no periods exist and fallback is provided', fu
         Period::make('2024-03-01', '2024-03-05', Precision::DAY()),
         Period::make('2024-03-10', '2024-03-15', Precision::DAY())
     );
+
+    $booking->load('bookedPeriods');
 
     $result = $booking->getBookedPeriods(fallbackPeriods: $fallbackPeriods);
 
@@ -133,6 +144,8 @@ it('returns database periods when both periods exist and fallback is provided', 
     $fallbackPeriods = new PeriodCollection(
         Period::make('2024-03-01', '2024-03-05', Precision::DAY())
     );
+
+    $booking->load('bookedPeriods');
 
     $result = $booking->getBookedPeriods(fallbackPeriods: $fallbackPeriods);
 
@@ -158,6 +171,8 @@ it('combines database periods with merge periods and ignores fallback when datab
     $fallbackPeriods = new PeriodCollection(
         Period::make('2024-03-01', '2024-03-05', Precision::DAY())
     );
+
+    $booking->load('bookedPeriods');
 
     $result = $booking->getBookedPeriods(
         mergePeriods: $mergePeriods,
@@ -194,6 +209,8 @@ it('handles complex scenario with all parameters', function () {
         Period::make('2024-03-01', '2024-03-05', Precision::DAY())
     );
 
+    $booking->load('bookedPeriods');
+
     // Test with excluded periods
     $excludedResult = $booking->getBookedPeriods(
         isExcluded: true,
@@ -225,6 +242,8 @@ it('returns fallback when no database periods match filter', function () {
     $fallbackPeriods = new PeriodCollection(
         Period::make('2024-03-01', '2024-03-05', Precision::DAY())
     );
+
+    $booking->load('bookedPeriods');
 
     // Ask for included periods (should find none, return fallback)
     $result = $booking->getBookedPeriods(

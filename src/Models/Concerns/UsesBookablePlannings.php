@@ -175,21 +175,23 @@ trait UsesBookablePlannings
             return;
         }
 
+        $resourceIds = $bookableResources->pluck('id');
+
         if (app()->hasDebugModeEnabled()) {
             Log::debug('Validating planning availability', [
                 'resource_count' => $bookableResources->count(),
-                'resource_ids' => $bookableResources->pluck('id')->toArray(),
+                'resource_ids' => $resourceIds->toArray(),
                 'dates' => $dates->map->format('Y-m-d')->toArray(),
             ]);
         }
 
         $validResources = BookableResource::query()
-            ->whereIn('id', $bookableResources->pluck('id'))
+            ->whereIn('id', $resourceIds)
             ->whereHas('bookablePlannings', fn ($query) => $query->whereDatesAreValids($dates))
             ->get();
 
         if ($validResources->count() !== $bookableResources->count()) {
-            $invalidResourceIds = $bookableResources->pluck('id')->diff($validResources->pluck('id'));
+            $invalidResourceIds = $resourceIds->diff($validResources->pluck('id'));
             
             if (app()->hasDebugModeEnabled()) {
                 Log::warning('Planning validation failed', [
@@ -208,7 +210,7 @@ trait UsesBookablePlannings
         if (app()->hasDebugModeEnabled()) {
             Log::debug('Planning validation passed', [
                 'resource_count' => $bookableResources->count(),
-                'resource_ids' => $bookableResources->pluck('id')->toArray(),
+                'resource_ids' => $resourceIds->toArray(),
             ]);
         }
     }
@@ -228,8 +230,10 @@ trait UsesBookablePlannings
             return true;
         }
 
+        $resourceIds = $bookableResources->pluck('id');
+        
         return BookableResource::query()
-            ->whereIn('id', $bookableResources->pluck('id'))
+            ->whereIn('id', $resourceIds)
             ->whereHas('bookablePlannings', fn ($query) => $query->whereDatesAreValids($dates))
             ->count() === $bookableResources->count();
     }

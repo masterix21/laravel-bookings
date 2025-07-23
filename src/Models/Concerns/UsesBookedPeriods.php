@@ -15,6 +15,10 @@ trait UsesBookedPeriods
         ?PeriodCollection $mergePeriods = null,
         ?PeriodCollection $fallbackPeriods = null
     ): PeriodCollection {
+        if (! $this->relationLoaded('bookedPeriods')) {
+            throw new \Exception('Relation "bookedPeriods" not loaded.');
+        }
+
         $periods = $this->bookedPeriods
             ->where('is_excluded', $isExcluded)
             ->map(fn ($bookedPeriod) => Period::make(

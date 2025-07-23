@@ -446,3 +446,85 @@ it('handles exception and rolls back transaction when changing booking', functio
             && $event->bookableResource->id === $resource->id;
     });
 });
+
+it('triggers natural catch block for overlapping booking updates', function () {
+    // Create a bookable resource with max=1
+    $resource = $this->createsResources(
+        startsAt: now()->startOfDay(),
+        endsAt: now()->addDays(7)->endOfDay(),
+        resourcesCount: 1,
+        resourcesStates: ['max' => 1]
+    )->first();
+
+    // Create users
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+
+    // Create initial periods for first booking
+    $initialPeriods = PeriodCollection::make(
+        SpatiePeriod::make(
+            now()->addDay()->format('Y-m-d'),
+            now()->addDays(2)->format('Y-m-d')
+        )
+    );
+
+    // Create initial booking
+    $booking = (new BookResource())->run(
+        periods: $initialPeriods,
+        bookableResource: $resource,
+        booker: $user1,
+        label: 'Initial Booking'
+    );
+
+    // Create a second booking with non-overlapping period
+    $secondPeriods = PeriodCollection::make(
+        SpatiePeriod::make(
+            now()->addDays(3)->format('Y-m-d'),
+            now()->addDays(4)->format('Y-m-d')
+        )
+    );
+
+    $secondBooking = (new BookResource())->run(
+        periods: $secondPeriods,
+        bookableResource: $resource,
+        booker: $user2,
+        label: 'Second Booking'
+    );
+
+    // Clear events to track only the update attempt
+    Event::fake();
+
+    // Now try to update the first booking to overlap with the second booking
+    // This should trigger the natural catch block in the BookResource update method
+    $overlappingPeriods = PeriodCollection::make(
+        SpatiePeriod::make(
+            now()->addDays(3)->format('Y-m-d'),
+            now()->addDays(4)->format('Y-m-d')
+        )
+    );
+
+    // This test should let the natural exception handling occur without manual event dispatching
+    expect(fn () => (new BookResource())->run(
+        booking: $booking,
+        periods: $overlappingPeriods,
+        bookableResource: $resource,
+        booker: $user1,
+        label: 'Updated Booking'
+    ))->toThrow(BookingResourceOverlappingException::class);
+
+    // Refresh the booking from the database
+    $booking->refresh();
+
+    // Assert the booking was not changed (transaction was rolled back)
+    expect($booking->label)->toBe('Initial Booking')
+        ->and($booking->bookedPeriods->first()->starts_at->format('Y-m-d'))->toBe(now()->addDay()->format('Y-m-d'))
+        ->and($booking->bookedPeriods->first()->ends_at->format('Y-m-d'))->toBe(now()->addDays(2)->format('Y-m-d'));
+
+    // Assert that the natural catch block events were dispatched
+    Event::assertDispatched(BookingChanging::class);
+    Event::assertDispatched(BookingChangeFailed::class, function ($event) use ($booking, $resource) {
+        return $event->booking->id === $booking->id
+            && $event->reason === UnbookableReason::EXCEPTION
+            && $event->bookableResource->id === $resource->id;
+    });
+});
