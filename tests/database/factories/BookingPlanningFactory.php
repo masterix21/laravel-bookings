@@ -14,14 +14,11 @@ class BookingPlanningFactory extends Factory
 
     public function definition(): array
     {
-        $fromDay = $this->faker->boolean(25) ? $this->faker->dateTimeThisYear : null;
-        $fromTime = $this->faker->dateTime;
+        $startsAt = $this->faker->boolean(25) ? $this->faker->dateTimeThisYear : null;
 
         return [
-            'from_date' => optional($fromDay)->format('Y-m-d'),
-            'to_date' => ! blank($fromDay) ? Carbon::parse($fromDay)->addDays(7) : null,
-            'from_time' => Carbon::parse($fromTime),
-            'to_time' => Carbon::parse($fromTime)->addHour(),
+            'starts_at' => $startsAt,
+            'ends_at' => $startsAt ? Carbon::parse($startsAt)->addHour() : null,
         ];
     }
 }

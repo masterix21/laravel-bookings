@@ -17,20 +17,24 @@ trait UsesBookedPeriods
     ): PeriodCollection {
         $periods = $this->bookedPeriods
             ->where('is_excluded', $isExcluded)
-            ->transform(fn ($planning) => Period::make(
-                $planning->from_date,
-                $planning->to_date,
+            ->map(fn ($bookedPeriod) => Period::make(
+                $bookedPeriod->starts_at,
+                $bookedPeriod->ends_at,
                 Precision::DAY()
-            ));
+            ))
+            ->values()
+            ->toArray();
+
+        $periodCollection = new PeriodCollection(...$periods);
 
         if ($mergePeriods && ! $mergePeriods->isEmpty()) {
-            $periods = $periods->merge(...$mergePeriods);
+            $periodCollection = $periodCollection->add(...$mergePeriods);
         }
 
-        if ($periods->isEmpty() && $fallbackPeriods && ! $fallbackPeriods->isEmpty()) {
+        if ($periodCollection->isEmpty() && $fallbackPeriods && ! $fallbackPeriods->isEmpty()) {
             return $fallbackPeriods;
         }
 
-        return PeriodCollection::make(...$periods->toArray());
+        return $periodCollection;
     }
 }

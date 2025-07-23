@@ -28,8 +28,8 @@ beforeEach(function () {
 it('can book a resource', function () {
     // Create a bookable resource
     $resource = $this->createsResources(
-        fromDate: now()->startOfDay(),
-        toDate: now()->addDays(7)->endOfDay(),
+        startsAt: now()->startOfDay(),
+        endsAt: now()->addDays(7)->endOfDay(),
         resourcesCount: 1
     )->first();
 
@@ -82,8 +82,8 @@ it('can book a resource', function () {
 it('can update an existing booking', function () {
     // Create a bookable resource
     $resource = $this->createsResources(
-        fromDate: now()->startOfDay(),
-        toDate: now()->addDays(7)->endOfDay(),
+        startsAt: now()->startOfDay(),
+        endsAt: now()->addDays(7)->endOfDay(),
         resourcesCount: 1
     )->first();
 
@@ -160,8 +160,8 @@ it('can update an existing booking', function () {
 it('fails when booking overlapping periods', function () {
     // Create a bookable resource with max=1
     $resource = $this->createsResources(
-        fromDate: now()->startOfDay(),
-        toDate: now()->addDays(7)->endOfDay(),
+        startsAt: now()->startOfDay(),
+        endsAt: now()->addDays(7)->endOfDay(),
         resourcesCount: 1,
         resourcesStates: ['max' => 1]
     )->first();
@@ -206,8 +206,8 @@ it('fails when booking overlapping periods', function () {
 it('preserves the booking code when updating', function () {
     // Create a bookable resource
     $resource = $this->createsResources(
-        fromDate: now()->startOfDay(),
-        toDate: now()->addDays(7)->endOfDay(),
+        startsAt: now()->startOfDay(),
+        endsAt: now()->addDays(7)->endOfDay(),
         resourcesCount: 1
     )->first();
 
@@ -256,8 +256,8 @@ it('preserves the booking code when updating', function () {
 it('can use code prefix and suffix', function () {
     // Create a bookable resource
     $resource = $this->createsResources(
-        fromDate: now()->startOfDay(),
-        toDate: now()->addDays(7)->endOfDay(),
+        startsAt: now()->startOfDay(),
+        endsAt: now()->addDays(7)->endOfDay(),
         resourcesCount: 1
     )->first();
 
@@ -289,8 +289,8 @@ it('can use code prefix and suffix', function () {
 it('handles transaction rollback on failure', function () {
     // Create a bookable resource
     $resource = $this->createsResources(
-        fromDate: now()->startOfDay(),
-        toDate: now()->addDays(7)->endOfDay(),
+        startsAt: now()->startOfDay(),
+        endsAt: now()->addDays(7)->endOfDay(),
         resourcesCount: 1,
         resourcesStates: ['max' => 1]
     )->first();
@@ -348,8 +348,8 @@ it('handles transaction rollback on failure', function () {
 it('handles exception and rolls back transaction when changing booking', function () {
     // Create a bookable resource with max=1
     $resource = $this->createsResources(
-        fromDate: now()->startOfDay(),
-        toDate: now()->addDays(7)->endOfDay(),
+        startsAt: now()->startOfDay(),
+        endsAt: now()->addDays(7)->endOfDay(),
         resourcesCount: 1,
         resourcesStates: ['max' => 1]
     )->first();

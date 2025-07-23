@@ -23,10 +23,8 @@ class BookablePlanning extends Model
         'friday' => 'bool',
         'saturday' => 'bool',
         'sunday' => 'bool',
-        'from_date' => 'date:Y-m-d',
-        'to_date' => 'date:Y-m-d',
-        'from_time' => 'datetime:H:i',
-        'to_time' => 'datetime:H:i',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
     ];
 
     public function bookableResource(): BelongsTo
@@ -63,13 +61,8 @@ class BookablePlanning extends Model
                     $query
                         ->where(function ($query) use ($date) {
                             $query
-                                ->where(fn ($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
-                                ->where(fn ($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
-                        })
-                        ->where(function ($query) use ($date) {
-                            $query
-                                ->where(fn ($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
-                                ->where(fn ($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
+                                ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', $date))
+                                ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', $date));
                         });
                 });
         });
@@ -84,13 +77,8 @@ class BookablePlanning extends Model
                     $builder
                         ->orWhere(function ($query) use ($date) {
                             $query
-                                ->where(fn ($q) => $q->whereNull('from_date')->orWhereDate('from_date', '<=', $date))
-                                ->where(fn ($q) => $q->whereNull('to_date')->orWhereDate('to_date', '>=', $date));
-                        })
-                        ->orWhere(function ($query) use ($date) {
-                            $query
-                                ->where(fn ($q) => $q->whereNull('from_time')->orWhereTime('from_time', '<=', $date))
-                                ->where(fn ($q) => $q->whereNull('to_time')->orWhereTime('to_time', '>=', $date));
+                                ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', $date))
+                                ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', $date));
                         });
                 });
         });
