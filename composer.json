@@ -56,7 +56,8 @@
         "analyse": "vendor/bin/phpstan analyse",
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
-        "format": "vendor/bin/pint"
+        "format": "vendor/bin/pint",
+        "update-guidelines": "curl -o laravel-php-guidelines.md https://spatie.be/laravel-php-ai-guidelines.md"
     },
     "config": {
         "sort-packages": true,

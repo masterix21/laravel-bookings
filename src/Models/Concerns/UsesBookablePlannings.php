@@ -61,16 +61,8 @@ trait UsesBookablePlannings
             })
             ->where(
                 fn (Builder $query) => $query
-                    ->where(
-                        fn (Builder $query) => $query
-                            ->whereDoesntHave('bookablePlannings')
-                            ->whereDoesntHave('bookableArea.bookablePlannings')
-                    )
-                    ->orWhere(
-                        fn (Builder $query) => $query
-                            ->whereHas('bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
-                            ->orWhereHas('bookableArea.bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
-                    )
+                    ->whereDoesntHave('bookablePlannings')
+                    ->orWhereHas('bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates))
             )
             ->count() > 0;
 

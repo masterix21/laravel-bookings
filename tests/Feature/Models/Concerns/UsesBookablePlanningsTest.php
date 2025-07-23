@@ -59,14 +59,11 @@ it('handles empty relations in ensureRelationsHaveValidPlannings', function () {
     expect(true)->toBeTrue();
 });
 
-// The following tests directly test the behavior of lines 56-78 in UsesBookablePlannings.php
-
-// Test that an exception is thrown when relations have no valid plannings
-it('throws an exception when relations have no valid plannings', function () {
+it('succeeds when relations have no plannings due to whereDoesntHave logic', function () {
     // Create a resource without plannings
     $resourceWithoutPlannings = BookableResource::factory()->create();
 
-    // Create dates for a future period (outside of planning)
+    // Create dates for future period 
     $dates = Period::toDates(
         SpatiePeriod::make(
             now()->addMonth()->startOf('week')->format('Y-m-d'),
@@ -74,32 +71,18 @@ it('throws an exception when relations have no valid plannings', function () {
         )
     );
 
-    // Create a custom implementation of ensureRelationsHaveValidPlannings that simulates
-    // the behavior of lines 56-78 in UsesBookablePlannings.php when no valid plannings exist
-    $testMethod = function ($dates, $relations) {
-        if (($relations ?? collect())->isEmpty()) {
-            return;
-        }
+    // This tests lines 56-67 in UsesBookablePlannings.php
+    // Resources without plannings will match the whereDoesntHave('bookablePlannings') condition
+    $resourceWithoutPlannings->ensureRelationsHaveValidPlannings(
+        dates: $dates,
+        relations: collect([$resourceWithoutPlannings])
+    );
 
-        // Simulate the query in lines 56-78 returning no results (count = 0)
-        // This will cause the method to throw a RelationsOutOfPlanningsException
-        $result = 0;
-
-        if (! $result) {
-            throw new RelationsOutOfPlanningsException;
-        }
-    };
-
-    // This should throw an exception because the resource has no valid plannings
-    expect(fn () => $testMethod(
-        $dates,
-        collect([$resourceWithoutPlannings])
-    ))->toThrow(RelationsOutOfPlanningsException::class);
+    expect(true)->toBeTrue();
 });
 
-// Test that no exception is thrown when relations have valid plannings
-it('validates relations with valid plannings successfully', function () {
-    // Create a resource with plannings
+it('succeeds when relations have valid plannings through direct bookablePlannings', function () {
+    // Create a resource with valid plannings
     $resourceWithPlannings = BookableResource::factory()
         ->has(
             BookablePlanning::factory()->state([
@@ -109,7 +92,7 @@ it('validates relations with valid plannings successfully', function () {
         )
         ->create();
 
-    // Create dates for the planning period
+    // Create dates that match the planning period
     $dates = Period::toDates(
         SpatiePeriod::make(
             now()->subWeek()->startOf('week')->format('Y-m-d'),
@@ -117,24 +100,102 @@ it('validates relations with valid plannings successfully', function () {
         )
     );
 
-    // Create a custom implementation of ensureRelationsHaveValidPlannings that simulates
-    // the behavior of lines 56-78 in UsesBookablePlannings.php when valid plannings exist
-    $testMethod = function ($dates, $relations) {
-        if (($relations ?? collect())->isEmpty()) {
-            return;
-        }
-
-        // Simulate the query in lines 56-78 returning results (count > 0)
-        // This will allow the method to complete without throwing an exception
-        $result = 1;
-
-        if (! $result) {
-            throw new RelationsOutOfPlanningsException;
-        }
-    };
-
-    // This should not throw an exception because the resource has valid plannings
-    $testMethod($dates, collect([$resourceWithPlannings]));
+    // This should not throw an exception - tests the success path in lines 56-78
+    $resourceWithPlannings->ensureRelationsHaveValidPlannings(
+        dates: $dates,
+        relations: collect([$resourceWithPlannings])
+    );
 
     expect(true)->toBeTrue();
+});
+
+it('handles mixed relations with some having valid plannings', function () {
+    // Create one resource with plannings
+    $resourceWithPlannings = BookableResource::factory()
+        ->has(
+            BookablePlanning::factory()->state([
+                'starts_at' => now()->subWeek()->startOf('week'),
+                'ends_at' => now()->subWeek()->endOf('week'),
+            ])
+        )
+        ->create();
+
+    // Create one resource without plannings
+    $resourceWithoutPlannings = BookableResource::factory()->create();
+
+    // Create dates that match the planning period
+    $dates = Period::toDates(
+        SpatiePeriod::make(
+            now()->subWeek()->startOf('week')->format('Y-m-d'),
+            now()->subWeek()->endOf('week')->format('Y-m-d')
+        )
+    );
+
+    // This should succeed because at least one resource has valid plannings
+    $resourceWithPlannings->ensureRelationsHaveValidPlannings(
+        dates: $dates,
+        relations: collect([$resourceWithPlannings, $resourceWithoutPlannings])
+    );
+
+    expect(true)->toBeTrue();
+});
+
+it('filters non-BookableResource objects from relations', function () {
+    // Create a mock object that isn't a BookableResource
+    $nonBookableResource = new stdClass();
+    $nonBookableResource->id = 999;
+
+    // Create dates
+    $dates = collect([now()]);
+
+    // Create a resource to call the method on
+    $resource = BookableResource::factory()->create();
+
+    // This should not throw an exception because non-BookableResource objects are filtered out
+    // This tests the filter logic in line 58: $relations->filter(fn ($bookable) => $bookable instanceof BookableResource)
+    $resource->ensureRelationsHaveValidPlannings(
+        dates: $dates,
+        relations: collect([$nonBookableResource])
+    );
+
+    expect(true)->toBeTrue();
+});
+
+it('handles resources that dont have plannings but match through whereDoesntHave', function () {
+    // Create a resource without any plannings
+    $resourceWithoutPlannings = BookableResource::factory()->create();
+
+    // Create dates
+    $dates = collect([now()]);
+
+    // This tests the whereDoesntHave logic in lines 64-65
+    // A resource without plannings should still pass validation in some scenarios
+    $resourceWithoutPlannings->ensureRelationsHaveValidPlannings(
+        dates: $dates,
+        relations: collect([$resourceWithoutPlannings])
+    );
+
+    expect(true)->toBeTrue();
+});
+
+it('throws exception when no BookableResource instances found after filtering', function () {
+    // Create a mock object that isn't a BookableResource but will cause the query to return 0 results
+    $resource = BookableResource::factory()->create();
+    
+    // Delete the resource after creating it so the ID won't be found in the database
+    $deletedResourceId = $resource->id;
+    $resource->delete();
+    
+    // Create a new resource with the deleted ID to simulate the query finding no results
+    $mockResource = new BookableResource();
+    $mockResource->id = $deletedResourceId;
+    
+    // Create dates
+    $dates = collect([now()]);
+
+    // This should throw an exception because the query will find no matching resources
+    expect(fn () => $resource->ensureRelationsHaveValidPlannings(
+        dates: $dates,
+        relations: collect([$mockResource])
+    ))->toThrow(RelationsOutOfPlanningsException::class);
 });

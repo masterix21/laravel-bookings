@@ -12,6 +12,7 @@ This is `masterix21/laravel-bookings`, a Laravel package that adds booking funct
 - `composer test` - Run all tests using Pest
 - `vendor/bin/pest` - Direct Pest execution
 - `composer test-coverage` - Run tests with coverage report
+- `pest-coverage`: An alias for "herd coverage ./vendor/bin/pest --coverage"
 
 ### Code Quality
 - `composer analyse` - Run PHPStan static analysis
