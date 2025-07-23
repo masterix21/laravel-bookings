@@ -45,7 +45,7 @@ trait UsesBookablePlannings
         try {
             if (! $this->hasValidPlanningsForDates($dates)) {
                 throw new OutOfPlanningsException(
-                    "Resource does not have valid plannings for dates: " . 
+                    "Resource does not have valid plannings for dates: " .
                     $dates->map->format('Y-m-d')->implode(', ')
                 );
             }
@@ -55,6 +55,7 @@ trait UsesBookablePlannings
             event(new PlanningValidationPassed($this, $dates, $relations));
         } catch (Exception $e) {
             event(new PlanningValidationFailed($this, $dates, $relations, $e));
+
             throw $e;
         }
     }
@@ -100,14 +101,15 @@ trait UsesBookablePlannings
 
         // Convert all dates to Carbon instances if they aren't already
         $dates->transform(function ($date) {
-            if (!$date instanceof Carbon) {
+            if (! $date instanceof Carbon) {
                 return Carbon::parse($date);
             }
+
             return $date;
         });
 
         if ($relations !== null && $relations->isNotEmpty()) {
-            $nonModelItems = $relations->filter(fn($item) => !$item instanceof Model);
+            $nonModelItems = $relations->filter(fn ($item) => ! $item instanceof Model);
             if ($nonModelItems->isNotEmpty()) {
                 throw new InvalidArgumentException('All relation items must be Model instances');
             }
@@ -202,7 +204,7 @@ trait UsesBookablePlannings
             
             throw new RelationsOutOfPlanningsException(
                 "Resources with IDs [" . $invalidResourceIds->implode(', ') . "] " .
-                "do not have valid plannings for the requested dates: " . 
+                "do not have valid plannings for the requested dates: " .
                 $dates->map->format('Y-m-d')->implode(', ')
             );
         }
