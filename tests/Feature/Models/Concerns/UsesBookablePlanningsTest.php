@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Collection;
 use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
 use Masterix21\Bookings\Exceptions\RelationsOutOfPlanningsException;
 use Masterix21\Bookings\Models\BookablePlanning;
@@ -63,7 +62,7 @@ it('throws exception when relations have no plannings', function () {
     // Create a resource without plannings
     $resourceWithoutPlannings = BookableResource::factory()->create();
 
-    // Create dates for future period 
+    // Create dates for future period
     $dates = Period::toDates(
         SpatiePeriod::make(
             now()->addMonth()->startOf('week')->format('Y-m-d'),

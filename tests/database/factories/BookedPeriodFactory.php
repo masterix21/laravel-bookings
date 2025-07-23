@@ -3,7 +3,6 @@
 namespace Masterix21\Bookings\Tests\database\factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Masterix21\Bookings\Tests\database\factories\BookingFactory;
 
 class BookedPeriodFactory extends Factory
 {
