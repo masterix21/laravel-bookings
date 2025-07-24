@@ -131,3 +131,6 @@ When working on this Laravel/PHP project, first read the coding guidelines at @l
 
 ### Date and Time Management
 - We must use Carbon for date and datetime.
+
+## Communication Guidelines
+- Also if we talk in other languages, you must use english only for code and documentations.
