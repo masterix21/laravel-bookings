@@ -104,7 +104,7 @@ it('persists meta data correctly', function () {
     $metaData = [
         'preferences' => ['theme' => 'dark'],
         'notes' => 'Special requirements',
-        'tags' => ['vip', 'priority']
+        'tags' => ['vip', 'priority'],
     ];
     
     $booking = Booking::create([

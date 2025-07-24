@@ -3,8 +3,6 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedPeriod;
-use Masterix21\Bookings\Tests\database\factories\BookableResourceFactory;
-use Masterix21\Bookings\Tests\database\factories\BookedPeriodFactory;
 use Masterix21\Bookings\Tests\database\factories\BookingFactory;
 use Masterix21\Bookings\Tests\TestClasses\Product;
 
