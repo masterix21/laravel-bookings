@@ -35,7 +35,7 @@ class CheckBookingOverlaps
         $periodCounts = resolve(config('bookings.models.booked_period'))
             ->selectRaw(collect($sumConditions)->join(', '), $bindings)
             ->where('bookable_resource_id', $bookableResource->id)
-            ->when($ignoreBooking, fn($q) => $q->whereNot('booking_id', $ignoreBooking->getKey()))
+            ->when($ignoreBooking, fn ($q) => $q->whereNot('booking_id', $ignoreBooking->getKey()))
             ->lockForUpdate()
             ->first();
 
