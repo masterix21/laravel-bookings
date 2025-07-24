@@ -211,6 +211,17 @@ foreach ($resources as $resource) {
 }
 ```
 
+#### Performance Notes
+
+The `CheckBookingOverlaps` action is optimized for multiple periods:
+
+- **Single Query**: Uses one database query regardless of the number of periods
+- **Efficient Counting**: Leverages database aggregation with `SUM` and `CASE` statements
+- **Scalable**: Performance remains consistent whether checking 1 period or 100 periods
+- **Resource-Aware**: Properly considers the `max` parameter of each BookableResource
+
+This makes it ideal for complex booking scenarios like recurring appointments or multi-day reservations.
+
 ## Custom Actions
 
 ### Creating Custom Actions
