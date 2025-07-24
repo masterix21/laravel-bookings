@@ -258,18 +258,44 @@ $allBookings = $room->bookings;
 ### Query Available Resources
 
 ```php
-use Masterix21\Bookings\Actions\CheckBookingOverlaps;
+use Masterix21\Bookings\Models\BookableResource;
+use Spatie\Period\Period;
 
-$availableRooms = Room::whereHas('bookableResource', function ($query) {
-    $query->where('is_bookable', true);
-})->get()->filter(function ($room) use ($periods) {
-    return (new CheckBookingOverlaps())->run(
-        periods: $periods,
-        bookableResource: $room->bookableResource,
-        emitEvent: false,
-        throw: false
-    );
-});
+// Define the period you want to check availability for
+$period = Period::make(now(), now()->addMonths(3));
+
+// Get all available bookable resources for the specified period
+$availableResources = BookableResource::availableForPeriod($period)->get();
+
+// Or get available rooms specifically
+$availableRooms = Room::whereHas('bookableResource', function ($query) use ($period) {
+    $query->availableForPeriod($period);
+})->get();
+```
+
+### Query Resources with Existing Bookings
+
+```php
+use Masterix21\Bookings\Models\BookableResource;
+use Spatie\Period\Period;
+
+// Get resources with their bookings for the specified period
+$period = Period::make(now(), now()->addMonths(3));
+$resourcesWithBookings = BookableResource::withBookingsInPeriod($period)->get();
+
+// Access the loaded bookings
+foreach ($resourcesWithBookings as $resource) {
+    foreach ($resource->bookedPeriods as $bookedPeriod) {
+        echo "Booking: " . $bookedPeriod->booking->code;
+        echo " from " . $bookedPeriod->starts_at;
+        echo " to " . $bookedPeriod->ends_at;
+    }
+}
+
+// Combine both scopes for planning views
+$planningData = BookableResource::availableForPeriod($period)
+    ->withBookingsInPeriod($period)
+    ->get();
 ```
 
 ### Handle Booking Conflicts

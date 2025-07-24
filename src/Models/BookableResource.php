@@ -12,6 +12,7 @@ use Masterix21\Bookings\Models\Concerns\ImplementsBook;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsVisibleScopes;
 use Masterix21\Bookings\Models\Concerns\UsesBookablePlannings;
+use Spatie\Period\Period;
 
 class BookableResource extends Model
 {
@@ -58,5 +59,24 @@ class BookableResource extends Model
         }
 
         return 0;
+    }
+
+    public function scopeAvailableForPeriod(Builder $query, Period $period): Builder
+    {
+        return $query->where('is_bookable', true)
+            ->withCount(['bookedPeriods' => function (Builder $query) use ($period) {
+                $query->where('starts_at', '<', $period->end())
+                      ->where('ends_at', '>', $period->start());
+            }])
+            ->havingRaw('booked_periods_count < max');
+    }
+
+    public function scopeWithBookingsInPeriod(Builder $query, Period $period): Builder
+    {
+        return $query->with(['bookedPeriods' => function (Builder $query) use ($period) {
+            $query->where('starts_at', '<', $period->end())
+                  ->where('ends_at', '>', $period->start())
+                  ->with('booking');
+        }]);
     }
 }
