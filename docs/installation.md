@@ -63,10 +63,8 @@ Add these to your `.env` file for advanced configuration:
 ```env
 # Booking configuration
 BOOKINGS_DEFAULT_BATCH_SIZE=100
-BOOKINGS_CACHE_DRIVER=redis
-BOOKINGS_QUEUE_CONNECTION=redis
 
-# Performance tuning
+# Performance tuning (use Laravel's standard configuration)
 DB_CONNECTION=mysql
 QUEUE_CONNECTION=redis
 CACHE_DRIVER=redis
