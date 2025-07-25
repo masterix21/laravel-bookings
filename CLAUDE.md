@@ -134,3 +134,6 @@ When working on this Laravel/PHP project, first read the coding guidelines at @l
 
 ## Communication Guidelines
 - Also if we talk in other languages, you must use english only for code and documentations.
+
+## Code Writing Guidelines
+- When adding comments in the code, these must be written in English.

@@ -19,39 +19,29 @@ class CheckBookingOverlaps
         bool $throw = false,
         ?Booking $ignoreBooking = null,
     ): bool {
-        $overlaps = collect();
-
-        // Costruisco le condizioni SUM
-        $sumConditions = [];
-        $bindings = [];
-
-        foreach ($periods as $index => $period) {
-            $sumConditions[] = "SUM(CASE WHEN starts_at < ? AND ends_at > ? THEN 1 ELSE 0 END) as period_{$index}_count";
-            $bindings[] = $period->end();
-            $bindings[] = $period->start();
+        if (blank($bookableResource->max) || $periods->isEmpty()) {
+            return true;
         }
 
-        // Query unica sui BookedPeriod
-        $periodCounts = resolve(config('bookings.models.booked_period'))
-            ->selectRaw(collect($sumConditions)->join(', '), $bindings)
-            ->where('bookable_resource_id', $bookableResource->id)
-            ->when($ignoreBooking, fn ($q) => $q->whereNot('booking_id', $ignoreBooking->getKey()))
-            ->lockForUpdate()
-            ->first();
+        $builder = resolve(config('bookings.models.booked_period'))::query()
+            ->where('bookable_resource_id', $bookableResource->getKey());
 
-        // Verifico ogni periodo
-        foreach ($periods as $index => $period) {
-            $countKey = "period_{$index}_count";
-            if ($periodCounts->{$countKey} >= $bookableResource->max) {
-                $overlaps->add([
-                    'starts_at' => $period->start(),
-                    'ends_at' => $period->end(),
-                    'overlaps_count' => $periodCounts->{$countKey},
-                ]);
+        $builder->where(function($query) use ($periods) {
+            foreach ($periods as $period) {
+                $query->orWhere(fn($q) => $q
+                    ->where('starts_at', '<=', $period->end())
+                    ->where('ends_at', '>=', $period->start())
+                );
             }
+        });
+
+        if ($ignoreBooking) {
+            $builder->where('booking_id', '!=', $ignoreBooking->getKey());
         }
 
-        if ($overlaps->isEmpty()) {
+        $foundOverlaps = $builder->count();
+
+        if ($bookableResource->max > $foundOverlaps) {
             return true;
         }
 

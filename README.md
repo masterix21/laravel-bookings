@@ -16,7 +16,7 @@ A comprehensive Laravel package that adds powerful booking functionality to any 
 - 🔍 **Overlap detection** and conflict prevention
 - 🎯 **Event-driven architecture** for audit trails and integrations
 - 🗂️ **Polymorphic relationships** for flexible booker and resource types
-- 🧪 **100% test coverage** with comprehensive test suite
+- 🧪 **Well tested** with comprehensive test suite
 - ⚡ **Performance optimized** with efficient database queries
 - 🛡️ **Transaction safety** with automatic rollback on failures
 
