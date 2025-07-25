@@ -26,9 +26,10 @@ class CheckBookingOverlaps
         $builder = resolve(config('bookings.models.booked_period'))::query()
             ->where('bookable_resource_id', $bookableResource->getKey());
 
-        $builder->where(function($query) use ($periods) {
+        $builder->where(function ($query) use ($periods) {
             foreach ($periods as $period) {
-                $query->orWhere(fn($q) => $q
+                $query->orWhere(
+                    fn ($q) => $q
                     ->where('starts_at', '<=', $period->end())
                     ->where('ends_at', '>=', $period->start())
                 );

@@ -187,7 +187,7 @@ it('throws exception when throw is true and overlaps exist', function () {
         Period::make(Carbon::now()->addHour(), Carbon::now()->addHours(3), Precision::HOUR())
     );
 
-    expect(fn() => (new CheckBookingOverlaps())->run(
+    expect(fn () => (new CheckBookingOverlaps())->run(
         periods: $periods,
         bookableResource: $bookableResource,
         emitEvent: false,
