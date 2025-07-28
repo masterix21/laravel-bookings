@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0]
+
 ### Added
 - Comprehensive test suite with Pest framework
 - Event-driven architecture for booking lifecycle
@@ -15,17 +17,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced planning constraints and validation
 - Resource capacity management
 - Overlap detection and conflict prevention
+- Size-based booking system with capacity management
+- Custom exception handling for booking failures
+- UnbookableReason enum for standardized rejection reasons
+- Planning validation events (PlanningValidationStarted, PlanningValidationPassed, PlanningValidationFailed)
+- Batch processing for planning validation with configurable batch sizes
+- Scoping system for bookable and visible resources
+- Period-based date validation and overlap detection
+- Relational booking constraints with free size validation
 
 ### Changed
 - Migrated from PHPUnit to Pest for testing
 - Enhanced code styling with PHP CS Fixer
 - Improved database schema design
+- Restructured model concerns for better organization
+- Enhanced booking validation with comprehensive exception handling
+- Improved performance with optimized database queries
 
 ### Fixed
 - Various styling and code quality improvements
 - Database relationship optimizations
+- Exception handling for edge cases in booking validation
+- Performance issues with large datasets in planning validation
+- Memory optimization for batch processing operations
 
-## [0.0.2] - 2024-01-XX
+## [0.0.2]
 
 ### Added
 - Booking code generation system
@@ -41,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code styling improvements
 - Database column fixes
 
-## [0.0.1] - 2024-01-XX
+## [0.0.1]
 
 ### Added
 - Initial package structure
@@ -70,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test Coverage**: Extensive test suite with factories
 - **Configuration**: Highly configurable models and generators
 
-[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/0.0.2...HEAD
+[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/masterix21/laravel-bookings/compare/0.0.2...1.0.0
 [0.0.2]: https://github.com/masterix21/laravel-bookings/compare/0.0.1...0.0.2
 [0.0.1]: https://github.com/masterix21/laravel-bookings/releases/tag/0.0.1
