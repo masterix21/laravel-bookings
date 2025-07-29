@@ -2,7 +2,6 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/masterix21/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/masterix21/laravel-bookings/run-tests.yml)](https://img.shields.io/github/actions/workflow/status/masterix21/laravel-bookings/run-tests.yml)
-[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/masterix21/laravel-bookings/Check%20&%20fix%20styling?label=code%20style)](https://github.com/masterix21/laravel-bookings/actions?query=workflow%3A"Check+%26+fix+styling"+branch%3Amaster)
 [![Total Downloads](https://img.shields.io/packagist/dt/masterix21/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
 
 A comprehensive Laravel package that adds powerful booking functionality to any Eloquent model. Transform your models into bookable resources with advanced features like time-based reservations, capacity management, planning constraints, overlap detection, and event-driven architecture.
