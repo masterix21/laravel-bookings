@@ -1,7 +1,7 @@
 # Laravel Bookings
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/masterix21/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
-[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/masterix21/laravel-bookings/run-tests?label=tests)](https://github.com/masterix21/laravel-bookings/actions?query=workflow%3ATests+branch%3Amaster)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/masterix21/laravel-bookings/run-tests.yml)](https://img.shields.io/github/actions/workflow/status/masterix21/laravel-bookings/run-tests.yml)
 [![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/masterix21/laravel-bookings/Check%20&%20fix%20styling?label=code%20style)](https://github.com/masterix21/laravel-bookings/actions?query=workflow%3A"Check+%26+fix+styling"+branch%3Amaster)
 [![Total Downloads](https://img.shields.io/packagist/dt/masterix21/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
 
