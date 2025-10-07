@@ -349,7 +349,7 @@ it('uses eager loaded bookedPeriods for isBookedAt when relation is loaded', fun
 
 it('uses eager loaded bookedPeriods for bookedPeriodsOfDate when relation is loaded', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -360,21 +360,21 @@ it('uses eager loaded bookedPeriods for bookedPeriodsOfDate when relation is loa
     $booking1 = Booking::factory()->create();
     $booking2 = Booking::factory()->create();
     $testDate = Carbon::now();
-    
+
     $bookedPeriod1 = BookedPeriod::factory()->create([
         'bookable_resource_id' => $bookableResource->id,
         'booking_id' => $booking1->id,
         'starts_at' => $testDate->copy()->subHour(),
         'ends_at' => $testDate->copy()->addHour(),
     ]);
-    
+
     $bookedPeriod2 = BookedPeriod::factory()->create([
         'bookable_resource_id' => $bookableResource->id,
         'booking_id' => $booking2->id,
         'starts_at' => $testDate->copy()->subMinutes(30),
         'ends_at' => $testDate->copy()->addMinutes(30),
     ]);
-    
+
     // Create a period that doesn't contain the test date
     BookedPeriod::factory()->create([
         'bookable_resource_id' => $bookableResource->id,
@@ -385,19 +385,111 @@ it('uses eager loaded bookedPeriods for bookedPeriodsOfDate when relation is loa
 
     // Pre-load the bookedPeriods relation
     $product->load('bookedPeriods');
-    
+
     // Verify relation is loaded
     expect($product->relationLoaded('bookedPeriods'))->toBeTrue();
-    
+
     // This should use the eager loaded data (lines 62-63)
     $periodsOfDate = $product->bookedPeriodsOfDate($testDate);
-    
+
     expect($periodsOfDate)->toBeInstanceOf(\Illuminate\Support\Collection::class)
         ->and($periodsOfDate)->toHaveCount(2)
         ->and($periodsOfDate->pluck('id')->toArray())->toContain($bookedPeriod1->id, $bookedPeriod2->id);
-    
+
     // Test with a date that has no booked periods
     $emptyDate = $testDate->copy()->addDays(2);
     $emptyPeriods = $product->bookedPeriodsOfDate($emptyDate);
     expect($emptyPeriods)->toHaveCount(0);
+});
+
+it('calls syncBookableResource when model is saved', function () {
+    $product = Product::factory()->create();
+
+    $product->bookableResources()->create([
+        'code' => 'RES-001',
+        'is_visible' => true,
+        'is_bookable' => true,
+    ]);
+
+    $product->syncCallCount = 0;
+    $product->name = 'Updated';
+    $product->save();
+
+    expect($product->syncCallCount)->toBe(1);
+});
+
+it('calls syncBookableResource for each bookable resource when model is saved', function () {
+    $product = Product::factory()->create();
+
+    $product->bookableResources()->createMany([
+        ['code' => 'RES-001', 'is_visible' => true, 'is_bookable' => true],
+        ['code' => 'RES-002', 'is_visible' => true, 'is_bookable' => false],
+        ['code' => 'RES-003', 'is_visible' => false, 'is_bookable' => true],
+    ]);
+
+    $product->syncCallCount = 0;
+    $product->name = 'Updated Product';
+    $product->save();
+
+    expect($product->syncCallCount)->toBe(3);
+});
+
+it('passes correct BookableResource instance to syncBookableResource', function () {
+    $product = Product::factory()->create();
+
+    $resource1 = $product->bookableResources()->create([
+        'code' => 'RES-001',
+        'is_visible' => true,
+        'is_bookable' => true,
+    ]);
+
+    $resource2 = $product->bookableResources()->create([
+        'code' => 'RES-002',
+        'is_visible' => true,
+        'is_bookable' => false,
+    ]);
+
+    expect($resource1->id)->toBeGreaterThan(0)
+        ->and($resource2->id)->toBeGreaterThan(0)
+        ->and($resource1->id)->not->toBe($resource2->id);
+});
+
+it('avoids N+1 queries by checking if bookableResources relation is loaded', function () {
+    $product = Product::factory()->create();
+
+    $product->bookableResources()->createMany([
+        ['code' => 'RES-001', 'is_visible' => true, 'is_bookable' => true],
+        ['code' => 'RES-002', 'is_visible' => true, 'is_bookable' => false],
+    ]);
+
+    $product = Product::find($product->id);
+    $product->load('bookableResources');
+
+    expect($product->relationLoaded('bookableResources'))->toBeTrue();
+
+    $product->syncCallCount = 0;
+    $product->name = 'Updated';
+    $product->save();
+
+    expect($product->syncCallCount)->toBe(2);
+});
+
+it('loads bookableResources relation if not already loaded before syncing', function () {
+    $product = Product::factory()->create();
+
+    $product->bookableResources()->createMany([
+        ['code' => 'RES-001', 'is_visible' => true, 'is_bookable' => true],
+        ['code' => 'RES-002', 'is_visible' => true, 'is_bookable' => false],
+    ]);
+
+    $product = Product::find($product->id);
+
+    expect($product->relationLoaded('bookableResources'))->toBeFalse();
+
+    $product->syncCallCount = 0;
+    $product->name = 'Updated';
+    $product->save();
+
+    expect($product->syncCallCount)->toBe(2)
+        ->and($product->relationLoaded('bookableResources'))->toBeTrue();
 });

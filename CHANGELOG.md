@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Custom Resource Synchronization**: `syncBookableResource()` method for automatic resource updates on model save
+  - Automatically syncs data from bookable models to their BookableResource
+  - Handles both single (`bookableResource`) and multiple resources (`bookableResources`)
+  - N+1 query optimized with automatic relation loading
+  - Called via model event hooks in `IsBookable` trait
+- **Planning Source Pattern**: Link business models directly to planning with polymorphic relations
+  - New `BookablePlanningSource` interface for models that generate planning
+  - New `IsBookablePlanningSource` trait with automatic sync functionality
+  - `syncBookablePlanning()` method called automatically on model save
+  - Bidirectional navigation: `source->planning` and `planning->source`
+  - Automatic planning deletion when source model is deleted
+- **Polymorphic Planning Relations**: `BookablePlanning` now supports `source_type` and `source_id`
+  - Allows rates, special offers, and other models to directly control planning
+  - Multiple sources can create planning for the same resource
+  - Optional migration for existing installations: `update_bookable_plannings_add_source_columns.php.stub`
+- **Comprehensive Documentation**:
+  - New `docs/synchronization.md` with detailed guides and examples
+  - Updated `CLAUDE.md` with architecture details
+  - Updated `README.md` with quick start examples
+- **Test Coverage**:
+  - Complete test suite for `IsBookable` sync functionality (23 tests, 73 assertions)
+  - Complete test suite for `IsBookablePlanningSource` (6 tests, 15 assertions)
+  - Test models: `Rate` for planning source testing
+  - Factories and migrations for all test scenarios
+
+### Changed
+- `Bookable` interface now requires `syncBookableResource(BookableResource $resource): void` method
+- `IsBookable` trait now automatically calls `syncBookableResource()` on model save
+- `BookablePlanning` model now includes `source(): MorphTo` relation
+- Test migrations now properly sorted alphabetically to ensure correct execution order
+- `TestCase` improved to handle dynamic migration loading with proper ordering
+
+### Migration Notes
+- **Breaking Change**: Models implementing `Bookable` must now implement `syncBookableResource()` method
+  - Add empty implementation if no sync needed: `public function syncBookableResource(BookableResource $resource): void {}`
+- **Optional Feature**: Planning source columns are optional for existing installations
+  - Run `update_bookable_plannings_add_source_columns.php` migration when ready to use the feature
+  - No action needed if not using `BookablePlanningSource`
+
 ## [1.0.0]
 
 ### Added

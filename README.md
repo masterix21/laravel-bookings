@@ -115,6 +115,90 @@ Defines availability rules, working hours, and constraints for resources.
 
 ## Advanced Features
 
+### Custom Resource Synchronization
+
+Automatically sync data from your models to bookable resources:
+
+```php
+use Masterix21\Bookings\Models\Concerns\IsBookable;
+use Masterix21\Bookings\Models\Concerns\Bookable;
+use Masterix21\Bookings\Models\BookableResource;
+
+class Room extends Model implements Bookable
+{
+    use IsBookable;
+
+    /**
+     * Called automatically when the room is saved
+     */
+    public function syncBookableResource(BookableResource $resource): void
+    {
+        // Update resource properties from your model
+        $resource->update([
+            'is_visible' => $this->is_published,
+            'is_bookable' => $this->is_available && $this->is_clean,
+            'max' => $this->max_concurrent_bookings,
+            'size' => $this->capacity,
+        ]);
+    }
+}
+```
+
+**Key Features:**
+- Automatically called on model save
+- Handles both single resource (`bookableResource`) and multiple resources (`bookableResources`)
+- N+1 query optimized
+
+### Planning Source Pattern
+
+Link business models (rates, special offers) directly to planning:
+
+```php
+use Masterix21\Bookings\Models\Concerns\BookablePlanningSource;
+use Masterix21\Bookings\Models\Concerns\IsBookablePlanningSource;
+
+class Rate extends Model implements BookablePlanningSource
+{
+    use IsBookablePlanningSource;
+
+    /**
+     * Called automatically when the rate is saved
+     */
+    public function syncBookablePlanning(): void
+    {
+        $this->planning()->updateOrCreate(
+            ['bookable_resource_id' => $this->room->bookableResource->id],
+            [
+                'starts_at' => $this->valid_from,
+                'ends_at' => $this->valid_to,
+                'monday' => true,
+                'tuesday' => true,
+                'wednesday' => true,
+                'thursday' => true,
+                'friday' => true,
+                'saturday' => $this->includes_weekend,
+                'sunday' => $this->includes_weekend,
+            ]
+        );
+    }
+}
+```
+
+**Benefits:**
+- Single source of truth: your business model controls availability
+- Automatic synchronization on save
+- Bidirectional navigation: `$rate->planning` and `$planning->source`
+- Planning auto-deleted when source is deleted
+
+**Migration Required:**
+If you're upgrading from an older version, run this additional migration:
+
+```bash
+php artisan vendor:publish --tag="bookings-migrations"
+# Then manually run: update_bookable_plannings_add_source_columns.php
+php artisan migrate
+```
+
 ### Planning Constraints
 
 Define when resources are available:

@@ -40,6 +40,7 @@ class TestCase extends Orchestra
         Schema::disableForeignKeyConstraints();
 
         collect(File::files(__DIR__.'/../database/migrations'))
+            ->sortBy(fn ($file) => $file->getFilename())
             ->each(function ($file) {
                 $migration = include $file;
                 $migration->up();
@@ -49,6 +50,9 @@ class TestCase extends Orchestra
         ($migration)->up();
 
         $migration = include __DIR__.'/database/migrations/2014_10_12_000001_create_products_table.php';
+        ($migration)->up();
+
+        $migration = include __DIR__.'/database/migrations/2014_10_12_000002_create_rates_table.php';
         ($migration)->up();
 
         Schema::enableForeignKeyConstraints();

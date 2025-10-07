@@ -19,6 +19,16 @@ trait IsBookable
 
     public static function bootIsBookable(): void
     {
+        static::saved(static function (Bookable $model) {
+            if (! $model->relationLoaded('bookableResources')) {
+                $model->load('bookableResources');
+            }
+
+            $model->bookableResources->each(function ($resource) use ($model) {
+                $model->syncBookableResource($resource);
+            });
+        });
+
         static::deleting(static function (Bookable $model) {
             $model->bookableResource()->delete();
         });
