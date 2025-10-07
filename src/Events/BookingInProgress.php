@@ -15,6 +15,5 @@ class BookingInProgress
     public function __construct(
         public BookableResource $bookableResource,
         public PeriodCollection $periods,
-    ) {
-    }
+    ) {}
 }

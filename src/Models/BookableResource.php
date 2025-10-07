@@ -66,7 +66,7 @@ class BookableResource extends Model
         return $query->where('is_bookable', true)
             ->withCount(['bookedPeriods' => function (Builder $query) use ($period) {
                 $query->where('starts_at', '<', $period->end())
-                      ->where('ends_at', '>', $period->start());
+                    ->where('ends_at', '>', $period->start());
             }])
             ->havingRaw('booked_periods_count < max');
     }
@@ -75,8 +75,8 @@ class BookableResource extends Model
     {
         return $query->with(['bookedPeriods' => function (Builder $query) use ($period) {
             $query->where('starts_at', '<', $period->end())
-                  ->where('ends_at', '>', $period->start())
-                  ->with('booking');
+                ->where('ends_at', '>', $period->start())
+                ->with('booking');
         }]);
     }
 }

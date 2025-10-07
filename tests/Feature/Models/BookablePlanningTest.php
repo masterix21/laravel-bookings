@@ -41,7 +41,7 @@ it('casts weekday boolean properties correctly', function () {
 it('casts datetime properties correctly', function () {
     $startDate = '2024-01-15 10:00:00';
     $endDate = '2024-01-15 18:00:00';
-    
+
     $planning = BookablePlanningFactory::new()->create([
         'starts_at' => $startDate,
         'ends_at' => $endDate,

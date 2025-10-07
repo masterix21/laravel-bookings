@@ -17,6 +17,5 @@ class BookingChanging
         public Booking $booking,
         public BookableResource $bookableResource,
         public PeriodCollection $periods,
-    ) {
-    }
+    ) {}
 }

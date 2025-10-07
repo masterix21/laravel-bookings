@@ -30,8 +30,8 @@ class CheckBookingOverlaps
             foreach ($periods as $period) {
                 $query->orWhere(
                     fn ($q) => $q
-                    ->where('starts_at', '<=', $period->end())
-                    ->where('ends_at', '>=', $period->start())
+                        ->where('starts_at', '<=', $period->end())
+                        ->where('ends_at', '>=', $period->start())
                 );
             }
         });

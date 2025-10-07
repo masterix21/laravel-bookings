@@ -66,8 +66,8 @@ class BookedPeriod extends Model
             foreach ($periods as $period) {
                 $builder->where(
                     fn ($query) => $query
-                    ->where('starts_at', '<=', $period->end())
-                    ->where('ends_at', '>=', $period->start())
+                        ->where('starts_at', '<=', $period->end())
+                        ->where('ends_at', '>=', $period->start())
                 );
             }
         });
@@ -84,8 +84,8 @@ class BookedPeriod extends Model
                     foreach ($periods as $period) {
                         $builder->orWhere(
                             fn ($query) => $query
-                            ->where('starts_at', '<=', $period->end())
-                            ->where('ends_at', '>=', $period->start())
+                                ->where('starts_at', '<=', $period->end())
+                                ->where('ends_at', '>=', $period->start())
                         );
                     }
                 });

@@ -48,7 +48,7 @@ it('can book a resource', function () {
     );
 
     // Book the resource
-    $booking = (new BookResource())->run(
+    $booking = (new BookResource)->run(
         periods: $periods,
         bookableResource: $resource,
         booker: $user,
@@ -102,7 +102,7 @@ it('can update an existing booking', function () {
     );
 
     // Create initial booking
-    $booking = (new BookResource())->run(
+    $booking = (new BookResource)->run(
         periods: $initialPeriods,
         bookableResource: $resource,
         booker: $user1,
@@ -124,7 +124,7 @@ it('can update an existing booking', function () {
     );
 
     // Update the booking
-    $updatedBooking = (new BookResource())->run(
+    $updatedBooking = (new BookResource)->run(
         periods: $updatedPeriods,
         bookableResource: $resource,
         booker: $user2,
@@ -178,7 +178,7 @@ it('fails when booking overlapping periods', function () {
     );
 
     // Book the resource first time
-    $booking = (new BookResource())->run(
+    $booking = (new BookResource)->run(
         periods: $periods,
         bookableResource: $resource,
         booker: $user,
@@ -189,7 +189,7 @@ it('fails when booking overlapping periods', function () {
     Event::fake();
 
     // Try to book the same period again
-    expect(fn () => (new BookResource())->run(
+    expect(fn () => (new BookResource)->run(
         periods: $periods,
         bookableResource: $resource,
         booker: $user,
@@ -223,7 +223,7 @@ it('preserves the booking code when updating', function () {
     );
 
     // Create initial booking with a specific code
-    $booking = (new BookResource())->run(
+    $booking = (new BookResource)->run(
         periods: $initialPeriods,
         bookableResource: $resource,
         booker: $user,
@@ -242,7 +242,7 @@ it('preserves the booking code when updating', function () {
     );
 
     // Update the booking without specifying a code
-    $updatedBooking = (new BookResource())->run(
+    $updatedBooking = (new BookResource)->run(
         periods: $updatedPeriods,
         bookableResource: $resource,
         booker: $user,
@@ -273,7 +273,7 @@ it('can use code prefix and suffix', function () {
     );
 
     // Book the resource with code prefix and suffix
-    $booking = (new BookResource())->run(
+    $booking = (new BookResource)->run(
         periods: $periods,
         bookableResource: $resource,
         booker: $user,
@@ -315,7 +315,7 @@ it('handles transaction rollback on failure', function () {
     );
 
     // Book the resource first time
-    $booking1 = (new BookResource())->run(
+    $booking1 = (new BookResource)->run(
         periods: $periods1,
         bookableResource: $resource,
         booker: $user1
@@ -327,7 +327,7 @@ it('handles transaction rollback on failure', function () {
 
     // Try to book overlapping period (should fail)
     try {
-        (new BookResource())->run(
+        (new BookResource)->run(
             periods: $periods2,
             bookableResource: $resource,
             booker: $user2
@@ -367,7 +367,7 @@ it('handles exception and rolls back transaction when changing booking', functio
     );
 
     // Create initial booking
-    $booking = (new BookResource())->run(
+    $booking = (new BookResource)->run(
         periods: $initialPeriods,
         bookableResource: $resource,
         booker: $user1,
@@ -386,7 +386,7 @@ it('handles exception and rolls back transaction when changing booking', functio
         )
     );
 
-    $secondBooking = (new BookResource())->run(
+    $secondBooking = (new BookResource)->run(
         periods: $secondPeriods,
         bookableResource: $resource,
         booker: $user2,
@@ -407,7 +407,7 @@ it('handles exception and rolls back transaction when changing booking', functio
 
     // Try to update the booking (should fail due to overlap)
     try {
-        (new BookResource())->run(
+        (new BookResource)->run(
             booking: $booking,
             periods: $overlappingPeriods,
             bookableResource: $resource,
@@ -469,7 +469,7 @@ it('triggers natural catch block for overlapping booking updates', function () {
     );
 
     // Create initial booking
-    $booking = (new BookResource())->run(
+    $booking = (new BookResource)->run(
         periods: $initialPeriods,
         bookableResource: $resource,
         booker: $user1,
@@ -484,7 +484,7 @@ it('triggers natural catch block for overlapping booking updates', function () {
         )
     );
 
-    $secondBooking = (new BookResource())->run(
+    $secondBooking = (new BookResource)->run(
         periods: $secondPeriods,
         bookableResource: $resource,
         booker: $user2,
@@ -504,7 +504,7 @@ it('triggers natural catch block for overlapping booking updates', function () {
     );
 
     // This test should let the natural exception handling occur without manual event dispatching
-    expect(fn () => (new BookResource())->run(
+    expect(fn () => (new BookResource)->run(
         booking: $booking,
         periods: $overlappingPeriods,
         bookableResource: $resource,

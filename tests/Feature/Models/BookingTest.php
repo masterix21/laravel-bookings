@@ -72,21 +72,21 @@ it('uses HasFactory trait', function () {
 });
 
 it('uses UsesBookedPeriods trait', function () {
-    $booking = new Booking();
-    
+    $booking = new Booking;
+
     expect(method_exists($booking, 'getBookedPeriods'))->toBeTrue();
 });
 
 it('uses UsesGenerateBookedPeriods trait', function () {
-    $booking = new Booking();
-    
+    $booking = new Booking;
+
     // Check that the trait is used (method should exist)
     expect(in_array('Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriods', class_uses($booking)))->toBeTrue();
 });
 
 it('creates booking with different booker types', function () {
     $user = User::factory()->create();
-    
+
     $booking = Booking::create([
         'code' => 'TEST-001',
         'booker_type' => User::class,
@@ -106,7 +106,7 @@ it('persists meta data correctly', function () {
         'notes' => 'Special requirements',
         'tags' => ['vip', 'priority'],
     ];
-    
+
     $booking = Booking::create([
         'code' => 'META-001',
         'booker_type' => User::class,
@@ -115,7 +115,7 @@ it('persists meta data correctly', function () {
     ]);
 
     $retrieved = Booking::find($booking->id);
-    
+
     expect($retrieved->meta)->toBeInstanceOf(ArrayObject::class)
         ->and($retrieved->meta['preferences'])->toBe(['theme' => 'dark'])
         ->and($retrieved->meta['notes'])->toBe('Special requirements')
@@ -124,13 +124,13 @@ it('persists meta data correctly', function () {
 
 it('handles null meta data', function () {
     $booking = BookingFactory::new()->create(['meta' => null]);
-    
+
     expect($booking->meta)->toBeNull();
 });
 
 it('handles empty meta data', function () {
     $booking = BookingFactory::new()->create(['meta' => []]);
-    
+
     expect($booking->meta)->toBeInstanceOf(ArrayObject::class)
         ->and(count($booking->meta))->toBe(0);
 });

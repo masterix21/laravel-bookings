@@ -17,7 +17,7 @@ class RandomBookingCode implements BookingCodeGenerator
         $missingCharsLen = 64 - str($prefix)->append($suffix)->length();
 
         if ($missingCharsLen <= 26) {
-            throw new \Exception("Please keep your prefix and suffix below 26 characters.");
+            throw new \Exception('Please keep your prefix and suffix below 26 characters.');
         }
 
         $str = str($prefix)->append(Str::ulid());

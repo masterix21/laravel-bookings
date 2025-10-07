@@ -87,7 +87,7 @@ class BookResource
 
             event(new BookingInProgress($bookableResource, $periods));
 
-            (new CheckBookingOverlaps())->run($periods, $bookableResource, emitEvent: true, throw: true);
+            (new CheckBookingOverlaps)->run($periods, $bookableResource, emitEvent: true, throw: true);
 
             $booking
                 ->fill([
@@ -148,7 +148,7 @@ class BookResource
             event(new BookingChanging($booking, $bookableResource, $periods));
 
             try {
-                (new CheckBookingOverlaps())->run(
+                (new CheckBookingOverlaps)->run(
                     periods: $periods,
                     bookableResource: $bookableResource,
                     emitEvent: false, // Don't emit event here, we'll emit it in the catch block

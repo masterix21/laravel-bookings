@@ -21,6 +21,5 @@ class BookingChangeFailed
         public PeriodCollection $periods,
         public ?string $message = null,
         public ?string $stackTrace = null,
-    ) {
-    }
+    ) {}
 }

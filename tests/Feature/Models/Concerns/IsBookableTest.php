@@ -64,7 +64,7 @@ it('can access bookable resource through morphOne relationship', function () {
 
 it('performs database query when checking isBookedAt without pre-loading relation', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -79,7 +79,7 @@ it('performs database query when checking isBookedAt without pre-loading relatio
 
 it('returns false when not booked at specific date', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -93,7 +93,7 @@ it('returns false when not booked at specific date', function () {
 
 it('returns true when booked at specific date', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -117,7 +117,7 @@ it('returns true when booked at specific date', function () {
 
 it('performs database query when getting bookedPeriodsOfDate without pre-loading relation', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -128,14 +128,14 @@ it('performs database query when getting bookedPeriodsOfDate without pre-loading
 
     // Should work without pre-loading the relation (uses database query)
     $periodsOfDate = $product->bookedPeriodsOfDate($date);
-    
+
     expect($periodsOfDate)->toBeInstanceOf(\Illuminate\Support\Collection::class)
         ->and($periodsOfDate)->toHaveCount(0);
 });
 
 it('returns empty collection when no booked periods exist for date', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -152,7 +152,7 @@ it('returns empty collection when no booked periods exist for date', function ()
 
 it('returns collection of booked periods for specific date', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -197,7 +197,7 @@ it('returns collection of booked periods for specific date', function () {
 
 it('can access bookings through hasManyDeep relationship', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -231,7 +231,7 @@ it('can access bookings through hasManyDeep relationship', function () {
 
 it('deletes associated bookable resources when model is deleted', function () {
     $product = Product::factory()->create();
-    
+
     // Create multiple bookable resources
     $bookableResource1 = $product->bookableResources()->create([
         'code' => 'TEST-001',
@@ -266,7 +266,7 @@ it('deletes associated bookable resources when model is deleted', function () {
 
 it('handles multiple bookable resources correctly', function () {
     $product = Product::factory()->create();
-    
+
     // Create multiple bookable resources
     $product->bookableResources()->createMany([
         ['code' => 'RES-001', 'is_visible' => true, 'is_bookable' => true],
@@ -284,7 +284,7 @@ it('handles multiple bookable resources correctly', function () {
 
 it('demonstrates isBookedAt functionality with basic scenario', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -306,7 +306,7 @@ it('demonstrates isBookedAt functionality with basic scenario', function () {
     expect($product->bookedPeriods()->count())->toBe(1)
         ->and($product->bookings)->toHaveCount(1)
         ->and($product->bookings->first()->id)->toBe($booking->id);
-        
+
     // Basic functionality test - the methods work correctly with database queries
     $bookedPeriod = $product->bookedPeriods()->first();
     expect($bookedPeriod)->toBeInstanceOf(BookedPeriod::class)
@@ -315,7 +315,7 @@ it('demonstrates isBookedAt functionality with basic scenario', function () {
 
 it('uses eager loaded bookedPeriods for isBookedAt when relation is loaded', function () {
     $product = Product::factory()->create();
-    
+
     // Create bookable resource
     $bookableResource = $product->bookableResources()->create([
         'is_visible' => true,
@@ -325,7 +325,7 @@ it('uses eager loaded bookedPeriods for isBookedAt when relation is loaded', fun
     // Create booking with a booked period
     $booking = Booking::factory()->create();
     $testDate = Carbon::now();
-    
+
     BookedPeriod::factory()->create([
         'bookable_resource_id' => $bookableResource->id,
         'booking_id' => $booking->id,
@@ -335,13 +335,13 @@ it('uses eager loaded bookedPeriods for isBookedAt when relation is loaded', fun
 
     // Pre-load the bookedPeriods relation
     $product->load('bookedPeriods');
-    
+
     // Verify relation is loaded
     expect($product->relationLoaded('bookedPeriods'))->toBeTrue();
-    
+
     // This should use the eager loaded data (lines 49-50)
     expect($product->isBookedAt($testDate))->toBeTrue();
-    
+
     // Test with a date that's not booked
     $unbootedDate = $testDate->copy()->addDays(1);
     expect($product->isBookedAt($unbootedDate))->toBeFalse();

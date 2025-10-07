@@ -29,8 +29,8 @@ trait UsesBookablePlannings
     /**
      * Validates that this resource and its relations have valid plannings for the given dates.
      *
-     * @param Collection<\Carbon\Carbon> $dates
-     * @param Collection<BookableResource>|EloquentCollection<int, BookableResource>|null $relations
+     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<BookableResource>|EloquentCollection<int, BookableResource>|null  $relations
      *
      * @throws OutOfPlanningsException
      * @throws RelationsOutOfPlanningsException
@@ -45,7 +45,7 @@ trait UsesBookablePlannings
         try {
             if (! $this->hasValidPlanningsForDates($dates)) {
                 throw new OutOfPlanningsException(
-                    "Resource does not have valid plannings for dates: " .
+                    'Resource does not have valid plannings for dates: '.
                     $dates->map->format('Y-m-d')->implode(', ')
                 );
             }
@@ -63,21 +63,21 @@ trait UsesBookablePlannings
     /**
      * Validates that the given relations have valid plannings for the specified dates.
      *
-     * @param Collection<\Carbon\Carbon> $dates
-     * @param Collection<BookableResource>|EloquentCollection<int, BookableResource>|null $relations
+     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<BookableResource>|EloquentCollection<int, BookableResource>|null  $relations
      *
      * @throws RelationsOutOfPlanningsException
      */
     public function validateRelationsPlanningAvailability(Collection $dates, Collection|EloquentCollection|null $relations = null): void
     {
         $relations = $relations ?? collect();
-        
+
         if ($relations->isEmpty()) {
             return;
         }
 
         $bookableResources = $this->getBookableResourcesFromRelations($relations);
-        
+
         if ($bookableResources->isEmpty()) {
             return;
         }
@@ -88,8 +88,8 @@ trait UsesBookablePlannings
     /**
      * Validates input parameters for planning validation methods.
      *
-     * @param Collection<\Carbon\Carbon> $dates
-     * @param Collection<BookableResource>|EloquentCollection<int, BookableResource>|null $relations
+     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<BookableResource>|EloquentCollection<int, BookableResource>|null  $relations
      *
      * @throws InvalidArgumentException
      */
@@ -119,7 +119,7 @@ trait UsesBookablePlannings
     /**
      * Checks if this resource has valid plannings for the given dates.
      *
-     * @param Collection<\Carbon\Carbon> $dates
+     * @param  Collection<\Carbon\Carbon>  $dates
      */
     protected function hasValidPlanningsForDates(Collection $dates): bool
     {
@@ -132,7 +132,7 @@ trait UsesBookablePlannings
     /**
      * Filters relations to get only BookableResource instances.
      *
-     * @param Collection<mixed>|EloquentCollection<int, mixed> $relations
+     * @param  Collection<mixed>|EloquentCollection<int, mixed>  $relations
      * @return Collection<BookableResource>
      */
     protected function getBookableResourcesFromRelations(Collection|EloquentCollection $relations): Collection
@@ -143,8 +143,8 @@ trait UsesBookablePlannings
     /**
      * Validates relations with batching support for large collections.
      *
-     * @param Collection<BookableResource> $bookableResources
-     * @param Collection<\Carbon\Carbon> $dates
+     * @param  Collection<BookableResource>  $bookableResources
+     * @param  Collection<\Carbon\Carbon>  $dates
      *
      * @throws RelationsOutOfPlanningsException
      */
@@ -166,8 +166,8 @@ trait UsesBookablePlannings
     /**
      * Validates a chunk of bookable resources have valid plannings for the specified dates.
      *
-     * @param Collection<BookableResource> $bookableResources
-     * @param Collection<\Carbon\Carbon> $dates
+     * @param  Collection<BookableResource>  $bookableResources
+     * @param  Collection<\Carbon\Carbon>  $dates
      *
      * @throws RelationsOutOfPlanningsException
      */
@@ -194,17 +194,17 @@ trait UsesBookablePlannings
 
         if ($validResources->count() !== $bookableResources->count()) {
             $invalidResourceIds = $resourceIds->diff($validResources->pluck('id'));
-            
+
             if (app()->hasDebugModeEnabled()) {
                 Log::warning('Planning validation failed', [
                     'invalid_resource_ids' => $invalidResourceIds->toArray(),
                     'dates' => $dates->map->format('Y-m-d')->toArray(),
                 ]);
             }
-            
+
             throw new RelationsOutOfPlanningsException(
-                "Resources with IDs [" . $invalidResourceIds->implode(', ') . "] " .
-                "do not have valid plannings for the requested dates: " .
+                'Resources with IDs ['.$invalidResourceIds->implode(', ').'] '.
+                'do not have valid plannings for the requested dates: '.
                 $dates->map->format('Y-m-d')->implode(', ')
             );
         }
@@ -221,8 +221,8 @@ trait UsesBookablePlannings
      * Checks if the given bookable resources have valid plannings for the specified dates.
      * A resource is considered valid if it has plannings that cover the requested dates.
      *
-     * @param Collection<BookableResource> $bookableResources
-     * @param Collection<\Carbon\Carbon> $dates
+     * @param  Collection<BookableResource>  $bookableResources
+     * @param  Collection<\Carbon\Carbon>  $dates
      *
      * @deprecated Use validateRelationsWithBatching() instead
      */
@@ -233,7 +233,7 @@ trait UsesBookablePlannings
         }
 
         $resourceIds = $bookableResources->pluck('id');
-        
+
         return BookableResource::query()
             ->whereIn('id', $resourceIds)
             ->whereHas('bookablePlannings', fn ($query) => $query->whereDatesAreValids($dates))

@@ -136,7 +136,7 @@ it('throws exception when mixed relations have some without valid plannings', fu
 
 it('filters non-BookableResource objects from relations', function () {
     // Create a mock object that isn't a BookableResource
-    $nonBookableResource = new stdClass();
+    $nonBookableResource = new stdClass;
     $nonBookableResource->id = 999;
 
     // Create dates
@@ -209,15 +209,15 @@ it('succeeds when all relations have valid plannings', function () {
 it('throws exception when no BookableResource instances found after filtering', function () {
     // Create a mock object that isn't a BookableResource but will cause the query to return 0 results
     $resource = BookableResource::factory()->create();
-    
+
     // Delete the resource after creating it so the ID won't be found in the database
     $deletedResourceId = $resource->id;
     $resource->delete();
-    
+
     // Create a new resource with the deleted ID to simulate the query finding no resources
-    $mockResource = new BookableResource();
+    $mockResource = new BookableResource;
     $mockResource->id = $deletedResourceId;
-    
+
     // Create dates
     $dates = collect([now()]);
 
@@ -238,7 +238,7 @@ it('validates input parameters and throws exception for empty dates', function (
 it('validates input parameters and throws exception for non-model relations', function () {
     $resource = BookableResource::factory()->create();
     $dates = collect([now()]);
-    $invalidRelation = new stdClass();
+    $invalidRelation = new stdClass;
 
     expect(fn () => $resource->validatePlanningAvailability($dates, collect([$invalidRelation])))
         ->toThrow(InvalidArgumentException::class, 'All relation items must be Model instances');
@@ -246,18 +246,18 @@ it('validates input parameters and throws exception for non-model relations', fu
 
 it('converts non-Carbon dates to Carbon instances automatically', function () {
     $this->createsResources();
-    
+
     $bookableResource = BookableResource::first();
-    
+
     // Use string dates that match the planning period (last week)
     $dates = collect([
         now()->subWeek()->startOf('week')->format('Y-m-d'),
         now()->subWeek()->startOf('week')->addDay()->format('Y-m-d'),
     ]);
-    
+
     // This should work because the method converts strings to Carbon instances
     $bookableResource->validatePlanningAvailability($dates);
-    
+
     expect(true)->toBeTrue();
 });
 

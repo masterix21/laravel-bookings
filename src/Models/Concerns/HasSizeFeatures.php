@@ -64,7 +64,7 @@ trait HasSizeFeatures
 
         if ($bookableResources->isNotEmpty()) {
             $resourceIds = $bookableResources->pluck('id');
-            
+
             $hasAvailableResources = BookableResource::query()
                 ->select(['id', 'size'])
                 ->withCount([

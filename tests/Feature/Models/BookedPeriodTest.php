@@ -67,7 +67,7 @@ it('has relatable morphTo relationship', function () {
 it('creates period attribute from starts_at and ends_at', function () {
     $startDate = Carbon::create(2024, 1, 15, 10, 0, 0);
     $endDate = Carbon::create(2024, 1, 18, 15, 0, 0);
-    
+
     $bookedPeriod = BookedPeriodFactory::new()->create([
         'starts_at' => $startDate,
         'ends_at' => $endDate,
@@ -92,9 +92,9 @@ it('casts dates and boolean properly', function () {
 
 it('uses soft deletes', function () {
     $bookedPeriod = BookedPeriodFactory::new()->create();
-    
+
     $bookedPeriod->delete();
-    
+
     expect($bookedPeriod->deleted_at)->not->toBeNull()
         ->and(BookedPeriod::withTrashed()->find($bookedPeriod->id))->not->toBeNull()
         ->and(BookedPeriod::find($bookedPeriod->id))->toBeNull();
@@ -166,7 +166,7 @@ it('scopes whereDatesAreWithinPeriods for included periods', function () {
         'ends_at' => '2024-01-07 23:59:59', // overlaps first period
         'is_excluded' => false,
     ]);
-    
+
     $overlappingPeriod2 = BookedPeriodFactory::new()->create([
         'starts_at' => '2024-01-08 00:00:00',
         'ends_at' => '2024-01-12 23:59:59', // overlaps second period

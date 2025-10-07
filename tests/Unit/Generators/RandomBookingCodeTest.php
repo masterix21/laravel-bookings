@@ -4,7 +4,7 @@ use Masterix21\Bookings\Generators\RandomBookingCode;
 
 it('throws an exception when prefix and suffix are too long', function () {
     // Create an instance of RandomBookingCode
-    $generator = new RandomBookingCode();
+    $generator = new RandomBookingCode;
 
     // Create a prefix and suffix whose combined length would leave 26 or fewer characters
     // The condition is: 64 - (prefix length + suffix length) <= 26

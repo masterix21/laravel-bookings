@@ -94,7 +94,7 @@ it('returns true when overlaps exist but max is not exceeded', function () {
         Period::make(Carbon::now()->addHour(), Carbon::now()->addHours(3), Precision::HOUR())
     );
 
-    $result = (new CheckBookingOverlaps())->run(
+    $result = (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
     );
@@ -124,7 +124,7 @@ it('handles multiple periods correctly', function () {
         Period::make(Carbon::now()->addHours(2), Carbon::now()->addHours(3), Precision::MINUTE()) // No overlap
     );
 
-    $result = (new CheckBookingOverlaps())->run(
+    $result = (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
     );
@@ -154,7 +154,7 @@ it('ignores specified booking when provided', function () {
         Period::make(Carbon::now()->addHour(), Carbon::now()->addHours(3), Precision::HOUR())
     );
 
-    $result = (new CheckBookingOverlaps())->run(
+    $result = (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
         emitEvent: false,
@@ -187,7 +187,7 @@ it('throws exception when throw is true and overlaps exist', function () {
         Period::make(Carbon::now()->addHour(), Carbon::now()->addHours(3), Precision::HOUR())
     );
 
-    expect(fn () => (new CheckBookingOverlaps())->run(
+    expect(fn () => (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
         emitEvent: false,
@@ -218,7 +218,7 @@ it('emits BookingFailed event when emitEvent is true and no ignoreBooking', func
         Period::make(Carbon::now()->addHour(), Carbon::now()->addHours(3), Precision::HOUR())
     );
 
-    (new CheckBookingOverlaps())->run(
+    (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
         emitEvent: true,
@@ -263,7 +263,7 @@ it('emits BookingChangeFailed event when emitEvent is true and ignoreBooking is 
         Period::make(Carbon::now()->addHour(), Carbon::now()->addHours(3), Precision::HOUR())
     );
 
-    (new CheckBookingOverlaps())->run(
+    (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
         emitEvent: true,
@@ -301,7 +301,7 @@ it('does not emit events when emitEvent is false', function () {
         Period::make(Carbon::now()->addHour(), Carbon::now()->addHours(3), Precision::HOUR())
     );
 
-    (new CheckBookingOverlaps())->run(
+    (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
     );
@@ -348,7 +348,7 @@ it('handles complex overlapping scenarios with multiple periods', function () {
         Period::make(Carbon::now()->setTime(14, 0), Carbon::now()->setTime(15, 0), Precision::HOUR())
     );
 
-    $result = (new CheckBookingOverlaps())->run(
+    $result = (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
     );
@@ -380,7 +380,7 @@ it('works correctly when max is greater than existing bookings', function () {
         Period::make(Carbon::now()->addHour(), Carbon::now()->addHours(3), Precision::HOUR())
     );
 
-    $result = (new CheckBookingOverlaps())->run(
+    $result = (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
     );
@@ -396,9 +396,9 @@ it('handles empty periods collection', function () {
         'max' => 1,
     ]);
 
-    $periods = new PeriodCollection();
+    $periods = new PeriodCollection;
 
-    $result = (new CheckBookingOverlaps())->run(
+    $result = (new CheckBookingOverlaps)->run(
         periods: $periods,
         bookableResource: $bookableResource,
     );

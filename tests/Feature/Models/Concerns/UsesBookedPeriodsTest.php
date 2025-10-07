@@ -10,7 +10,6 @@ use Spatie\Period\Precision;
 
 uses(RefreshDatabase::class);
 
-
 it('has booked periods relationship', function () {
     $booking = BookingFactory::new()->create();
     $bookedPeriod = BookedPeriodFactory::new()->create(['booking_id' => $booking->id]);
@@ -105,7 +104,7 @@ it('does not merge empty additional periods', function () {
         ->included()
         ->create(['booking_id' => $booking->id]);
 
-    $emptyPeriods = new PeriodCollection();
+    $emptyPeriods = new PeriodCollection;
 
     $booking->load('bookedPeriods');
 

@@ -119,7 +119,7 @@ it('uses HasFactory trait', function () {
 });
 
 it('uses multiple concerns and traits', function () {
-    $bookableResource = new BookableResource();
+    $bookableResource = new BookableResource;
 
     // Check that methods from various traits are available
     expect(method_exists($bookableResource, 'size'))->toBeTrue() // HasSizeFeatures

@@ -81,6 +81,6 @@ trait IsBookable
 
     public function bookings(): HasManyDeep
     {
-        return $this->hasManyDeepFromRelations($this->bookedPeriods(), (new BookedPeriod())->booking());
+        return $this->hasManyDeepFromRelations($this->bookedPeriods(), (new BookedPeriod)->booking());
     }
 }
