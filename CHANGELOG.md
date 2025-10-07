@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-10-07
+
 ### Added
 - **Custom Resource Synchronization**: `syncBookableResource()` method for automatic resource updates on model save
   - Automatically syncs data from bookable models to their BookableResource
@@ -126,7 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test Coverage**: Extensive test suite with factories
 - **Configuration**: Highly configurable models and generators
 
-[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/masterix21/laravel-bookings/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/masterix21/laravel-bookings/compare/0.0.2...1.0.0
 [0.0.2]: https://github.com/masterix21/laravel-bookings/compare/0.0.1...0.0.2
 [0.0.1]: https://github.com/masterix21/laravel-bookings/releases/tag/0.0.1
