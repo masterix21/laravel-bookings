@@ -121,12 +121,14 @@ Automatically sync data from your models to bookable resources:
 
 ```php
 use Masterix21\Bookings\Models\Concerns\IsBookable;
+use Masterix21\Bookings\Models\Concerns\SyncBookableResource;
 use Masterix21\Bookings\Models\Concerns\Bookable;
 use Masterix21\Bookings\Models\BookableResource;
 
 class Room extends Model implements Bookable
 {
     use IsBookable;
+    use SyncBookableResource;
 
     /**
      * Called automatically when the room is saved
@@ -145,9 +147,12 @@ class Room extends Model implements Bookable
 ```
 
 **Key Features:**
+- Opt-in with `SyncBookableResource` trait
 - Automatically called on model save
 - Handles both single resource (`bookableResource`) and multiple resources (`bookableResources`)
 - N+1 query optimized
+
+*For complete documentation, see [docs/synchronization.md](docs/synchronization.md)*
 
 ### Planning Source Pattern
 
@@ -156,10 +161,12 @@ Link business models (rates, special offers) directly to planning:
 ```php
 use Masterix21\Bookings\Models\Concerns\BookablePlanningSource;
 use Masterix21\Bookings\Models\Concerns\IsBookablePlanningSource;
+use Masterix21\Bookings\Models\Concerns\SyncBookablePlanning;
 
 class Rate extends Model implements BookablePlanningSource
 {
     use IsBookablePlanningSource;
+    use SyncBookablePlanning;
 
     /**
      * Called automatically when the rate is saved
@@ -185,6 +192,7 @@ class Rate extends Model implements BookablePlanningSource
 ```
 
 **Benefits:**
+- Opt-in with `SyncBookablePlanning` trait
 - Single source of truth: your business model controls availability
 - Automatic synchronization on save
 - Bidirectional navigation: `$rate->planning` and `$planning->source`
@@ -198,6 +206,8 @@ php artisan vendor:publish --tag="bookings-migrations"
 # Then manually run: update_bookable_plannings_add_source_columns.php
 php artisan migrate
 ```
+
+*For complete documentation, see [docs/synchronization.md](docs/synchronization.md)*
 
 ### Planning Constraints
 
@@ -292,6 +302,7 @@ For detailed documentation, see:
 - 🚀 [Getting Started](docs/getting-started.md) - Quick start guide
 - 📊 [Models](docs/models.md) - Model relationships and usage
 - ⚡ [Actions](docs/actions.md) - Core booking operations
+- 🔄 [Synchronization](docs/synchronization.md) - Resource and planning synchronization
 - 🎯 [Events](docs/events.md) - Event system and listeners
 - 🧪 [Testing](docs/testing.md) - Testing strategies and examples
 - 🔧 [Extending](docs/extending.md) - Customization and extensions
