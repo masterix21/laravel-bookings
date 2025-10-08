@@ -10,10 +10,6 @@ trait IsBookablePlanningSource
 {
     public static function bootIsBookablePlanningSource(): void
     {
-        static::saved(static function (BookablePlanningSource $model) {
-            $model->syncBookablePlanning();
-        });
-
         static::deleting(static function (BookablePlanningSource $model) {
             $model->planning()->delete();
         });

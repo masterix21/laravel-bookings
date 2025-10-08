@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\Concerns\Bookable;
 use Masterix21\Bookings\Models\Concerns\IsBookable;
+use Masterix21\Bookings\Models\Concerns\SyncBookableResource;
 
 class Product extends Model implements Bookable
 {
     use HasFactory;
     use IsBookable;
+    use SyncBookableResource;
 
     protected $guarded = [];
 

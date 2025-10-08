@@ -7,12 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Masterix21\Bookings\Models\BookablePlanning;
 use Masterix21\Bookings\Models\Concerns\BookablePlanningSource;
 use Masterix21\Bookings\Models\Concerns\IsBookablePlanningSource;
+use Masterix21\Bookings\Models\Concerns\SyncBookablePlanning;
 use Masterix21\Bookings\Tests\Database\Factories\RateFactory;
 
 class Rate extends Model implements BookablePlanningSource
 {
     use HasFactory;
     use IsBookablePlanningSource;
+    use SyncBookablePlanning;
 
     protected $guarded = [];
 
