@@ -11,6 +11,4 @@ interface Bookable
     public function bookableResources(): MorphMany;
 
     public function bookableResource(): MorphOne;
-
-    public function syncBookableResource(BookableResource $resource): void;
 }

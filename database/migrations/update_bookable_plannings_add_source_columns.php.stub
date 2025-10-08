@@ -9,9 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('bookable_plannings', function (Blueprint $table) {
-            $table->after('bookable_resource_id', function (Blueprint $table) {
-                $table->nullableMorphs('source');
-            });
+            $table->nullableMorphs(
+                name: 'source',
+                after: 'bookable_resource_id'
+            );
         });
     }
 };
