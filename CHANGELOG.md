@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2025-10-08
+
+### Changed
+- **Breaking Change - Synchronization is now opt-in**: Extracted synchronization logic into separate traits
+  - New `SyncBookableResource` trait: Add this trait to enable automatic `syncBookableResource()` calls on model save
+  - New `SyncBookablePlanning` trait: Add this trait to enable automatic `syncBookablePlanning()` calls on model save
+  - `IsBookable` trait no longer automatically calls `syncBookableResource()` - this is now opt-in via the `SyncBookableResource` trait
+  - `IsBookablePlanningSource` trait no longer automatically calls `syncBookablePlanning()` - this is now opt-in via the `SyncBookablePlanning` trait
+  - Removed `syncBookableResource()` method requirement from `Bookable` interface
+  - Removed `syncBookablePlanning()` method requirement from `BookablePlanningSource` interface
+  - Better separation of concerns: base traits provide relations, sync traits provide automatic updates
+- **Dependency Updates**:
+  - Require PHP 8.4 (dropped PHP 8.3 support)
+  - Require Laravel 12.* only (dropped Laravel 11 and earlier)
+  - Updated all dev dependencies to latest compatible versions
+- **Migration Improvements**:
+  - Simplified `update_bookable_plannings_add_source_columns.php.stub` migration syntax
+  - Now uses named parameters for better readability
+- **Documentation**:
+  - Updated `docs/synchronization.md` with new trait-based approach
+  - Added `SyncBookableResource` and `SyncBookablePlanning` traits to all examples
+  - Added synchronization documentation link to README.md Key Topics section
+  - Clarified opt-in nature of synchronization in all documentation
+
+### Migration Guide
+If you were using the synchronization features from version 1.1.0:
+
+1. **For models using resource synchronization**: Add `use SyncBookableResource;` trait
+   ```php
+   class Room extends Model implements Bookable
+   {
+       use IsBookable;
+       use SyncBookableResource; // Add this line
+
+       public function syncBookableResource(BookableResource $resource): void
+       {
+           // Your sync logic
+       }
+   }
+   ```
+
+2. **For models using planning synchronization**: Add `use SyncBookablePlanning;` trait
+   ```php
+   class Rate extends Model implements BookablePlanningSource
+   {
+       use IsBookablePlanningSource;
+       use SyncBookablePlanning; // Add this line
+
+       public function syncBookablePlanning(): void
+       {
+           // Your sync logic
+       }
+   }
+   ```
+
+3. If you don't need automatic synchronization, simply don't add the sync traits and remove the sync methods
+
 ## [1.1.0] - 2025-10-07
 
 ### Added
@@ -128,7 +185,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test Coverage**: Extensive test suite with factories
 - **Configuration**: Highly configurable models and generators
 
-[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/masterix21/laravel-bookings/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/masterix21/laravel-bookings/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/masterix21/laravel-bookings/compare/0.0.2...1.0.0
 [0.0.2]: https://github.com/masterix21/laravel-bookings/compare/0.0.1...0.0.2
