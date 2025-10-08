@@ -1,6 +1,6 @@
 # Resource and Planning Synchronization
 
-This guide covers the automatic synchronization features that allow your business models to control their bookable resources and planning.
+This guide covers the synchronization features that allow your business models to control their bookable resources and planning.
 
 ## Table of Contents
 
@@ -12,18 +12,20 @@ This guide covers the automatic synchronization features that allow your busines
 
 ## Custom Resource Synchronization
 
-The `syncBookableResource()` method allows your models to automatically update their associated `BookableResource` when saved.
+The `SyncBookableResource` trait provides automatic synchronization between your models and their associated `BookableResource`.
 
 ### Basic Implementation
 
 ```php
 use Masterix21\Bookings\Models\Concerns\Bookable;
 use Masterix21\Bookings\Models\Concerns\IsBookable;
+use Masterix21\Bookings\Models\Concerns\SyncBookableResource;
 use Masterix21\Bookings\Models\BookableResource;
 
 class Room extends Model implements Bookable
 {
     use IsBookable;
+    use SyncBookableResource;
 
     protected $fillable = ['name', 'is_published', 'is_available', 'capacity'];
 
@@ -44,10 +46,11 @@ class Room extends Model implements Bookable
 
 ### How It Works
 
-1. **Automatic Trigger**: Called automatically when your model is saved
-2. **Receives Resource**: Gets the specific `BookableResource` instance
-3. **Multiple Resources**: If your model has multiple resources (via `bookableResources()`), the method is called for each one
-4. **N+1 Optimized**: The relation is loaded once if not already eager-loaded
+1. **Opt-in Feature**: Add `SyncBookableResource` trait to enable automatic synchronization
+2. **Automatic Trigger**: Called automatically when your model is saved
+3. **Receives Resource**: Gets the specific `BookableResource` instance
+4. **Multiple Resources**: If your model has multiple resources (via `bookableResources()`), the method is called for each one
+5. **N+1 Optimized**: The relation is loaded once if not already eager-loaded
 
 ### Example with Multiple Resources
 
@@ -55,6 +58,7 @@ class Room extends Model implements Bookable
 class Product extends Model implements Bookable
 {
     use IsBookable;
+    use SyncBookableResource;
 
     public function variants()
     {
@@ -97,10 +101,12 @@ php artisan migrate
 ```php
 use Masterix21\Bookings\Models\Concerns\BookablePlanningSource;
 use Masterix21\Bookings\Models\Concerns\IsBookablePlanningSource;
+use Masterix21\Bookings\Models\Concerns\SyncBookablePlanning;
 
 class Rate extends Model implements BookablePlanningSource
 {
     use IsBookablePlanningSource;
+    use SyncBookablePlanning;
 
     protected $fillable = [
         'room_id',
@@ -165,7 +171,7 @@ $ratePlannings = BookablePlanning::where('source_type', Rate::class)->get();
 
 ### Lifecycle Management
 
-The planning is automatically managed:
+The planning is automatically managed when using the `SyncBookablePlanning` trait:
 
 ```php
 // Creating a rate automatically creates its planning
@@ -176,7 +182,7 @@ $rate = Rate::create([
     'valid_to' => '2024-08-31',
     'includes_weekend' => true,
 ]);
-// Planning is created automatically via syncBookablePlanning()
+// Planning is created automatically via syncBookablePlanning() (requires SyncBookablePlanning trait)
 
 // Updating a rate updates its planning
 $rate->update(['valid_to' => '2024-09-15']);
@@ -195,6 +201,7 @@ $rate->delete();
 class RoomRate extends Model implements BookablePlanningSource
 {
     use IsBookablePlanningSource;
+    use SyncBookablePlanning;
 
     public function syncBookablePlanning(): void
     {
@@ -223,6 +230,7 @@ class RoomRate extends Model implements BookablePlanningSource
 class SpecialOffer extends Model implements BookablePlanningSource
 {
     use IsBookablePlanningSource;
+    use SyncBookablePlanning;
 
     public function syncBookablePlanning(): void
     {
@@ -254,6 +262,7 @@ class SpecialOffer extends Model implements BookablePlanningSource
 class MaintenanceSchedule extends Model implements BookablePlanningSource
 {
     use IsBookablePlanningSource;
+    use SyncBookablePlanning;
 
     public function syncBookablePlanning(): void
     {
@@ -297,6 +306,7 @@ If you're upgrading from an older version:
 3. **Update your models**:
    - Implement `BookablePlanningSource` interface
    - Use `IsBookablePlanningSource` trait
+   - Use `SyncBookablePlanning` trait (for automatic synchronization)
    - Implement `syncBookablePlanning()` method
 
 4. **Migrate existing data** (if needed):
@@ -473,16 +483,18 @@ public function syncBookableResource(BookableResource $resource): void
 Check if:
 1. Migration has been run
 2. `IsBookablePlanningSource` trait is used
-3. Model implements `BookablePlanningSource` interface
-4. `syncBookablePlanning()` method is implemented
+3. `SyncBookablePlanning` trait is used (required for automatic sync)
+4. Model implements `BookablePlanningSource` interface
+5. `syncBookablePlanning()` method is implemented
 
 ### Resource Not Updated
 
 Check if:
 1. `IsBookable` trait is used
-2. Model implements `Bookable` interface
-3. `syncBookableResource()` method is implemented
-4. `BookableResource` exists and is associated
+2. `SyncBookableResource` trait is used (required for automatic sync)
+3. Model implements `Bookable` interface
+4. `syncBookableResource()` method is implemented
+5. `BookableResource` exists and is associated
 
 ### Multiple Planning for Same Resource
 
