@@ -126,3 +126,195 @@ it('uses multiple concerns and traits', function () {
         ->and(method_exists($bookableResource, 'book'))->toBeTrue() // ImplementsBook
         ->and(method_exists($bookableResource, 'validatePlanningAvailability'))->toBeTrue(); // UsesBookablePlannings
 });
+
+it('scopeAvailableSlotForPeriod returns resources with available slots', function () {
+    $startTime = \Carbon\Carbon::parse('2024-03-15 14:00:00');
+    $endTime = \Carbon\Carbon::parse('2024-03-15 16:00:00');
+    $period = \Spatie\Period\Period::make($startTime, $endTime, \Spatie\Period\Precision::HOUR());
+
+    $availableResource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $unavailableResource = BookableResource::factory()->create([
+        'is_bookable' => false,
+        'max' => 2,
+    ]);
+
+    $fullyBookedResource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 1,
+    ]);
+
+    $booking = BookingFactory::new()->create();
+    $fullyBookedResource->bookedPeriods()->create([
+        'booking_id' => $booking->id,
+        'starts_at' => '2024-03-15 14:00:00',
+        'ends_at' => '2024-03-15 17:00:00',
+        'is_excluded' => false,
+    ]);
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($availableResource->id)
+        ->and($results->pluck('id'))->not->toContain($unavailableResource->id)
+        ->and($results->pluck('id'))->not->toContain($fullyBookedResource->id);
+});
+
+it('scopeAvailableSlotForPeriod considers overlapping periods correctly', function () {
+    $period = \Spatie\Period\Period::make(now()->addDay(), now()->addDay()->addHours(2), \Spatie\Period\Precision::HOUR());
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $booking = BookingFactory::new()->create();
+
+    $resource->bookedPeriods()->create([
+        'booking_id' => $booking->id,
+        'starts_at' => now()->addDay()->subHour(),
+        'ends_at' => now()->addDay()->addHour(),
+        'is_excluded' => false,
+    ]);
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
+});
+
+it('scopeAvailableForPeriod returns resources with available slots and valid planning', function () {
+    $startDate = \Carbon\Carbon::parse('2024-01-15 09:00:00');
+    $endDate = \Carbon\Carbon::parse('2024-01-17 18:00:00');
+    $period = \Spatie\Period\Period::make($startDate, $endDate);
+
+    $resourceWithValidPlanning = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $resourceWithValidPlanning->bookablePlannings()->create([
+        'monday' => true,
+        'tuesday' => true,
+        'wednesday' => true,
+        'starts_at' => '2024-01-01 00:00:00',
+        'ends_at' => '2024-01-31 23:59:59',
+    ]);
+
+    $resourceWithoutPlanning = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $results = BookableResource::availableForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resourceWithValidPlanning->id)
+        ->and($results->pluck('id'))->not->toContain($resourceWithoutPlanning->id);
+});
+
+it('scopeAvailableForPeriod excludes resources with invalid weekdays in planning', function () {
+    $startDate = \Carbon\Carbon::parse('2024-01-15 09:00:00');
+    $endDate = \Carbon\Carbon::parse('2024-01-17 18:00:00');
+    $period = \Spatie\Period\Period::make($startDate, $endDate);
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $resource->bookablePlannings()->create([
+        'monday' => true,
+        'tuesday' => true,
+        'wednesday' => false,
+        'starts_at' => '2024-01-01 00:00:00',
+        'ends_at' => '2024-01-31 23:59:59',
+    ]);
+
+    $results = BookableResource::availableForPeriod($period)->get();
+
+    expect($results->pluck('id'))->not->toContain($resource->id);
+});
+
+it('scopeAvailableForPeriod excludes resources with planning outside period', function () {
+    $startDate = \Carbon\Carbon::parse('2024-02-15 09:00:00');
+    $endDate = \Carbon\Carbon::parse('2024-02-17 18:00:00');
+    $period = \Spatie\Period\Period::make($startDate, $endDate);
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $resource->bookablePlannings()->create([
+        'monday' => true,
+        'tuesday' => true,
+        'wednesday' => true,
+        'starts_at' => '2024-01-01 00:00:00',
+        'ends_at' => '2024-01-31 23:59:59',
+    ]);
+
+    $results = BookableResource::availableForPeriod($period)->get();
+
+    expect($results->pluck('id'))->not->toContain($resource->id);
+});
+
+it('scopeAvailableForPeriod handles resources with multiple plannings', function () {
+    $startDate = \Carbon\Carbon::parse('2024-01-15 09:00:00');
+    $endDate = \Carbon\Carbon::parse('2024-01-17 18:00:00');
+    $period = \Spatie\Period\Period::make($startDate, $endDate);
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $resource->bookablePlannings()->create([
+        'monday' => false,
+        'starts_at' => '2024-01-01 00:00:00',
+        'ends_at' => '2024-01-31 23:59:59',
+    ]);
+
+    $resource->bookablePlannings()->create([
+        'monday' => true,
+        'tuesday' => true,
+        'wednesday' => true,
+        'starts_at' => '2024-01-01 00:00:00',
+        'ends_at' => '2024-01-31 23:59:59',
+    ]);
+
+    $results = BookableResource::availableForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
+});
+
+it('scopeAvailableForPeriod excludes fully booked resources even with valid planning', function () {
+    $startDate = \Carbon\Carbon::parse('2024-01-15 09:00:00');
+    $endDate = \Carbon\Carbon::parse('2024-01-17 18:00:00');
+    $period = \Spatie\Period\Period::make($startDate, $endDate);
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 1,
+    ]);
+
+    $resource->bookablePlannings()->create([
+        'monday' => true,
+        'tuesday' => true,
+        'wednesday' => true,
+        'starts_at' => '2024-01-01 00:00:00',
+        'ends_at' => '2024-01-31 23:59:59',
+    ]);
+
+    $booking = BookingFactory::new()->create();
+    $resource->bookedPeriods()->create([
+        'booking_id' => $booking->id,
+        'starts_at' => $startDate,
+        'ends_at' => $endDate,
+        'is_excluded' => false,
+    ]);
+
+    $results = BookableResource::availableForPeriod($period)->get();
+
+    expect($results->pluck('id'))->not->toContain($resource->id);
+});

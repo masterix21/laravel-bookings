@@ -4,6 +4,7 @@ namespace Masterix21\Bookings\Tests\database\factories;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
 
 class BookablePlanningFactory extends Factory
 {
@@ -20,6 +21,7 @@ class BookablePlanningFactory extends Factory
             'label' => $this->faker->randomElement([null, $this->faker->text(80)]),
             'starts_at' => $startsAt,
             'ends_at' => $startsAt ? Carbon::parse($startsAt)->addHour() : null,
+            'matching_strategy' => PlanningMatchingStrategy::All,
         ];
     }
 }

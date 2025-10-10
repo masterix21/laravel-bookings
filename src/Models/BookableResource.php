@@ -61,14 +61,24 @@ class BookableResource extends Model
         return 0;
     }
 
+    public function scopeAvailableSlotForPeriod(Builder $query, Period $period): Builder
+    {
+        $bookedPeriodModel = app(config('bookings.models.booked_period'));
+        $bookedPeriodTable = $bookedPeriodModel->getTable();
+        $foreignKey = $bookedPeriodModel->qualifyColumn('bookable_resource_id');
+
+        return $query->where('is_bookable', true)
+            ->whereRaw("(SELECT COUNT(*) FROM {$bookedPeriodTable} WHERE bookable_resource_id = bookable_resources.id AND starts_at < ? AND ends_at > ? AND deleted_at IS NULL) < bookable_resources.max", [
+                $period->end()->format('Y-m-d H:i:s'),
+                $period->start()->format('Y-m-d H:i:s'),
+            ]);
+    }
+
     public function scopeAvailableForPeriod(Builder $query, Period $period): Builder
     {
-        return $query->where('is_bookable', true)
-            ->withCount(['bookedPeriods' => function (Builder $query) use ($period) {
-                $query->where('starts_at', '<', $period->end())
-                    ->where('ends_at', '>', $period->start());
-            }])
-            ->havingRaw('booked_periods_count < max');
+        return $query
+            ->availableSlotForPeriod($period)
+            ->whereHas('bookablePlannings', fn (Builder $q) => $q->wherePeriodIsValid($period));
     }
 
     public function scopeWithBookingsInPeriod(Builder $query, Period $period): Builder

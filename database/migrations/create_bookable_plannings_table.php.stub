@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
 
 return new class extends Migration
 {
@@ -22,6 +23,8 @@ return new class extends Migration
             $table->boolean('friday')->default(true);
             $table->boolean('saturday')->default(true);
             $table->boolean('sunday')->default(true);
+
+            $table->string('matching_strategy')->default(PlanningMatchingStrategy::All->value);
 
             $table->dateTime('starts_at')->nullable();
             $table->dateTime('ends_at')->nullable();

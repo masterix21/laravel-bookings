@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
+use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
 
 class BookablePlanning extends Model
 {
@@ -26,6 +27,7 @@ class BookablePlanning extends Model
         'sunday' => 'bool',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'matching_strategy' => PlanningMatchingStrategy::class,
     ];
 
     public function bookableResource(): BelongsTo
@@ -95,5 +97,69 @@ class BookablePlanning extends Model
         return $builder
             ->whereWeekdaysDates($dates)
             ->whereAllDatesAreWithinPeriods($dates);
+    }
+
+    public function scopeWherePeriodIsValid(Builder $builder, \Spatie\Period\Period $period): Builder
+    {
+        $start = Carbon::parse($period->start());
+        $end = Carbon::parse($period->end());
+
+        $weekdaysInPeriod = collect();
+        $current = $start->copy();
+
+        while ($current->lte($end)) {
+            $weekdaysInPeriod->push($current->dayOfWeek);
+            $current->addDay();
+
+            if ($weekdaysInPeriod->count() >= 7) {
+                break;
+            }
+        }
+
+        $weekdaysInPeriod = $weekdaysInPeriod->unique();
+
+        return $builder->where(function (Builder $query) use ($weekdaysInPeriod, $start, $end) {
+            $query->where(function (Builder $subQuery) use ($weekdaysInPeriod) {
+                $subQuery->where(function (Builder $allStrategy) use ($weekdaysInPeriod) {
+                    $allStrategy->where('matching_strategy', PlanningMatchingStrategy::All->value);
+
+                    $weekdaysInPeriod->each(function ($dayOfWeek) use ($allStrategy) {
+                        $weekdayColumn = match ($dayOfWeek) {
+                            Carbon::MONDAY => 'monday',
+                            Carbon::TUESDAY => 'tuesday',
+                            Carbon::WEDNESDAY => 'wednesday',
+                            Carbon::THURSDAY => 'thursday',
+                            Carbon::FRIDAY => 'friday',
+                            Carbon::SATURDAY => 'saturday',
+                            Carbon::SUNDAY => 'sunday',
+                        };
+
+                        $allStrategy->where($weekdayColumn, true);
+                    });
+                })->orWhere(function (Builder $anyStrategy) use ($weekdaysInPeriod) {
+                    $anyStrategy->where('matching_strategy', PlanningMatchingStrategy::Any->value);
+
+                    $anyStrategy->where(function (Builder $weekdayOr) use ($weekdaysInPeriod) {
+                        $weekdaysInPeriod->each(function ($dayOfWeek) use ($weekdayOr) {
+                            $weekdayColumn = match ($dayOfWeek) {
+                                Carbon::MONDAY => 'monday',
+                                Carbon::TUESDAY => 'tuesday',
+                                Carbon::WEDNESDAY => 'wednesday',
+                                Carbon::THURSDAY => 'thursday',
+                                Carbon::FRIDAY => 'friday',
+                                Carbon::SATURDAY => 'saturday',
+                                Carbon::SUNDAY => 'sunday',
+                            };
+
+                            $weekdayOr->orWhere($weekdayColumn, true);
+                        });
+                    });
+                });
+            });
+
+            $query
+                ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', $end))
+                ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', $start));
+        });
     }
 }
