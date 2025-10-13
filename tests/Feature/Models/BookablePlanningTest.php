@@ -18,25 +18,21 @@ it('has bookableResource belongsTo relationship', function () {
         ->and($planning->bookableResource->id)->toBe($bookableResource->id);
 });
 
-it('casts weekday boolean properties correctly', function () {
+it('casts weekday boolean properties correctly', function (string $weekday, int $value, bool $expected) {
     $planning = BookablePlanningFactory::new()->create([
-        'monday' => 1,
-        'tuesday' => 0,
-        'wednesday' => 1,
-        'thursday' => 0,
-        'friday' => 1,
-        'saturday' => 0,
-        'sunday' => 1,
+        $weekday => $value,
     ]);
 
-    expect($planning->monday)->toBeTrue()
-        ->and($planning->tuesday)->toBeFalse()
-        ->and($planning->wednesday)->toBeTrue()
-        ->and($planning->thursday)->toBeFalse()
-        ->and($planning->friday)->toBeTrue()
-        ->and($planning->saturday)->toBeFalse()
-        ->and($planning->sunday)->toBeTrue();
-});
+    expect($planning->$weekday)->toBe($expected);
+})->with([
+    'monday true' => ['monday', 1, true],
+    'tuesday false' => ['tuesday', 0, false],
+    'wednesday true' => ['wednesday', 1, true],
+    'thursday false' => ['thursday', 0, false],
+    'friday true' => ['friday', 1, true],
+    'saturday false' => ['saturday', 0, false],
+    'sunday true' => ['sunday', 1, true],
+]);
 
 it('casts datetime properties correctly', function () {
     $startDate = '2024-01-15 10:00:00';

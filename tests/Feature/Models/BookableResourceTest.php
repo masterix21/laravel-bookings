@@ -48,41 +48,24 @@ it('can create booked periods through relationship', function () {
         ->and($bookableResource->bookedPeriods)->toHaveCount(1);
 });
 
-it('returns correct size when resource is bookable', function () {
-    $bookableResource = BookableResource::factory()->create([
-        'size' => 5,
-        'is_bookable' => true,
+it('returns correct size based on bookable status and ignore flag', function (
+    int $size,
+    bool $isBookable,
+    bool $ignoresUnbookable,
+    int $expected
+) {
+    $resource = BookableResource::factory()->create([
+        'size' => $size,
+        'is_bookable' => $isBookable,
     ]);
 
-    expect($bookableResource->size())->toBe(5);
-});
-
-it('returns zero size when resource is not bookable', function () {
-    $bookableResource = BookableResource::factory()->create([
-        'size' => 5,
-        'is_bookable' => false,
-    ]);
-
-    expect($bookableResource->size())->toBe(0);
-});
-
-it('returns actual size when ignoring unbookable flag', function () {
-    $bookableResource = BookableResource::factory()->create([
-        'size' => 5,
-        'is_bookable' => false,
-    ]);
-
-    expect($bookableResource->size(ignoresUnbookable: true))->toBe(5);
-});
-
-it('returns actual size when bookable and ignoring unbookable flag', function () {
-    $bookableResource = BookableResource::factory()->create([
-        'size' => 3,
-        'is_bookable' => true,
-    ]);
-
-    expect($bookableResource->size(ignoresUnbookable: true))->toBe(3);
-});
+    expect($resource->size(ignoresUnbookable: $ignoresUnbookable))->toBe($expected);
+})->with([
+    'bookable without ignore' => [5, true, false, 5],
+    'not bookable without ignore' => [5, false, false, 0],
+    'not bookable with ignore' => [5, false, true, 5],
+    'bookable with ignore' => [3, true, true, 3],
+]);
 
 it('casts is_visible and is_bookable to boolean', function () {
     $bookableResource = BookableResource::factory()->create([

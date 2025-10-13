@@ -19,25 +19,35 @@ trait UsesGenerateBookedPeriods
         ?string $note = null
     ): static {
         return tap($this, function () use ($relatable, $periods, $bookableResource, $isExcluded, $label, $note) {
-            foreach ($periods as $period) {
-                $bookedPeriod = resolve(config('bookings.models.booked_period'))
-                    ->fill([
-                        'booking_id' => $this->id,
-                        'bookable_resource_id' => $bookableResource?->getKey(),
-                        'is_excluded' => $isExcluded,
-                        'label' => $label,
-                        'starts_at' => $period->start(),
-                        'ends_at' => $period->end(),
-                        'note' => $note,
-                    ]);
-
-                if ($relatable) {
-                    $bookedPeriod->relatable_type = $relatable::class;
-                    $bookedPeriod->relatable_id = $relatable->getKey();
-                }
-
-                $bookedPeriod->save();
+            if ($periods->isEmpty()) {
+                return;
             }
+
+            $now = now();
+            $baseAttributes = [
+                'booking_id' => $this->id,
+                'bookable_resource_id' => $bookableResource?->getKey(),
+                'is_excluded' => $isExcluded,
+                'label' => $label,
+                'note' => $note,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+
+            if ($relatable) {
+                $baseAttributes['relatable_type'] = $relatable::class;
+                $baseAttributes['relatable_id'] = $relatable->getKey();
+            }
+
+            $records = [];
+            foreach ($periods as $period) {
+                $records[] = array_merge($baseAttributes, [
+                    'starts_at' => $period->start(),
+                    'ends_at' => $period->end(),
+                ]);
+            }
+
+            resolve(config('bookings.models.booked_period'))::insert($records);
         });
     }
 }

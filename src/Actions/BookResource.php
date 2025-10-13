@@ -33,10 +33,7 @@ class BookResource
         ?string $note = null,
         ?array $meta = null,
     ): ?Booking {
-        /** @var Booking $booking */
-        $booking ??= resolve(config('bookings.models.booking'));
-
-        if ($booking->exists) {
+        if ($booking?->exists) {
             return $this->update(
                 booking: $booking,
                 booker: $booker,
@@ -51,6 +48,9 @@ class BookResource
                 meta: $meta,
             );
         }
+
+        /** @var Booking $booking */
+        $booking ??= resolve(config('bookings.models.booking'));
 
         return $this->create(
             booking: $booking,
@@ -82,9 +82,19 @@ class BookResource
         ?string $note,
         ?array $meta,
     ): ?Booking {
-        try {
-            $booking->getConnection()->beginTransaction();
-
+        return $this->executeInTransaction($booking, $bookableResource, $periods, function () use (
+            $booking,
+            $periods,
+            $bookableResource,
+            $relatable,
+            $booker,
+            $code,
+            $codePrefix,
+            $codeSuffix,
+            $label,
+            $note,
+            $meta
+        ) {
             event(new BookingInProgress($bookableResource, $periods));
 
             (new CheckBookingOverlaps)->run($periods, $bookableResource, emitEvent: true, throw: true);
@@ -109,24 +119,8 @@ class BookResource
 
             event(new BookingCompleted($booking, $periods));
 
-            $booking->getConnection()->commit();
-
             return $booking;
-        } catch (\Exception $e) {
-            event(new BookingFailed(
-                UnbookableReason::EXCEPTION,
-                $bookableResource,
-                $periods,
-                $e->getMessage(),
-                $e->getTraceAsString()
-            ));
-
-            $booking->getConnection()->rollBack();
-
-            throw $e;
-        }
-
-        return null;
+        });
     }
 
     protected function update(
@@ -142,34 +136,32 @@ class BookResource
         ?string $note,
         ?array $meta,
     ): ?Booking {
-        try {
-            $booking->getConnection()->beginTransaction();
-
+        return $this->executeInTransaction($booking, $bookableResource, $periods, function () use (
+            $booking,
+            $periods,
+            $bookableResource,
+            $relatable,
+            $booker,
+            $code,
+            $codePrefix,
+            $codeSuffix,
+            $label,
+            $note,
+            $meta
+        ) {
             event(new BookingChanging($booking, $bookableResource, $periods));
 
             try {
                 (new CheckBookingOverlaps)->run(
                     periods: $periods,
                     bookableResource: $bookableResource,
-                    emitEvent: false, // Don't emit event here, we'll emit it in the catch block
+                    emitEvent: false,
                     throw: true,
                     ignoreBooking: $booking
                 );
             } catch (BookingResourceOverlappingException $e) {
-                // Dispatch the BookingChangeFailed event before re-throwing the exception
-                event(new BookingChangeFailed(
-                    $booking,
-                    UnbookableReason::EXCEPTION,
-                    $bookableResource,
-                    $periods,
-                    $e->getMessage(),
-                    $e->getTraceAsString()
-                ));
+                $this->emitFailureEvent($e, $bookableResource, $periods, $booking);
 
-                // Roll back the transaction
-                $booking->getConnection()->rollBack();
-
-                // Re-throw the exception
                 throw $e;
             }
 
@@ -199,10 +191,40 @@ class BookResource
 
             event(new BookingChanged($booking, $periods));
 
+            return $booking;
+        });
+    }
+
+    protected function executeInTransaction(
+        Booking $booking,
+        BookableResource $bookableResource,
+        PeriodCollection $periods,
+        callable $callback
+    ): ?Booking {
+        try {
+            $booking->getConnection()->beginTransaction();
+
+            $result = $callback();
+
             $booking->getConnection()->commit();
 
-            return $booking;
+            return $result;
         } catch (\Exception $e) {
+            $this->emitFailureEvent($e, $bookableResource, $periods, $booking->exists ? $booking : null);
+
+            $booking->getConnection()->rollBack();
+
+            throw $e;
+        }
+    }
+
+    protected function emitFailureEvent(
+        \Exception $e,
+        BookableResource $bookableResource,
+        PeriodCollection $periods,
+        ?Booking $booking = null
+    ): void {
+        if ($booking?->exists) {
             event(new BookingChangeFailed(
                 $booking,
                 UnbookableReason::EXCEPTION,
@@ -211,10 +233,14 @@ class BookResource
                 $e->getMessage(),
                 $e->getTraceAsString()
             ));
-
-            $booking->getConnection()->rollBack();
-
-            throw $e;
+        } else {
+            event(new BookingFailed(
+                UnbookableReason::EXCEPTION,
+                $bookableResource,
+                $periods,
+                $e->getMessage(),
+                $e->getTraceAsString()
+            ));
         }
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
 use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
+use Masterix21\Bookings\Enums\Weekday;
 
 class BookablePlanning extends Model
 {
@@ -124,15 +125,7 @@ class BookablePlanning extends Model
                     $allStrategy->where('matching_strategy', PlanningMatchingStrategy::All->value);
 
                     $weekdaysInPeriod->each(function ($dayOfWeek) use ($allStrategy) {
-                        $weekdayColumn = match ($dayOfWeek) {
-                            Carbon::MONDAY => 'monday',
-                            Carbon::TUESDAY => 'tuesday',
-                            Carbon::WEDNESDAY => 'wednesday',
-                            Carbon::THURSDAY => 'thursday',
-                            Carbon::FRIDAY => 'friday',
-                            Carbon::SATURDAY => 'saturday',
-                            Carbon::SUNDAY => 'sunday',
-                        };
+                        $weekdayColumn = Weekday::fromCarbonDay($dayOfWeek)->value;
 
                         $allStrategy->where($weekdayColumn, true);
                     });
@@ -141,15 +134,7 @@ class BookablePlanning extends Model
 
                     $anyStrategy->where(function (Builder $weekdayOr) use ($weekdaysInPeriod) {
                         $weekdaysInPeriod->each(function ($dayOfWeek) use ($weekdayOr) {
-                            $weekdayColumn = match ($dayOfWeek) {
-                                Carbon::MONDAY => 'monday',
-                                Carbon::TUESDAY => 'tuesday',
-                                Carbon::WEDNESDAY => 'wednesday',
-                                Carbon::THURSDAY => 'thursday',
-                                Carbon::FRIDAY => 'friday',
-                                Carbon::SATURDAY => 'saturday',
-                                Carbon::SUNDAY => 'sunday',
-                            };
+                            $weekdayColumn = Weekday::fromCarbonDay($dayOfWeek)->value;
 
                             $weekdayOr->orWhere($weekdayColumn, true);
                         });

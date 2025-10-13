@@ -17,7 +17,7 @@ class BookingFactory extends Factory
         return [
             'code' => $this->faker->firstName,
             'booker_type' => User::class,
-            'booker_id' => UserFactory::new(),
+            'booker_id' => User::factory(),
             'label' => $this->faker->lastName,
             'note' => $this->faker->boolean(60) ? null : $this->faker->realText(180),
         ];

@@ -16,8 +16,10 @@ class BookedPeriodFactory extends Factory
         $startsAt = $this->faker->dateTimeBetween('-1 week', '+1 week');
         $endsAt = $this->faker->dateTimeBetween($startsAt, '+2 weeks');
 
+        $bookingModel = config('bookings.models.booking');
+
         return [
-            'booking_id' => BookingFactory::new(),
+            'booking_id' => $bookingModel::factory(),
             'is_excluded' => $this->faker->boolean(20),
             'label' => $this->faker->words(3, true),
             'starts_at' => $startsAt,

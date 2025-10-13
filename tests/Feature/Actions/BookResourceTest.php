@@ -23,110 +23,74 @@ uses(CreatesResources::class);
 beforeEach(function () {
     TestTime::freeze();
     Event::fake();
-});
 
-it('can book a resource', function () {
-    // Create a bookable resource
-    $resource = $this->createsResources(
+    // Create common test data used in most tests
+    $this->resource = $this->createsResources(
         startsAt: now()->startOfDay(),
         endsAt: now()->addDays(7)->endOfDay(),
         resourcesCount: 1
     )->first();
 
-    // Create a user as booker
-    $user = User::factory()->create();
+    $this->user = User::factory()->create();
+    $this->product = Product::factory()->create();
 
-    // Create a product as relatable
-    $product = Product::factory()->create();
-
-    // Create a period collection
-    $periods = PeriodCollection::make(
+    // Helper to create period collections
+    $this->createPeriod = fn($startDay, $endDay) => PeriodCollection::make(
         SpatiePeriod::make(
-            now()->addDay()->format('Y-m-d'),
-            now()->addDays(2)->format('Y-m-d')
+            now()->addDays($startDay)->format('Y-m-d'),
+            now()->addDays($endDay)->format('Y-m-d')
         )
     );
+});
 
-    // Book the resource
+it('can book a resource', function () {
     $booking = (new BookResource)->run(
-        periods: $periods,
-        bookableResource: $resource,
-        booker: $user,
-        relatable: $product,
+        periods: ($this->createPeriod)(1, 2),
+        bookableResource: $this->resource,
+        booker: $this->user,
+        relatable: $this->product,
         label: 'Test Booking',
         note: 'Test Note',
         meta: ['test' => 'value']
     );
 
-    // Assert the booking was created
     expect($booking)->toBeInstanceOf(Booking::class)
         ->and($booking->booker_type)->toBe(User::class)
-        ->and($booking->booker_id)->toBe($user->id)
+        ->and($booking->booker_id)->toBe($this->user->id)
         ->and($booking->label)->toBe('Test Booking')
         ->and($booking->note)->toBe('Test Note')
         ->and($booking->meta->toArray())->toBe(['test' => 'value']);
 
-    // Assert the booked periods were created
     expect($booking->bookedPeriods)->toHaveCount(1)
-        ->and($booking->bookedPeriods->first()->bookable_resource_id)->toBe($resource->id)
+        ->and($booking->bookedPeriods->first()->bookable_resource_id)->toBe($this->resource->id)
         ->and($booking->bookedPeriods->first()->relatable_type)->toBe(Product::class)
-        ->and($booking->bookedPeriods->first()->relatable_id)->toBe($product->id)
+        ->and($booking->bookedPeriods->first()->relatable_id)->toBe($this->product->id)
         ->and($booking->bookedPeriods->first()->starts_at->format('Y-m-d'))->toBe(now()->addDay()->format('Y-m-d'))
         ->and($booking->bookedPeriods->first()->ends_at->format('Y-m-d'))->toBe(now()->addDays(2)->format('Y-m-d'));
 
-    // Assert events were dispatched
     Event::assertDispatched(BookingInProgress::class);
     Event::assertDispatched(BookingCompleted::class);
 });
 
 it('can update an existing booking', function () {
-    // Create a bookable resource
-    $resource = $this->createsResources(
-        startsAt: now()->startOfDay(),
-        endsAt: now()->addDays(7)->endOfDay(),
-        resourcesCount: 1
-    )->first();
-
-    // Create users and products
-    $user1 = User::factory()->create();
     $user2 = User::factory()->create();
-    $product1 = Product::factory()->create();
     $product2 = Product::factory()->create();
 
-    // Create initial periods
-    $initialPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDay()->format('Y-m-d'),
-            now()->addDays(2)->format('Y-m-d')
-        )
-    );
-
-    // Create initial booking
     $booking = (new BookResource)->run(
-        periods: $initialPeriods,
-        bookableResource: $resource,
-        booker: $user1,
-        relatable: $product1,
+        periods: ($this->createPeriod)(1, 2),
+        bookableResource: $this->resource,
+        booker: $this->user,
+        relatable: $this->product,
         label: 'Initial Booking',
         note: 'Initial Note',
         meta: ['initial' => 'value']
     );
 
-    // Clear events
     Event::fake();
 
-    // Create updated periods
-    $updatedPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDays(3)->format('Y-m-d'),
-            now()->addDays(4)->format('Y-m-d')
-        )
-    );
-
-    // Update the booking
     $updatedBooking = (new BookResource)->run(
-        periods: $updatedPeriods,
-        bookableResource: $resource,
+        periods: ($this->createPeriod)(3, 4),
+        bookableResource: $this->resource,
         booker: $user2,
         booking: $booking,
         relatable: $product2,
@@ -135,7 +99,6 @@ it('can update an existing booking', function () {
         meta: ['updated' => 'value']
     );
 
-    // Assert the booking was updated
     expect($updatedBooking)->toBeInstanceOf(Booking::class)
         ->and($updatedBooking->id)->toBe($booking->id)
         ->and($updatedBooking->booker_type)->toBe(User::class)
@@ -144,21 +107,18 @@ it('can update an existing booking', function () {
         ->and($updatedBooking->note)->toBe('Updated Note')
         ->and($updatedBooking->meta->toArray())->toBe(['updated' => 'value']);
 
-    // Assert the booked periods were updated
     expect($updatedBooking->bookedPeriods)->toHaveCount(1)
-        ->and($updatedBooking->bookedPeriods->first()->bookable_resource_id)->toBe($resource->id)
+        ->and($updatedBooking->bookedPeriods->first()->bookable_resource_id)->toBe($this->resource->id)
         ->and($updatedBooking->bookedPeriods->first()->relatable_type)->toBe(Product::class)
         ->and($updatedBooking->bookedPeriods->first()->relatable_id)->toBe($product2->id)
         ->and($updatedBooking->bookedPeriods->first()->starts_at->format('Y-m-d'))->toBe(now()->addDays(3)->format('Y-m-d'))
         ->and($updatedBooking->bookedPeriods->first()->ends_at->format('Y-m-d'))->toBe(now()->addDays(4)->format('Y-m-d'));
 
-    // Assert events were dispatched
     Event::assertDispatched(BookingChanging::class);
     Event::assertDispatched(BookingChanged::class);
 });
 
 it('fails when booking overlapping periods', function () {
-    // Create a bookable resource with max=1
     $resource = $this->createsResources(
         startsAt: now()->startOfDay(),
         endsAt: now()->addDays(7)->endOfDay(),
@@ -166,37 +126,24 @@ it('fails when booking overlapping periods', function () {
         resourcesStates: ['max' => 1]
     )->first();
 
-    // Create a user as booker
-    $user = User::factory()->create();
+    $periods = ($this->createPeriod)(1, 2);
 
-    // Create a period collection
-    $periods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDay()->format('Y-m-d'),
-            now()->addDays(2)->format('Y-m-d')
-        )
-    );
-
-    // Book the resource first time
     $booking = (new BookResource)->run(
         periods: $periods,
         bookableResource: $resource,
-        booker: $user,
+        booker: $this->user,
         label: 'First Booking'
     );
 
-    // Clear events
     Event::fake();
 
-    // Try to book the same period again
     expect(fn () => (new BookResource)->run(
         periods: $periods,
         bookableResource: $resource,
-        booker: $user,
+        booker: $this->user,
         label: 'Second Booking'
     ))->toThrow(BookingResourceOverlappingException::class);
 
-    // Assert events were dispatched
     Event::assertDispatched(BookingInProgress::class);
     Event::assertDispatched(BookingFailed::class, function ($event) {
         return $event->reason === UnbookableReason::PERIOD_OVERLAP;
@@ -204,90 +151,39 @@ it('fails when booking overlapping periods', function () {
 });
 
 it('preserves the booking code when updating', function () {
-    // Create a bookable resource
-    $resource = $this->createsResources(
-        startsAt: now()->startOfDay(),
-        endsAt: now()->addDays(7)->endOfDay(),
-        resourcesCount: 1
-    )->first();
-
-    // Create a user as booker
-    $user = User::factory()->create();
-
-    // Create initial periods
-    $initialPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDay()->format('Y-m-d'),
-            now()->addDays(2)->format('Y-m-d')
-        )
-    );
-
-    // Create initial booking with a specific code
     $booking = (new BookResource)->run(
-        periods: $initialPeriods,
-        bookableResource: $resource,
-        booker: $user,
+        periods: ($this->createPeriod)(1, 2),
+        bookableResource: $this->resource,
+        booker: $this->user,
         code: 'CUSTOM-CODE'
     );
 
-    // Assert the code was set
     expect($booking->code)->toBe('CUSTOM-CODE');
 
-    // Create updated periods
-    $updatedPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDays(3)->format('Y-m-d'),
-            now()->addDays(4)->format('Y-m-d')
-        )
-    );
-
-    // Update the booking without specifying a code
     $updatedBooking = (new BookResource)->run(
-        periods: $updatedPeriods,
-        bookableResource: $resource,
-        booker: $user,
+        periods: ($this->createPeriod)(3, 4),
+        bookableResource: $this->resource,
+        booker: $this->user,
         booking: $booking
     );
 
-    // Assert the code was preserved
     expect($updatedBooking->code)->toBe('CUSTOM-CODE');
 });
 
 it('can use code prefix and suffix', function () {
-    // Create a bookable resource
-    $resource = $this->createsResources(
-        startsAt: now()->startOfDay(),
-        endsAt: now()->addDays(7)->endOfDay(),
-        resourcesCount: 1
-    )->first();
-
-    // Create a user as booker
-    $user = User::factory()->create();
-
-    // Create a period collection
-    $periods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDay()->format('Y-m-d'),
-            now()->addDays(2)->format('Y-m-d')
-        )
-    );
-
-    // Book the resource with code prefix and suffix
     $booking = (new BookResource)->run(
-        periods: $periods,
-        bookableResource: $resource,
-        booker: $user,
+        periods: ($this->createPeriod)(1, 2),
+        bookableResource: $this->resource,
+        booker: $this->user,
         codePrefix: 'PRE-',
         codeSuffix: '-SUF'
     );
 
-    // Assert the code has the prefix and suffix
     expect($booking->code)->toStartWith('PRE-')
         ->and($booking->code)->toEndWith('-SUF');
 });
 
 it('handles transaction rollback on failure', function () {
-    // Create a bookable resource
     $resource = $this->createsResources(
         startsAt: now()->startOfDay(),
         endsAt: now()->addDays(7)->endOfDay(),
@@ -295,40 +191,20 @@ it('handles transaction rollback on failure', function () {
         resourcesStates: ['max' => 1]
     )->first();
 
-    // Create users
-    $user1 = User::factory()->create();
     $user2 = User::factory()->create();
 
-    // Create overlapping periods
-    $periods1 = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDay()->format('Y-m-d'),
-            now()->addDays(2)->format('Y-m-d')
-        )
-    );
-
-    $periods2 = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDays(1)->format('Y-m-d'),
-            now()->addDays(3)->format('Y-m-d')
-        )
-    );
-
-    // Book the resource first time
     $booking1 = (new BookResource)->run(
-        periods: $periods1,
+        periods: ($this->createPeriod)(1, 2),
         bookableResource: $resource,
-        booker: $user1
+        booker: $this->user
     );
 
-    // Count bookings before attempting the second booking
     $bookingsCountBefore = Booking::count();
     $bookedPeriodsCountBefore = $resource->bookedPeriods()->count();
 
-    // Try to book overlapping period (should fail)
     try {
         (new BookResource)->run(
-            periods: $periods2,
+            periods: ($this->createPeriod)(1, 3),
             bookableResource: $resource,
             booker: $user2
         );
@@ -336,17 +212,14 @@ it('handles transaction rollback on failure', function () {
         // Expected exception
     }
 
-    // Count bookings after the failed attempt
     $bookingsCountAfter = Booking::count();
     $bookedPeriodsCountAfter = $resource->bookedPeriods()->count();
 
-    // Assert no new bookings or booked periods were created
     expect($bookingsCountAfter)->toBe($bookingsCountBefore)
         ->and($bookedPeriodsCountAfter)->toBe($bookedPeriodsCountBefore);
 });
 
 it('handles exception and rolls back transaction when changing booking', function () {
-    // Create a bookable resource with max=1
     $resource = $this->createsResources(
         startsAt: now()->startOfDay(),
         endsAt: now()->addDays(7)->endOfDay(),
@@ -354,73 +227,39 @@ it('handles exception and rolls back transaction when changing booking', functio
         resourcesStates: ['max' => 1]
     )->first();
 
-    // Create users
-    $user1 = User::factory()->create();
     $user2 = User::factory()->create();
 
-    // Create initial periods for first booking
-    $initialPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDay()->format('Y-m-d'),
-            now()->addDays(2)->format('Y-m-d')
-        )
-    );
-
-    // Create initial booking
     $booking = (new BookResource)->run(
-        periods: $initialPeriods,
+        periods: ($this->createPeriod)(1, 2),
         bookableResource: $resource,
-        booker: $user1,
+        booker: $this->user,
         label: 'Initial Booking'
     );
 
-    // Store the original booking data for comparison
-    $originalBookingData = $booking->toArray();
     $originalPeriodsCount = $booking->bookedPeriods()->count();
 
-    // Create a second booking with non-overlapping period
-    $secondPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDays(3)->format('Y-m-d'),
-            now()->addDays(4)->format('Y-m-d')
-        )
-    );
-
     $secondBooking = (new BookResource)->run(
-        periods: $secondPeriods,
+        periods: ($this->createPeriod)(3, 4),
         bookableResource: $resource,
         booker: $user2,
         label: 'Second Booking'
     );
 
-    // Clear events
     Event::fake();
 
-    // Now try to update the first booking to overlap with the second booking
-    // This should cause an exception due to the overlap
-    $overlappingPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDays(3)->format('Y-m-d'),
-            now()->addDays(4)->format('Y-m-d')
-        )
-    );
+    $overlappingPeriods = ($this->createPeriod)(3, 4);
 
-    // Try to update the booking (should fail due to overlap)
     try {
         (new BookResource)->run(
             booking: $booking,
             periods: $overlappingPeriods,
             bookableResource: $resource,
-            booker: $user1,
+            booker: $this->user,
             label: 'Updated Booking'
         );
 
         $this->fail('Expected exception was not thrown');
     } catch (BookingResourceOverlappingException $e) {
-        // Expected exception
-
-        // Manually dispatch the BookingChangeFailed event
-        // This is a workaround for the test, in a real application this would be handled by the BookResource class
         event(new BookingChangeFailed(
             $booking,
             UnbookableReason::EXCEPTION,
@@ -429,16 +268,13 @@ it('handles exception and rolls back transaction when changing booking', functio
         ));
     }
 
-    // Refresh the booking from the database
     $booking->refresh();
 
-    // Assert the booking was not changed (transaction was rolled back)
     expect($booking->label)->toBe('Initial Booking')
         ->and($booking->bookedPeriods()->count())->toBe($originalPeriodsCount)
         ->and($booking->bookedPeriods->first()->starts_at->format('Y-m-d'))->toBe(now()->addDay()->format('Y-m-d'))
         ->and($booking->bookedPeriods->first()->ends_at->format('Y-m-d'))->toBe(now()->addDays(2)->format('Y-m-d'));
 
-    // Assert events were dispatched
     Event::assertDispatched(BookingChanging::class);
     Event::assertDispatched(BookingChangeFailed::class, function ($event) use ($booking, $resource) {
         return $event->booking->id === $booking->id
@@ -448,7 +284,6 @@ it('handles exception and rolls back transaction when changing booking', functio
 });
 
 it('triggers natural catch block for overlapping booking updates', function () {
-    // Create a bookable resource with max=1
     $resource = $this->createsResources(
         startsAt: now()->startOfDay(),
         endsAt: now()->addDays(7)->endOfDay(),
@@ -456,71 +291,38 @@ it('triggers natural catch block for overlapping booking updates', function () {
         resourcesStates: ['max' => 1]
     )->first();
 
-    // Create users
-    $user1 = User::factory()->create();
     $user2 = User::factory()->create();
 
-    // Create initial periods for first booking
-    $initialPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDay()->format('Y-m-d'),
-            now()->addDays(2)->format('Y-m-d')
-        )
-    );
-
-    // Create initial booking
     $booking = (new BookResource)->run(
-        periods: $initialPeriods,
+        periods: ($this->createPeriod)(1, 2),
         bookableResource: $resource,
-        booker: $user1,
+        booker: $this->user,
         label: 'Initial Booking'
     );
 
-    // Create a second booking with non-overlapping period
-    $secondPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDays(3)->format('Y-m-d'),
-            now()->addDays(4)->format('Y-m-d')
-        )
-    );
-
     $secondBooking = (new BookResource)->run(
-        periods: $secondPeriods,
+        periods: ($this->createPeriod)(3, 4),
         bookableResource: $resource,
         booker: $user2,
         label: 'Second Booking'
     );
 
-    // Clear events to track only the update attempt
     Event::fake();
 
-    // Now try to update the first booking to overlap with the second booking
-    // This should trigger the natural catch block in the BookResource update method
-    $overlappingPeriods = PeriodCollection::make(
-        SpatiePeriod::make(
-            now()->addDays(3)->format('Y-m-d'),
-            now()->addDays(4)->format('Y-m-d')
-        )
-    );
-
-    // This test should let the natural exception handling occur without manual event dispatching
     expect(fn () => (new BookResource)->run(
         booking: $booking,
-        periods: $overlappingPeriods,
+        periods: ($this->createPeriod)(3, 4),
         bookableResource: $resource,
-        booker: $user1,
+        booker: $this->user,
         label: 'Updated Booking'
     ))->toThrow(BookingResourceOverlappingException::class);
 
-    // Refresh the booking from the database
     $booking->refresh();
 
-    // Assert the booking was not changed (transaction was rolled back)
     expect($booking->label)->toBe('Initial Booking')
         ->and($booking->bookedPeriods->first()->starts_at->format('Y-m-d'))->toBe(now()->addDay()->format('Y-m-d'))
         ->and($booking->bookedPeriods->first()->ends_at->format('Y-m-d'))->toBe(now()->addDays(2)->format('Y-m-d'));
 
-    // Assert that the natural catch block events were dispatched
     Event::assertDispatched(BookingChanging::class);
     Event::assertDispatched(BookingChangeFailed::class, function ($event) use ($booking, $resource) {
         return $event->booking->id === $booking->id

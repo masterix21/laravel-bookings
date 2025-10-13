@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Period;
@@ -7,6 +8,7 @@ use Masterix21\Bookings\Tests\Concerns\CreatesResources;
 use Spatie\Period\Period as SpatiePeriod;
 
 uses(CreatesResources::class);
+uses(RefreshDatabase::class);
 
 it('throws an exception because it has no plannings', function () {
     BookableResource::factory()->count(1)->create();

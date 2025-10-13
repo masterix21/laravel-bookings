@@ -23,6 +23,22 @@ class CheckBookingOverlaps
             return true;
         }
 
+        $foundOverlaps = $this->countOverlappingPeriods($periods, $bookableResource, $ignoreBooking);
+
+        if ($bookableResource->max > $foundOverlaps) {
+            return true;
+        }
+
+        $this->handleOverlapFailure($emitEvent, $throw, $ignoreBooking, $bookableResource, $periods);
+
+        return false;
+    }
+
+    protected function countOverlappingPeriods(
+        PeriodCollection $periods,
+        BookableResource $bookableResource,
+        ?Booking $ignoreBooking
+    ): int {
         $builder = resolve(config('bookings.models.booked_period'))::query()
             ->where('bookable_resource_id', $bookableResource->getKey());
 
@@ -40,12 +56,16 @@ class CheckBookingOverlaps
             $builder->where('booking_id', '!=', $ignoreBooking->getKey());
         }
 
-        $foundOverlaps = $builder->count();
+        return $builder->count();
+    }
 
-        if ($bookableResource->max > $foundOverlaps) {
-            return true;
-        }
-
+    protected function handleOverlapFailure(
+        bool $emitEvent,
+        bool $throw,
+        ?Booking $ignoreBooking,
+        BookableResource $bookableResource,
+        PeriodCollection $periods
+    ): void {
         if ($emitEvent) {
             if ($ignoreBooking) {
                 event(new BookingChangeFailed($ignoreBooking, UnbookableReason::PERIOD_OVERLAP, $bookableResource, $periods));
@@ -57,7 +77,5 @@ class CheckBookingOverlaps
         if ($throw) {
             throw new BookingResourceOverlappingException;
         }
-
-        return false;
     }
 }

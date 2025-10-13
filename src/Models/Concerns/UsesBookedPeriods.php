@@ -19,24 +19,24 @@ trait UsesBookedPeriods
             throw new \Exception('Relation "bookedPeriods" not loaded.');
         }
 
-        $periods = $this->bookedPeriods
-            ->where('is_excluded', $isExcluded)
+        $filteredPeriods = $this->bookedPeriods->where('is_excluded', $isExcluded);
+
+        if ($filteredPeriods->isEmpty() && $fallbackPeriods && ! $fallbackPeriods->isEmpty()) {
+            return $fallbackPeriods;
+        }
+
+        $periods = $filteredPeriods
             ->map(fn ($bookedPeriod) => Period::make(
                 $bookedPeriod->starts_at,
                 $bookedPeriod->ends_at,
                 Precision::DAY()
             ))
-            ->values()
-            ->toArray();
+            ->all();
 
         $periodCollection = new PeriodCollection(...$periods);
 
         if ($mergePeriods && ! $mergePeriods->isEmpty()) {
-            $periodCollection = $periodCollection->add(...$mergePeriods);
-        }
-
-        if ($periodCollection->isEmpty() && $fallbackPeriods && ! $fallbackPeriods->isEmpty()) {
-            return $fallbackPeriods;
+            return $periodCollection->add(...$mergePeriods);
         }
 
         return $periodCollection;
