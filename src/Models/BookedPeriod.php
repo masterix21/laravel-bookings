@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Masterix21\Bookings\Models;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -13,12 +15,40 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 
+/**
+ * @property int $id
+ * @property int $booking_id
+ * @property int|null $bookable_resource_id
+ * @property string|null $relatable_type
+ * @property int|null $relatable_id
+ * @property int|null $parent_id
+ * @property \Illuminate\Support\Carbon $starts_at
+ * @property \Illuminate\Support\Carbon $ends_at
+ * @property bool $is_excluded
+ * @property string|null $label
+ * @property string|null $note
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read Period $period
+ */
 class BookedPeriod extends Model
 {
     use HasFactory;
     use SoftDeletes;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'booking_id',
+        'bookable_resource_id',
+        'relatable_type',
+        'relatable_id',
+        'parent_id',
+        'starts_at',
+        'ends_at',
+        'is_excluded',
+        'label',
+        'note',
+    ];
 
     protected $casts = [
         'is_excluded' => 'boolean',

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Masterix21\Bookings\Enums;
 
 use Carbon\Carbon;
@@ -24,6 +26,7 @@ enum Weekday: string
             Carbon::FRIDAY => self::Friday,
             Carbon::SATURDAY => self::Saturday,
             Carbon::SUNDAY => self::Sunday,
+            default => throw new \InvalidArgumentException("Invalid Carbon day: {$carbonDay}"),
         };
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Masterix21\Bookings\Models;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +16,20 @@ use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsVisibleScopes;
 use Masterix21\Bookings\Models\Concerns\UsesBookablePlannings;
 use Spatie\Period\Period;
 
+/**
+ * @property int $id
+ * @property string|null $code
+ * @property string $resource_type
+ * @property int $resource_id
+ * @property int|null $min
+ * @property int|null $max
+ * @property int|null $max_nested
+ * @property int $size
+ * @property bool $is_visible
+ * @property bool $is_bookable
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ */
 class BookableResource extends Model
 {
     use HasFactory;
@@ -23,7 +39,17 @@ class BookableResource extends Model
     use ImplementsVisibleScopes;
     use UsesBookablePlannings;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'code',
+        'resource_type',
+        'resource_id',
+        'min',
+        'max',
+        'max_nested',
+        'size',
+        'is_visible',
+        'is_bookable',
+    ];
 
     protected $casts = [
         'is_visible' => 'bool',
@@ -43,7 +69,7 @@ class BookableResource extends Model
             'bookable_area_id'
         )->where(function (Builder $query) {
             $query->whereNull('parent_bookable_resource_id')
-                ->orWhere('parent_bookable_resource_id', 'bookable_resources.id');
+                ->orWhereColumn('parent_bookable_resource_id', 'bookable_resources.id');
         });
     }
 
@@ -65,10 +91,9 @@ class BookableResource extends Model
     {
         $bookedPeriodModel = app(config('bookings.models.booked_period'));
         $bookedPeriodTable = $bookedPeriodModel->getTable();
-        $foreignKey = $bookedPeriodModel->qualifyColumn('bookable_resource_id');
 
         return $query->where('is_bookable', true)
-            ->whereRaw("(SELECT COUNT(*) FROM {$bookedPeriodTable} WHERE bookable_resource_id = bookable_resources.id AND starts_at < ? AND ends_at > ? AND deleted_at IS NULL) < bookable_resources.max", [
+            ->whereRaw('bookable_resources.max > (SELECT COUNT(*) FROM '.$bookedPeriodTable.' WHERE bookable_resource_id = bookable_resources.id AND starts_at < ? AND ends_at > ? AND deleted_at IS NULL)', [
                 $period->end()->format('Y-m-d H:i:s'),
                 $period->start()->format('Y-m-d H:i:s'),
             ]);

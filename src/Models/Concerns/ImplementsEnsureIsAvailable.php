@@ -29,7 +29,7 @@ trait ImplementsEnsureIsAvailable
     ): void {
         $dates = app('bookings')->periodsToDates($periods);
 
-        $this->ensureHasValidPlannings(dates: $dates, relations: $relations);
+        $this->validatePlanningAvailability(dates: $dates, relations: $relations);
 
         $this->ensureHasFreeSize(dates: $dates, relations: $relations, ignoresUnbookable: $ignoresUnbookable);
     }

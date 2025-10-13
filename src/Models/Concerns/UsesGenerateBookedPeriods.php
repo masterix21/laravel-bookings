@@ -39,15 +39,25 @@ trait UsesGenerateBookedPeriods
                 $baseAttributes['relatable_id'] = $relatable->getKey();
             }
 
+            $model = resolve(config('bookings.models.booked_period'));
+            $chunkSize = 500;
             $records = [];
+
             foreach ($periods as $period) {
                 $records[] = array_merge($baseAttributes, [
                     'starts_at' => $period->start(),
                     'ends_at' => $period->end(),
                 ]);
+
+                if (count($records) >= $chunkSize) {
+                    $model::insert($records);
+                    $records = [];
+                }
             }
 
-            resolve(config('bookings.models.booked_period'))::insert($records);
+            if (! empty($records)) {
+                $model::insert($records);
+            }
         });
     }
 }

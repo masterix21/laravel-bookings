@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Masterix21\Bookings\Models;
 
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
@@ -11,13 +13,31 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Masterix21\Bookings\Models\Concerns\UsesBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriods;
 
+/**
+ * @property int $id
+ * @property string $code
+ * @property string|null $booker_type
+ * @property int|null $booker_id
+ * @property string|null $label
+ * @property string|null $note
+ * @property array|null $meta
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ */
 class Booking extends Model
 {
     use HasFactory;
     use UsesBookedPeriods;
     use UsesGenerateBookedPeriods;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'code',
+        'booker_type',
+        'booker_id',
+        'label',
+        'note',
+        'meta',
+    ];
 
     protected function casts(): array
     {

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Masterix21\Bookings\Actions;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\User;
+use Illuminate\Support\Facades\DB;
 use Masterix21\Bookings\Enums\UnbookableReason;
 use Masterix21\Bookings\Events\BookingChanged;
 use Masterix21\Bookings\Events\BookingChangeFailed;
@@ -24,7 +26,6 @@ class BookResource
         BookableResource $bookableResource,
         ?Model $booker,
         ?Booking $booking = null,
-        ?User $creator = null,
         ?Model $relatable = null,
         ?string $code = null,
         ?string $codePrefix = null,
@@ -57,7 +58,6 @@ class BookResource
             booker: $booker,
             periods: $periods,
             bookableResource: $bookableResource,
-            creator: $creator,
             relatable: $relatable,
             code: $code,
             codePrefix: $codePrefix,
@@ -74,7 +74,6 @@ class BookResource
         BookableResource $bookableResource,
         ?Model $relatable,
         ?Model $booker,
-        ?User $creator,
         ?string $code,
         ?string $codePrefix,
         ?string $codeSuffix,
@@ -117,7 +116,9 @@ class BookResource
                     relatable: $relatable,
                 );
 
-            event(new BookingCompleted($booking, $periods));
+            DB::afterCommit(function () use ($booking, $periods) {
+                event(new BookingCompleted($booking, $periods));
+            });
 
             return $booking;
         });
@@ -151,19 +152,13 @@ class BookResource
         ) {
             event(new BookingChanging($booking, $bookableResource, $periods));
 
-            try {
-                (new CheckBookingOverlaps)->run(
-                    periods: $periods,
-                    bookableResource: $bookableResource,
-                    emitEvent: false,
-                    throw: true,
-                    ignoreBooking: $booking
-                );
-            } catch (BookingResourceOverlappingException $e) {
-                $this->emitFailureEvent($e, $bookableResource, $periods, $booking);
-
-                throw $e;
-            }
+            (new CheckBookingOverlaps)->run(
+                periods: $periods,
+                bookableResource: $bookableResource,
+                emitEvent: false,
+                throw: true,
+                ignoreBooking: $booking
+            );
 
             $booking
                 ->fill([
@@ -180,7 +175,11 @@ class BookResource
                 ])
                 ->save();
 
-            $booking->bookedPeriods()->forceDelete();
+            if (config('bookings.booking_update.preserve_deleted_periods', false)) {
+                $booking->bookedPeriods()->delete();
+            } else {
+                $booking->bookedPeriods()->forceDelete();
+            }
 
             $booking
                 ->addBookedPeriods(
@@ -189,7 +188,9 @@ class BookResource
                     relatable: $relatable,
                 );
 
-            event(new BookingChanged($booking, $periods));
+            DB::afterCommit(function () use ($booking, $periods) {
+                event(new BookingChanged($booking, $periods));
+            });
 
             return $booking;
         });

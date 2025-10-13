@@ -17,4 +17,8 @@ return [
     'planning_validation' => [
         'batch_size' => 100,
     ],
+
+    'booking_update' => [
+        'preserve_deleted_periods' => false,
+    ],
 ];

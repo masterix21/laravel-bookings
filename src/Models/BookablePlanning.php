@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Masterix21\Bookings\Models;
 
 use Carbon\Carbon;
@@ -12,11 +14,43 @@ use Illuminate\Support\Collection;
 use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
 use Masterix21\Bookings\Enums\Weekday;
 
+/**
+ * @property int $id
+ * @property int $bookable_resource_id
+ * @property string|null $source_type
+ * @property int|null $source_id
+ * @property \Illuminate\Support\Carbon|null $starts_at
+ * @property \Illuminate\Support\Carbon|null $ends_at
+ * @property bool $monday
+ * @property bool $tuesday
+ * @property bool $wednesday
+ * @property bool $thursday
+ * @property bool $friday
+ * @property bool $saturday
+ * @property bool $sunday
+ * @property PlanningMatchingStrategy $matching_strategy
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ */
 class BookablePlanning extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'bookable_resource_id',
+        'source_type',
+        'source_id',
+        'starts_at',
+        'ends_at',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+        'matching_strategy',
+    ];
 
     protected $casts = [
         'monday' => 'bool',

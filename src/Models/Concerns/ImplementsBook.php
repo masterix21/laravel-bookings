@@ -26,7 +26,6 @@ trait ImplementsBook
             periods: $periods,
             bookableResource: $this,
             booking: $booking,
-            creator: auth()->user(),
             relatable: $relatable,
             code: $code,
             codePrefix: $codePrefix,

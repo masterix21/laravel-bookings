@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Masterix21\Bookings\Actions;
 
 use Masterix21\Bookings\Enums\UnbookableReason;
@@ -39,8 +41,18 @@ class CheckBookingOverlaps
         BookableResource $bookableResource,
         ?Booking $ignoreBooking
     ): int {
+        $lockedResource = BookableResource::query()
+            ->where('id', $bookableResource->getKey())
+            ->lockForUpdate()
+            ->first();
+
+        if (! $lockedResource) {
+            throw new \RuntimeException('BookableResource not found or locked');
+        }
+
         $builder = resolve(config('bookings.models.booked_period'))::query()
-            ->where('bookable_resource_id', $bookableResource->getKey());
+            ->where('bookable_resource_id', $bookableResource->getKey())
+            ->lockForUpdate();
 
         $builder->where(function ($query) use ($periods) {
             foreach ($periods as $period) {
