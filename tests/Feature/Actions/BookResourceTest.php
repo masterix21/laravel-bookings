@@ -35,7 +35,7 @@ beforeEach(function () {
     $this->product = Product::factory()->create();
 
     // Helper to create period collections
-    $this->createPeriod = fn($startDay, $endDay) => PeriodCollection::make(
+    $this->createPeriod = fn ($startDay, $endDay) => PeriodCollection::make(
         SpatiePeriod::make(
             now()->addDays($startDay)->format('Y-m-d'),
             now()->addDays($endDay)->format('Y-m-d')
