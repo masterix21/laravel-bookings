@@ -145,9 +145,15 @@ When extending functionality, leverage the comprehensive event system rather tha
 Models implementing `Bookable` can customize how they sync data to their `BookableResource`:
 
 ```php
+use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\Concerns\Bookable;
+use Masterix21\Bookings\Models\Concerns\IsBookable;
+use Masterix21\Bookings\Models\Concerns\SyncBookableResource;
+
 class Room extends Model implements Bookable
 {
     use IsBookable;
+    use SyncBookableResource;
 
     public function rates()
     {
@@ -179,9 +185,14 @@ class Room extends Model implements Bookable
 Use `BookablePlanningSource` to link business models (like rates, seasonal rules) to planning:
 
 ```php
+use Masterix21\Bookings\Models\Concerns\BookablePlanningSource;
+use Masterix21\Bookings\Models\Concerns\IsBookablePlanningSource;
+use Masterix21\Bookings\Models\Concerns\SyncBookablePlanning;
+
 class Rate extends Model implements BookablePlanningSource
 {
     use IsBookablePlanningSource;
+    use SyncBookablePlanning;
 
     public function room()
     {

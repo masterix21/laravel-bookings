@@ -4,8 +4,8 @@ This guide provides detailed installation instructions for Laravel Bookings, inc
 
 ## Requirements
 
-- PHP 8.3 or higher
-- Laravel 12.0 or higher
+- PHP 8.4 or higher
+- Laravel 12.x
 - Composer
 - MySQL 8.0+ or PostgreSQL 13+ (recommended)
 - SQLite 3.8+ (for development/testing)
@@ -182,7 +182,7 @@ For Docker environments:
 
 ```dockerfile
 # Dockerfile
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 # Install required extensions
 RUN docker-php-ext-install pdo pdo_mysql

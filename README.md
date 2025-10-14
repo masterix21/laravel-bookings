@@ -18,6 +18,8 @@ A comprehensive Laravel package that adds powerful booking functionality to any 
 - 🧪 **Well tested** with comprehensive test suite
 - ⚡ **Performance optimized** with efficient database queries
 - 🛡️ **Transaction safety** with automatic rollback on failures
+- 🔄 **Automatic synchronization** with model events
+- 🔗 **Planning source pattern** for business logic separation
 
 ## Installation
 
@@ -47,13 +49,13 @@ php artisan vendor:publish --tag="bookings-config"
 Add the `IsBookable` trait to any model you want to make bookable:
 
 ```php
-use Masterix21\Bookings\Models\Concerns\IsBookable;
 use Masterix21\Bookings\Models\Concerns\Bookable;
+use Masterix21\Bookings\Models\Concerns\IsBookable;
 
 class Room extends Model implements Bookable
 {
     use IsBookable;
-    
+
     protected $fillable = ['name', 'capacity'];
 }
 ```
@@ -120,10 +122,10 @@ Defines availability rules, working hours, and constraints for resources.
 Automatically sync data from your models to bookable resources:
 
 ```php
+use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\Concerns\Bookable;
 use Masterix21\Bookings\Models\Concerns\IsBookable;
 use Masterix21\Bookings\Models\Concerns\SyncBookableResource;
-use Masterix21\Bookings\Models\Concerns\Bookable;
-use Masterix21\Bookings\Models\BookableResource;
 
 class Room extends Model implements Bookable
 {
@@ -135,7 +137,6 @@ class Room extends Model implements Bookable
      */
     public function syncBookableResource(BookableResource $resource): void
     {
-        // Update resource properties from your model
         $resource->update([
             'is_visible' => $this->is_published,
             'is_bookable' => $this->is_available && $this->is_clean,

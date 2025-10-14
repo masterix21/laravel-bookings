@@ -450,6 +450,117 @@ Get booked periods for a specific date.
 public function bookedPeriodsOfDate(Carbon $date): Collection
 ```
 
+### SyncBookableResource
+
+Enables automatic synchronization of model data to BookableResource on model save events.
+
+```php
+use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\Concerns\Bookable;
+use Masterix21\Bookings\Models\Concerns\IsBookable;
+use Masterix21\Bookings\Models\Concerns\SyncBookableResource;
+
+class Room extends Model implements Bookable
+{
+    use IsBookable;
+    use SyncBookableResource;
+
+    /**
+     * Called automatically when the room is saved
+     */
+    public function syncBookableResource(BookableResource $resource): void
+    {
+        $resource->update([
+            'is_visible' => $this->is_published,
+            'is_bookable' => $this->is_available && $this->is_clean,
+            'max' => $this->max_concurrent_bookings,
+            'size' => $this->capacity,
+        ]);
+    }
+}
+```
+
+**Key Features:**
+- Opt-in with `SyncBookableResource` trait
+- Automatically called on model save events
+- Handles both single resource (`bookableResource`) and multiple resources (`bookableResources`)
+- N+1 query optimized - relation loaded once if not already eager-loaded
+- Custom logic via `syncBookableResource(BookableResource $resource)` method
+
+#### Methods
+
+##### `syncBookableResource()`
+
+Override this method to define custom synchronization logic.
+
+```php
+public function syncBookableResource(BookableResource $resource): void
+```
+
+**Parameters:**
+- `$resource` (BookableResource) - The bookable resource to sync with
+
+### SyncBookablePlanning
+
+Enables automatic synchronization of planning data from source models on model save events.
+
+```php
+use Masterix21\Bookings\Models\Concerns\BookablePlanningSource;
+use Masterix21\Bookings\Models\Concerns\IsBookablePlanningSource;
+use Masterix21\Bookings\Models\Concerns\SyncBookablePlanning;
+
+class Rate extends Model implements BookablePlanningSource
+{
+    use IsBookablePlanningSource;
+    use SyncBookablePlanning;
+
+    /**
+     * Called automatically when the rate is saved
+     */
+    public function syncBookablePlanning(): void
+    {
+        $this->planning()->updateOrCreate(
+            ['bookable_resource_id' => $this->room->bookableResource->id],
+            [
+                'starts_at' => $this->valid_from,
+                'ends_at' => $this->valid_to,
+                'monday' => true,
+                'tuesday' => true,
+                'wednesday' => true,
+                'thursday' => true,
+                'friday' => true,
+                'saturday' => $this->includes_weekend,
+                'sunday' => $this->includes_weekend,
+            ]
+        );
+    }
+}
+```
+
+**Key Features:**
+- Opt-in with `SyncBookablePlanning` trait
+- Single source of truth - business model controls planning
+- Automatic synchronization on save events
+- Bidirectional navigation: `$rate->planning` and `$planning->source`
+- Planning auto-deleted when source is deleted
+- Multiple sources can create planning for same resource
+
+**Use Cases:**
+- Hotel rates that define room availability periods
+- Seasonal pricing with availability constraints
+- Special offers with booking rules
+- Maintenance schedules that block availability
+
+#### Methods
+
+##### `syncBookablePlanning()`
+
+Override this method to define custom planning synchronization logic.
+
+```php
+public function syncBookablePlanning(): void
+```
+
 ### HasBookings
 
 For models that can make bookings (users, organizations).
