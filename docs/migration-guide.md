@@ -11,6 +11,196 @@ This guide helps you migrate between versions of Laravel Bookings and upgrade yo
 | 1.x | 10.x, 11.x, 12.x | 8.3+ | Current |
 | 0.x | 9.x, 10.x | 8.1+ | Legacy |
 
+## Upgrading to Version 1.2.0
+
+Version 1.2.0 introduces the Related Bookings feature, which adds a parent-child relationship pattern to bookings. This is a **non-breaking, opt-in feature** that requires an optional database migration.
+
+### What's New in v1.2.0
+
+- Parent-child booking relationships
+- Ability to link related bookings together
+- New `parent_booking_id` column in bookings table
+- New `parentBooking()` and `childBookings()` relationship methods on Booking model
+- Optional `$parent` parameter in `BookResource::run()` action
+
+### Breaking Changes
+
+**None.** This version is fully backward compatible with v1.1.x. All changes are opt-in.
+
+### Migration Steps
+
+#### Step 1: Update Package Version
+
+```bash
+composer update masterix21/laravel-bookings
+```
+
+#### Step 2: Publish and Run Migration (Optional)
+
+This step is **only required if you want to use the related bookings feature**.
+
+```bash
+# Publish the migration file
+php artisan vendor:publish --tag="bookings-migrations"
+
+# Review the migration file
+# database/migrations/xxxx_xx_xx_update_bookings_add_parent_booking_id.php
+
+# Run the migration
+php artisan migrate
+```
+
+The migration adds a single nullable column to the bookings table:
+
+```php
+Schema::table('bookings', function (Blueprint $table) {
+    $table->foreignId('parent_booking_id')
+        ->nullable()
+        ->after('id')
+        ->constrained('bookings')
+        ->nullOnDelete();
+});
+```
+
+#### Step 3: Start Using Related Bookings (Optional)
+
+Once migrated, you can start creating parent-child booking relationships:
+
+```php
+use Masterix21\Bookings\Actions\BookResource;
+use Spatie\Period\Period;
+use Spatie\Period\PeriodCollection;
+
+// Create a parent booking
+$parentBooking = (new BookResource())->run(
+    periods: PeriodCollection::make([
+        Period::make('2024-12-25 14:00', '2024-12-25 16:00')
+    ]),
+    bookableResource: $room,
+    booker: $user,
+    label: 'Hotel Room'
+);
+
+// Create a child booking linked to the parent
+$childBooking = (new BookResource())->run(
+    periods: PeriodCollection::make([
+        Period::make('2024-12-25 14:00', '2024-12-25 16:00')
+    ]),
+    bookableResource: $parkingSpot,
+    booker: $user,
+    parent: $parentBooking,
+    label: 'Parking Spot'
+);
+
+// Access relationships
+$children = $parentBooking->childBookings; // Collection of child bookings
+$parent = $childBooking->parentBooking;    // Parent booking instance
+```
+
+### Behavior Notes
+
+#### Cascade Deletion with `nullOnDelete()`
+
+The migration uses `nullOnDelete()` for the foreign key constraint. This means:
+
+- **When a parent booking is deleted**: Child bookings become independent (their `parent_booking_id` is set to `null`)
+- **Child bookings are NOT deleted** when the parent is deleted
+- This allows child bookings to survive parent deletion, maintaining booking integrity
+
+**Example:**
+```php
+// Create parent and child
+$parentBooking = (new BookResource())->run(/* ... */);
+$childBooking = (new BookResource())->run(parent: $parentBooking, /* ... */);
+
+// Delete parent
+$parentBooking->delete();
+
+// Child still exists but is now independent
+$childBooking->refresh();
+$childBooking->parent_booking_id; // null
+$childBooking->exists; // true
+```
+
+#### Updating Parent Relationships
+
+You can update a booking's parent relationship:
+
+```php
+// Change parent
+$booking->update(['parent_booking_id' => $newParent->id]);
+
+// Remove parent relationship
+$booking->update(['parent_booking_id' => null]);
+
+// Using BookResource action
+(new BookResource())->run(
+    booking: $existingBooking,
+    parent: $newParent,
+    periods: $periods,
+    bookableResource: $resource,
+    booker: $user
+);
+```
+
+### Migration Without the Related Bookings Feature
+
+If you don't need the related bookings feature:
+
+1. **Do nothing** - Your installation will continue working as before
+2. **Don't publish the migration** - The column won't be added
+3. **Don't use the `$parent` parameter** - The feature is completely opt-in
+
+The package remains fully functional without this migration.
+
+### Rollback Plan
+
+If you need to rollback the migration:
+
+```bash
+# Rollback the specific migration
+php artisan migrate:rollback --step=1
+
+# Or create a down migration
+php artisan make:migration remove_parent_booking_id_from_bookings
+```
+
+**Down migration example:**
+```php
+Schema::table('bookings', function (Blueprint $table) {
+    $table->dropForeign(['parent_booking_id']);
+    $table->dropColumn('parent_booking_id');
+});
+```
+
+**Note:** Before rolling back, ensure no bookings have parent relationships, or they will be broken.
+
+### Testing the Migration
+
+After migrating, verify the feature works correctly:
+
+```php
+// In tinker or test environment
+php artisan tinker
+
+// Create test parent booking
+$parent = \Masterix21\Bookings\Models\Booking::factory()->create();
+
+// Create test child booking
+$child = \Masterix21\Bookings\Models\Booking::factory()->create([
+    'parent_booking_id' => $parent->id
+]);
+
+// Test relationships
+$parent->childBookings; // Should return collection with $child
+$child->parentBooking; // Should return $parent
+
+// Test cascade deletion
+$parent->delete();
+$child->refresh();
+$child->parent_booking_id; // Should be null
+```
+
 ## Upgrading to Version 1.0
 
 ### Breaking Changes

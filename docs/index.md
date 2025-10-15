@@ -58,6 +58,8 @@ Master the essential features and functionality of the package.
 
 - **[Synchronization](synchronization.md)** - Advanced guide to automatic resource and planning synchronization, implementing SyncBookableResource trait, planning source pattern with SyncBookablePlanning trait, and managing business logic separation.
 
+- **[Related Bookings](related-bookings.md)** - Comprehensive guide to the parent-child booking relationship pattern (v1.2.0+). Learn how to link related bookings together, manage booking families, handle deletion behavior, and implement common use cases like hotel room + parking or appointments + follow-ups.
+
 ### 📖 Reference & API
 
 Comprehensive reference documentation for developers.
@@ -144,6 +146,7 @@ Quick links to accomplish specific tasks:
 
 **Advanced Features:**
 - [Create availability rules](getting-started.md#create-availability-rules)
+- [Link related bookings](related-bookings.md)
 - [Listen to booking events](events.md)
 - [Implement custom actions](actions.md#custom-actions)
 - [Synchronize resource data](synchronization.md)
@@ -163,6 +166,7 @@ Quick links to accomplish specific tasks:
 - **Overlap Prevention**: Automatic conflict detection and prevention
 - **Event-Driven**: Complete event system for audit trails and integrations
 - **Polymorphic Relations**: Flexible booker and resource types
+- **Related Bookings**: Parent-child relationships between bookings (v1.2.0+)
 - **Well Tested**: Comprehensive test suite with 90%+ coverage
 - **Performance Optimized**: Efficient queries with eager loading support
 - **Transaction Safe**: Automatic rollback on failures

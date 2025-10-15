@@ -134,3 +134,129 @@ it('handles empty meta data', function () {
     expect($booking->meta)->toBeInstanceOf(ArrayObject::class)
         ->and(count($booking->meta))->toBe(0);
 });
+
+it('has parentBooking belongsTo relationship', function () {
+    $parentBooking = BookingFactory::new()->create();
+    $childBooking = BookingFactory::new()->create([
+        'parent_booking_id' => $parentBooking->id,
+    ]);
+
+    expect($childBooking->parentBooking())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+        ->and($childBooking->parentBooking)->toBeInstanceOf(Booking::class)
+        ->and($childBooking->parentBooking->id)->toBe($parentBooking->id);
+});
+
+it('has childBookings hasMany relationship', function () {
+    $parentBooking = BookingFactory::new()->create();
+    $childBooking1 = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
+    $childBooking2 = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
+
+    expect($parentBooking->childBookings())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class)
+        ->and($parentBooking->childBookings)->toHaveCount(2)
+        ->and($parentBooking->childBookings->pluck('id')->toArray())->toContain($childBooking1->id, $childBooking2->id);
+});
+
+it('returns null for parentBooking when booking has no parent', function () {
+    $booking = BookingFactory::new()->create(['parent_booking_id' => null]);
+
+    expect($booking->parentBooking)->toBeNull();
+});
+
+it('returns empty collection for childBookings when booking has no children', function () {
+    $booking = BookingFactory::new()->create();
+
+    expect($booking->childBookings)->toHaveCount(0)
+        ->and($booking->childBookings)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+});
+
+it('allows a booking to have multiple child bookings', function () {
+    $parentBooking = BookingFactory::new()->create();
+    $childBookings = collect([
+        BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]),
+        BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]),
+        BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]),
+    ]);
+
+    $parentBooking->refresh();
+
+    expect($parentBooking->childBookings)->toHaveCount(3)
+        ->and($parentBooking->childBookings->pluck('id')->sort()->values()->toArray())
+        ->toBe($childBookings->pluck('id')->sort()->values()->toArray());
+});
+
+it('sets child parent_booking_id to null when parent is deleted', function () {
+    $parentBooking = BookingFactory::new()->create();
+    $childBooking1 = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
+    $childBooking2 = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
+
+    expect($childBooking1->parent_booking_id)->toBe($parentBooking->id)
+        ->and($childBooking2->parent_booking_id)->toBe($parentBooking->id);
+
+    $parentBooking->delete();
+
+    $childBooking1->refresh();
+    $childBooking2->refresh();
+
+    expect($childBooking1->parent_booking_id)->toBeNull()
+        ->and($childBooking2->parent_booking_id)->toBeNull()
+        ->and($childBooking1->exists)->toBeTrue()
+        ->and($childBooking2->exists)->toBeTrue();
+});
+
+it('allows nested parent-child relationships', function () {
+    $grandparentBooking = BookingFactory::new()->create();
+    $parentBooking = BookingFactory::new()->create(['parent_booking_id' => $grandparentBooking->id]);
+    $childBooking = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
+
+    expect($childBooking->parentBooking->id)->toBe($parentBooking->id)
+        ->and($parentBooking->parentBooking->id)->toBe($grandparentBooking->id)
+        ->and($grandparentBooking->childBookings)->toHaveCount(1)
+        ->and($grandparentBooking->childBookings->first()->id)->toBe($parentBooking->id)
+        ->and($parentBooking->childBookings)->toHaveCount(1)
+        ->and($parentBooking->childBookings->first()->id)->toBe($childBooking->id);
+});
+
+it('allows mass assignment for parent_booking_id', function () {
+    $parentBooking = BookingFactory::new()->create();
+    $user = User::factory()->create();
+
+    $childBooking = new Booking([
+        'parent_booking_id' => $parentBooking->id,
+        'code' => 'CHILD-001',
+        'booker_type' => User::class,
+        'booker_id' => $user->id,
+    ]);
+
+    expect($childBooking->parent_booking_id)->toBe($parentBooking->id);
+});
+
+it('can query parent and children together using eager loading', function () {
+    $parentBooking = BookingFactory::new()->create();
+    $childBooking1 = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
+    $childBooking2 = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
+
+    $loadedParent = Booking::with('childBookings')->find($parentBooking->id);
+    $loadedChild = Booking::with('parentBooking')->find($childBooking1->id);
+
+    expect($loadedParent->relationLoaded('childBookings'))->toBeTrue()
+        ->and($loadedParent->childBookings)->toHaveCount(2)
+        ->and($loadedChild->relationLoaded('parentBooking'))->toBeTrue()
+        ->and($loadedChild->parentBooking->id)->toBe($parentBooking->id);
+});
+
+it('persists parent_booking_id correctly to database', function () {
+    $parentBooking = BookingFactory::new()->create();
+    $user = User::factory()->create();
+
+    $childBooking = Booking::create([
+        'parent_booking_id' => $parentBooking->id,
+        'code' => 'TEST-CHILD',
+        'booker_type' => User::class,
+        'booker_id' => $user->id,
+    ]);
+
+    $retrieved = Booking::find($childBooking->id);
+
+    expect($retrieved->parent_booking_id)->toBe($parentBooking->id)
+        ->and($retrieved->parentBooking->id)->toBe($parentBooking->id);
+});

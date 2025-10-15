@@ -26,7 +26,7 @@ public function run(
     BookableResource $bookableResource,
     ?Model $booker = null,
     ?Booking $booking = null,
-    ?User $creator = null,
+    ?Booking $parent = null,
     ?Model $relatable = null,
     ?string $code = null,
     ?string $codePrefix = null,
@@ -42,7 +42,7 @@ public function run(
 - `$bookableResource` (BookableResource) - Resource to book
 - `$booker` (?Model) - Entity making the booking (polymorphic)
 - `$booking` (?Booking) - Existing booking for updates
-- `$creator` (?User) - User creating the booking
+- `$parent` (?Booking) - Parent booking for creating related bookings (v1.2.0+)
 - `$relatable` (?Model) - Related model for the booking
 - `$code` (?string) - Custom booking code
 - `$codePrefix` (?string) - Prefix for generated code
@@ -73,6 +73,30 @@ $booking = (new BookResource())->run(
     booker: $user,
     label: 'Conference Room Booking',
     meta: ['attendees' => 10, 'equipment' => 'projector']
+);
+```
+
+**Example with Related Bookings (v1.2.0+):**
+```php
+// Create parent booking
+$parentBooking = (new BookResource())->run(
+    periods: PeriodCollection::make([
+        Period::make('2024-12-25 14:00', '2024-12-25 16:00')
+    ]),
+    bookableResource: $room,
+    booker: $user,
+    label: 'Hotel Room'
+);
+
+// Create child booking linked to parent
+$childBooking = (new BookResource())->run(
+    periods: PeriodCollection::make([
+        Period::make('2024-12-25 14:00', '2024-12-25 16:00')
+    ]),
+    bookableResource: $parkingSpot,
+    booker: $user,
+    parent: $parentBooking,
+    label: 'Parking Spot'
 );
 ```
 
@@ -235,15 +259,13 @@ use Masterix21\Bookings\Models\Booking;
 
 ```php
 protected $fillable = [
-    'code',            // Booking code
-    'booker_type',     // Polymorphic booker type
-    'booker_id',       // Polymorphic booker ID
-    'creator_id',      // User who created booking
-    'relatable_type',  // Related model type
-    'relatable_id',    // Related model ID
-    'label',           // Booking label
-    'note',            // Additional notes
-    'meta',            // JSON metadata
+    'parent_booking_id', // Parent booking ID (v1.2.0+)
+    'code',              // Booking code
+    'booker_type',       // Polymorphic booker type
+    'booker_id',         // Polymorphic booker ID
+    'label',             // Booking label
+    'note',              // Additional notes
+    'meta',              // JSON metadata
 ];
 
 protected $casts = [
@@ -261,20 +283,10 @@ Polymorphic relationship to the booking entity.
 public function booker(): MorphTo
 ```
 
-##### `creator()`
-
-User who created the booking.
-
+**Example:**
 ```php
-public function creator(): BelongsTo
-```
-
-##### `relatable()`
-
-Optional related model.
-
-```php
-public function relatable(): MorphTo
+$booking = Booking::find(1);
+$user = $booking->booker; // Returns User instance
 ```
 
 ##### `bookedPeriods()`
@@ -283,6 +295,79 @@ Time periods for this booking.
 
 ```php
 public function bookedPeriods(): HasMany
+```
+
+**Example:**
+```php
+$periods = $booking->bookedPeriods;
+foreach ($periods as $period) {
+    echo "{$period->starts_at} to {$period->ends_at}";
+}
+```
+
+##### `parentBooking()` (v1.2.0+)
+
+Get the parent booking if this is a child booking.
+
+```php
+public function parentBooking(): BelongsTo
+```
+
+**Returns:** `Booking|null` - Parent booking or null if this is an independent booking
+
+**Example:**
+```php
+$childBooking = Booking::find(1);
+$parentBooking = $childBooking->parentBooking;
+
+if ($parentBooking) {
+    echo "This is a child of booking: {$parentBooking->code}";
+} else {
+    echo "This is an independent booking";
+}
+```
+
+##### `childBookings()` (v1.2.0+)
+
+Get all child bookings if this booking has children.
+
+```php
+public function childBookings(): HasMany
+```
+
+**Returns:** `Collection<Booking>` - Collection of child bookings
+
+**Example:**
+```php
+$parentBooking = Booking::find(1);
+$children = $parentBooking->childBookings;
+
+echo "This booking has {$children->count()} related bookings";
+
+foreach ($children as $child) {
+    echo "Child: {$child->label}";
+}
+```
+
+**Query Examples:**
+```php
+// Check if booking has children
+if ($booking->childBookings()->exists()) {
+    echo "This booking has children";
+}
+
+// Count children
+$childCount = $booking->childBookings()->count();
+
+// Filter children
+$activeChildren = $booking->childBookings()
+    ->whereHas('bookedPeriods', function ($query) {
+        $query->where('ends_at', '>', now());
+    })
+    ->get();
+
+// Eager load children
+$bookings = Booking::with('childBookings')->get();
 ```
 
 ### BookedPeriod

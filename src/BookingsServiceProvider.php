@@ -21,6 +21,7 @@ class BookingsServiceProvider extends PackageServiceProvider
                 'create_bookings_table',
                 'create_booked_periods_table',
                 'update_bookable_plannings_add_source_columns',
+                'update_bookings_add_parent_booking_id',
             ]);
     }
 

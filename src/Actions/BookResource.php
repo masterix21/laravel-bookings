@@ -25,6 +25,7 @@ class BookResource
         BookableResource $bookableResource,
         ?Model $booker,
         ?Booking $booking = null,
+        ?Booking $parent = null,
         ?Model $relatable = null,
         ?string $code = null,
         ?string $codePrefix = null,
@@ -37,6 +38,7 @@ class BookResource
             return $this->update(
                 booking: $booking,
                 booker: $booker,
+                parent: $parent,
                 relatable: $relatable,
                 periods: $periods,
                 bookableResource: $bookableResource,
@@ -55,6 +57,7 @@ class BookResource
         return $this->create(
             booking: $booking,
             booker: $booker,
+            parent: $parent,
             periods: $periods,
             bookableResource: $bookableResource,
             relatable: $relatable,
@@ -73,6 +76,7 @@ class BookResource
         BookableResource $bookableResource,
         ?Model $relatable,
         ?Model $booker,
+        ?Booking $parent,
         ?string $code,
         ?string $codePrefix,
         ?string $codeSuffix,
@@ -86,6 +90,7 @@ class BookResource
             $bookableResource,
             $relatable,
             $booker,
+            $parent,
             $code,
             $codePrefix,
             $codeSuffix,
@@ -99,6 +104,7 @@ class BookResource
 
             $booking
                 ->fill([
+                    'parent_booking_id' => $parent?->getKey(),
                     'code' => $code ?: app(BookingCodeGenerator::class)->run(prefix: $codePrefix, suffix: $codeSuffix),
                     'booker_type' => $booker ? $booker::class : null,
                     'booker_id' => $booker?->getKey(),
@@ -129,6 +135,7 @@ class BookResource
         BookableResource $bookableResource,
         ?Model $relatable,
         ?Model $booker,
+        ?Booking $parent,
         ?string $code,
         ?string $codePrefix,
         ?string $codeSuffix,
@@ -142,6 +149,7 @@ class BookResource
             $bookableResource,
             $relatable,
             $booker,
+            $parent,
             $code,
             $codePrefix,
             $codeSuffix,
@@ -161,6 +169,7 @@ class BookResource
 
             $booking
                 ->fill([
+                    'parent_booking_id' => $parent?->getKey() ?: $booking->parent_booking_id,
                     'code' => $code
                         ?: $booking->code
                             ?: app(BookingCodeGenerator::class)->run(prefix: $codePrefix, suffix: $codeSuffix),

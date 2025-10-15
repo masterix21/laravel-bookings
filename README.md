@@ -15,6 +15,7 @@ A comprehensive Laravel package that adds powerful booking functionality to any 
 - 🔍 **Overlap detection** and conflict prevention
 - 🎯 **Event-driven architecture** for audit trails and integrations
 - 🗂️ **Polymorphic relationships** for flexible booker and resource types
+- 🔗 **Related bookings** with parent-child relationships (v1.2.0+)
 - 🧪 **Well tested** with comprehensive test suite
 - ⚡ **Performance optimized** with efficient database queries
 - 🛡️ **Transaction safety** with automatic rollback on failures
@@ -154,6 +155,60 @@ class Room extends Model implements Bookable
 - N+1 query optimized
 
 *For complete documentation, see [docs/synchronization.md](docs/synchronization.md)*
+
+### Related Bookings (v1.2.0+)
+
+Link bookings together using parent-child relationships:
+
+```php
+use Masterix21\Bookings\Actions\BookResource;
+
+// Create a parent booking
+$roomBooking = (new BookResource())->run(
+    periods: PeriodCollection::make([Period::make('2024-12-25', '2024-12-27')]),
+    bookableResource: $room,
+    booker: $user,
+    label: 'Hotel Room'
+);
+
+// Create related child bookings
+$parkingBooking = (new BookResource())->run(
+    periods: PeriodCollection::make([Period::make('2024-12-25', '2024-12-27')]),
+    bookableResource: $parkingSpot,
+    booker: $user,
+    parent: $roomBooking,
+    label: 'Parking Spot'
+);
+
+$spaBooking = (new BookResource())->run(
+    periods: PeriodCollection::make([Period::make('2024-12-26 14:00', '2024-12-26 15:30')]),
+    bookableResource: $spaRoom,
+    booker: $user,
+    parent: $roomBooking,
+    label: 'Spa Treatment'
+);
+
+// Access relationships
+$children = $roomBooking->childBookings; // Collection of related bookings
+$parent = $parkingBooking->parentBooking; // Parent booking instance
+```
+
+**Benefits:**
+- Link related bookings together (room + parking, appointment + follow-up, etc.)
+- Maintain independent booking lifecycle for each resource
+- Children survive parent deletion (`nullOnDelete()` behavior)
+- Query and filter by relationships
+
+**Migration Required:**
+This is an opt-in feature requiring an optional migration:
+
+```bash
+php artisan vendor:publish --tag="bookings-migrations"
+# Then run: update_bookings_add_parent_booking_id.php
+php artisan migrate
+```
+
+*For complete documentation, see [docs/related-bookings.md](docs/related-bookings.md)*
 
 ### Planning Source Pattern
 
