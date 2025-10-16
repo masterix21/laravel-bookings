@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-10-15
+
+### Added
+- **Parent-Child Relationship Support**: Added support for parent-child relationships between related bookings
+  - Enables hierarchical booking structures for complex scenarios
+  - Allows bookings to be linked as parent-child for dependency management
+- **Planning Matching Strategies**: Enhanced resource availability with planning matching strategies
+  - More flexible planning matching for complex availability scenarios
+  - Improved resource availability scopes for better query optimization
+
+### Changed
+- **Performance Improvements**: Refactored codebase for better performance and maintainability
+  - Optimized database queries and relationships
+  - Improved code organization and structure
+  - Enhanced overall package efficiency
+- **Security & Quality**: Enhanced security, performance, and code quality across the package
+  - Improved validation and error handling
+  - Better security practices throughout the codebase
+  - Code quality improvements following Laravel best practices
+
+### Fixed
+- Documentation consistency and accuracy improvements
+- Code styling fixes throughout the package
+
 ## [1.1.1] - 2025-10-08
 
 ### Changed
@@ -185,7 +209,8 @@ If you were using the synchronization features from version 1.1.0:
 - **Test Coverage**: Extensive test suite with factories
 - **Configuration**: Highly configurable models and generators
 
-[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.1.1...HEAD
+[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/masterix21/laravel-bookings/compare/1.1.1...1.2.0
 [1.1.1]: https://github.com/masterix21/laravel-bookings/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/masterix21/laravel-bookings/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/masterix21/laravel-bookings/compare/0.0.2...1.0.0
