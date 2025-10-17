@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-10-17
+
+### Added
+- **Booking Lifecycle Callbacks**: New fluent interface to hook into the booking save lifecycle
+  - `onBookingSaving(callable $callback)`: Execute custom logic before booking is saved
+  - `onBookingSaved(callable $callback)`: Execute custom logic after booking is saved
+  - Supports method chaining for clean, readable code
+  - Callbacks receive the Booking instance as parameter
+  - Works with both create and update operations
+  - Executes within database transaction for safety
+  - Fully backward compatible - callbacks are optional
+  - Use cases: multi-tenancy, data transformation, logging, cache invalidation, external integrations
+- **Custom Booking Code Generators**: Per-booking code generator support
+  - New `codeGenerator` parameter in `BookResource::run()` method
+  - Accepts both generator class string and instance
+  - Allows different code generation strategies per booking type
+  - Falls back to configured default when not specified
+  - Supports dependency injection when using class string
+
+### Changed
+- **Documentation Enhancements**:
+  - Added comprehensive callback documentation with 7 practical examples
+  - Added custom code generator documentation with usage patterns
+  - Updated API reference with new method signatures
+  - Enhanced extending guide with advanced usage patterns
+
+### Fixed
+- PHP type compatibility: Use `Closure` type for callback properties instead of `callable`
+  - Callbacks automatically converted using `Closure::fromCallable()`
+  - Public API still accepts any `callable` type for flexibility
+
 ## [1.2.0] - 2025-10-15
 
 ### Added
@@ -209,7 +240,8 @@ If you were using the synchronization features from version 1.1.0:
 - **Test Coverage**: Extensive test suite with factories
 - **Configuration**: Highly configurable models and generators
 
-[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.2.0...HEAD
+[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.2.1...HEAD
+[1.2.1]: https://github.com/masterix21/laravel-bookings/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/masterix21/laravel-bookings/compare/1.1.1...1.2.0
 [1.1.1]: https://github.com/masterix21/laravel-bookings/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/masterix21/laravel-bookings/compare/1.0.0...1.1.0
