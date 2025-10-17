@@ -33,7 +33,12 @@ class BookResource
         ?string $label = null,
         ?string $note = null,
         ?array $meta = null,
+        string|BookingCodeGenerator|null $codeGenerator = null,
     ): ?Booking {
+        $codeGenerator ??= config('bookings.generators.booking_code');
+
+        $generatorInstance = is_string($codeGenerator) ? app($codeGenerator) : $codeGenerator;
+
         if ($booking?->exists) {
             return $this->update(
                 booking: $booking,
@@ -48,6 +53,7 @@ class BookResource
                 label: $label,
                 note: $note,
                 meta: $meta,
+                codeGenerator: $generatorInstance,
             );
         }
 
@@ -67,6 +73,7 @@ class BookResource
             label: $label,
             note: $note,
             meta: $meta,
+            codeGenerator: $generatorInstance,
         );
     }
 
@@ -83,6 +90,7 @@ class BookResource
         ?string $label,
         ?string $note,
         ?array $meta,
+        BookingCodeGenerator $codeGenerator,
     ): ?Booking {
         return $this->executeInTransaction($booking, $bookableResource, $periods, function () use (
             $booking,
@@ -96,7 +104,8 @@ class BookResource
             $codeSuffix,
             $label,
             $note,
-            $meta
+            $meta,
+            $codeGenerator
         ) {
             event(new BookingInProgress($bookableResource, $periods));
 
@@ -105,7 +114,7 @@ class BookResource
             $booking
                 ->fill([
                     'parent_booking_id' => $parent?->getKey(),
-                    'code' => $code ?: app(BookingCodeGenerator::class)->run(prefix: $codePrefix, suffix: $codeSuffix),
+                    'code' => $code ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
                     'booker_type' => $booker ? $booker::class : null,
                     'booker_id' => $booker?->getKey(),
                     'label' => $label,
@@ -142,6 +151,7 @@ class BookResource
         ?string $label,
         ?string $note,
         ?array $meta,
+        BookingCodeGenerator $codeGenerator,
     ): ?Booking {
         return $this->executeInTransaction($booking, $bookableResource, $periods, function () use (
             $booking,
@@ -155,7 +165,8 @@ class BookResource
             $codeSuffix,
             $label,
             $note,
-            $meta
+            $meta,
+            $codeGenerator
         ) {
             event(new BookingChanging($booking, $bookableResource, $periods));
 
@@ -172,7 +183,7 @@ class BookResource
                     'parent_booking_id' => $parent?->getKey() ?: $booking->parent_booking_id,
                     'code' => $code
                         ?: $booking->code
-                            ?: app(BookingCodeGenerator::class)->run(prefix: $codePrefix, suffix: $codeSuffix),
+                            ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
                     'booker_type' => $booker
                         ? $booker::class
                         : $booking->booker_type,
