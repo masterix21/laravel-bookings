@@ -484,6 +484,51 @@ foreach ($result['successful'] as $booking) {
 }
 ```
 
+### Using Booking Lifecycle Callbacks
+
+Use the fluent callback interface to inject custom logic during the booking lifecycle:
+
+```php
+<?php
+// app/Actions/BookResourceWithTenancy.php
+
+namespace App\Actions;
+
+use Masterix21\Bookings\Actions\BookResource;
+use Masterix21\Bookings\Models\Booking;
+
+class BookResourceWithTenancy
+{
+    public function __construct(
+        private BookResource $bookResource
+    ) {}
+
+    public function run(/* standard parameters */): Booking
+    {
+        return $this->bookResource
+            ->onBookingSaving(function (Booking $booking) {
+                // Automatically assign tenant context
+                $booking->tenant_id = auth()->user()->tenant_id;
+                $booking->created_by = auth()->id();
+            })
+            ->onBookingSaved(function (Booking $booking) {
+                // Post-save operations
+                Cache::forget("bookings:tenant:{$booking->tenant_id}");
+                event(new BookingCreatedInTenant($booking));
+            })
+            ->run(/* forward parameters */);
+    }
+}
+```
+
+**Key Benefits:**
+- Clean separation of concerns
+- Reusable booking logic with custom extensions
+- Transaction-safe modifications
+- Works with both creation and updates
+
+*For complete documentation, see [docs/actions.md](actions.md#booking-lifecycle-callbacks)*
+
 ### Recurring Booking Action
 
 ```php

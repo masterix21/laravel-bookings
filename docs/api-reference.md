@@ -16,6 +16,50 @@ $action = new BookResource();
 
 #### Methods
 
+##### `onBookingSaving()`
+
+Register a callback to be executed before the booking is saved.
+
+```php
+public function onBookingSaving(callable $callback): self
+```
+
+**Parameters:**
+- `$callback` (callable) - Callback function receiving the `Booking` instance before save
+
+**Returns:** `self` - For method chaining
+
+**Example:**
+```php
+$booking = (new BookResource())
+    ->onBookingSaving(function (Booking $booking) {
+        $booking->tenant_id = auth()->user()->tenant_id;
+    })
+    ->run(/* ... */);
+```
+
+##### `onBookingSaved()`
+
+Register a callback to be executed after the booking is saved.
+
+```php
+public function onBookingSaved(callable $callback): self
+```
+
+**Parameters:**
+- `$callback` (callable) - Callback function receiving the `Booking` instance after save
+
+**Returns:** `self` - For method chaining
+
+**Example:**
+```php
+$booking = (new BookResource())
+    ->onBookingSaved(function (Booking $booking) {
+        Log::info("Booking {$booking->code} created");
+    })
+    ->run(/* ... */);
+```
+
 ##### `run()`
 
 Creates or updates a booking with the specified parameters.
@@ -33,7 +77,8 @@ public function run(
     ?string $codeSuffix = null,
     ?string $label = null,
     ?string $note = null,
-    ?array $meta = null
+    ?array $meta = null,
+    string|BookingCodeGenerator|null $codeGenerator = null
 ): Booking
 ```
 
@@ -50,6 +95,7 @@ public function run(
 - `$label` (?string) - Booking label/title
 - `$note` (?string) - Additional notes
 - `$meta` (?array) - Additional metadata
+- `$codeGenerator` (string|BookingCodeGenerator|null) - Custom booking code generator
 
 **Returns:** `Booking` - The created or updated booking
 
@@ -57,6 +103,7 @@ public function run(
 - `BookingResourceOverlappingException` - When booking conflicts exist
 - `OutOfPlanningsException` - When no valid planning exists
 - `NoFreeSizeException` - When resource capacity is exceeded
+- Any exception thrown by `onBookingSaving` or `onBookingSaved` callbacks
 
 **Example:**
 ```php

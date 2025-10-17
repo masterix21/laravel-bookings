@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Masterix21\Bookings\Actions;
 
+use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Masterix21\Bookings\Enums\UnbookableReason;
@@ -20,6 +21,24 @@ use Spatie\Period\PeriodCollection;
 
 class BookResource
 {
+    protected ?Closure $savingCallback = null;
+
+    protected ?Closure $savedCallback = null;
+
+    public function onBookingSaving(callable $callback): self
+    {
+        $this->savingCallback = $callback instanceof Closure ? $callback : Closure::fromCallable($callback);
+
+        return $this;
+    }
+
+    public function onBookingSaved(callable $callback): self
+    {
+        $this->savedCallback = $callback instanceof Closure ? $callback : Closure::fromCallable($callback);
+
+        return $this;
+    }
+
     public function run(
         PeriodCollection $periods,
         BookableResource $bookableResource,
@@ -111,17 +130,25 @@ class BookResource
 
             (new CheckBookingOverlaps)->run($periods, $bookableResource, emitEvent: true, throw: true);
 
-            $booking
-                ->fill([
-                    'parent_booking_id' => $parent?->getKey(),
-                    'code' => $code ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
-                    'booker_type' => $booker ? $booker::class : null,
-                    'booker_id' => $booker?->getKey(),
-                    'label' => $label,
-                    'note' => $note,
-                    'meta' => $meta,
-                ])
-                ->save();
+            $booking->fill([
+                'parent_booking_id' => $parent?->getKey(),
+                'code' => $code ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
+                'booker_type' => $booker ? $booker::class : null,
+                'booker_id' => $booker?->getKey(),
+                'label' => $label,
+                'note' => $note,
+                'meta' => $meta,
+            ]);
+
+            if ($this->savingCallback) {
+                ($this->savingCallback)($booking);
+            }
+
+            $booking->save();
+
+            if ($this->savedCallback) {
+                ($this->savedCallback)($booking);
+            }
 
             $booking
                 ->addBookedPeriods(
@@ -178,21 +205,29 @@ class BookResource
                 ignoreBooking: $booking
             );
 
-            $booking
-                ->fill([
-                    'parent_booking_id' => $parent?->getKey() ?: $booking->parent_booking_id,
-                    'code' => $code
-                        ?: $booking->code
-                            ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
-                    'booker_type' => $booker
-                        ? $booker::class
-                        : $booking->booker_type,
-                    'booker_id' => $booker?->getKey() ?: $booking->booker_id,
-                    'label' => $label,
-                    'note' => $note,
-                    'meta' => $meta,
-                ])
-                ->save();
+            $booking->fill([
+                'parent_booking_id' => $parent?->getKey() ?: $booking->parent_booking_id,
+                'code' => $code
+                    ?: $booking->code
+                        ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
+                'booker_type' => $booker
+                    ? $booker::class
+                    : $booking->booker_type,
+                'booker_id' => $booker?->getKey() ?: $booking->booker_id,
+                'label' => $label,
+                'note' => $note,
+                'meta' => $meta,
+            ]);
+
+            if ($this->savingCallback) {
+                ($this->savingCallback)($booking);
+            }
+
+            $booking->save();
+
+            if ($this->savedCallback) {
+                ($this->savedCallback)($booking);
+            }
 
             if (config('bookings.booking_update.preserve_deleted_periods', false)) {
                 $booking->bookedPeriods()->delete();

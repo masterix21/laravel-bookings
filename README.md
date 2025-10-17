@@ -102,6 +102,32 @@ $booking = (new BookResource())->run(
 );
 ```
 
+### 4. Hook into the Booking Lifecycle (Optional)
+
+Add custom logic before or after booking is saved:
+
+```php
+use Masterix21\Bookings\Actions\BookResource;
+use Masterix21\Bookings\Models\Booking;
+
+$booking = (new BookResource())
+    ->onBookingSaving(function (Booking $booking) {
+        // Executed before $booking->save()
+        $booking->tenant_id = auth()->user()->tenant_id;
+    })
+    ->onBookingSaved(function (Booking $booking) {
+        // Executed after $booking->save()
+        Log::info("Booking {$booking->code} created");
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $bookableResource,
+        booker: auth()->user(),
+    );
+```
+
+*For complete documentation, see [docs/actions.md](docs/actions.md#booking-lifecycle-callbacks)*
+
 ## Core Concepts
 
 ### BookableResource

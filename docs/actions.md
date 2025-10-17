@@ -134,6 +134,238 @@ The action fires these events during execution:
 5. `BookingChanged` - On successful update
 6. `BookingChangeFailed` - On update failure
 
+#### Booking Lifecycle Callbacks
+
+Hook into the booking save lifecycle with chainable callback methods. These callbacks are executed within the database transaction and work for both creating and updating bookings.
+
+**Available Callbacks:**
+
+```php
+use Masterix21\Bookings\Actions\BookResource;
+use Masterix21\Bookings\Models\Booking;
+
+$action = new BookResource();
+
+$booking = $action
+    ->onBookingSaving(function (Booking $booking) {
+        // Executed before $booking->save()
+        // Modify the booking instance before it's saved
+    })
+    ->onBookingSaved(function (Booking $booking) {
+        // Executed after $booking->save()
+        // Perform post-save operations
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $resource,
+        booker: $user,
+    );
+```
+
+**Method Signatures:**
+
+```php
+onBookingSaving(callable $callback): self
+onBookingSaved(callable $callback): self
+```
+
+Both callbacks receive the `Booking` instance as their only parameter and are executed within the same database transaction.
+
+**Practical Examples:**
+
+**Multi-tenancy Support:**
+
+```php
+use Masterix21\Bookings\Actions\BookResource;
+
+$booking = (new BookResource)
+    ->onBookingSaving(function (Booking $booking) {
+        // Automatically assign tenant ID before save
+        $booking->tenant_id = auth()->user()->tenant_id;
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $resource,
+        booker: $user,
+    );
+```
+
+**Data Transformation:**
+
+```php
+$booking = (new BookResource)
+    ->onBookingSaving(function (Booking $booking) {
+        // Normalize or transform data before save
+        if ($booking->label) {
+            $booking->label = ucwords(strtolower($booking->label));
+        }
+
+        // Add computed values
+        $booking->computed_priority = $this->calculatePriority($booking);
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $resource,
+        booker: $user,
+        label: 'IMPORTANT MEETING',
+    );
+```
+
+**Logging and Auditing:**
+
+```php
+use Illuminate\Support\Facades\Log;
+
+$booking = (new BookResource)
+    ->onBookingSaved(function (Booking $booking) {
+        // Log booking creation for audit trail
+        Log::info('Booking created', [
+            'code' => $booking->code,
+            'booker' => $booking->booker->email,
+            'resource' => $booking->bookedPeriods->first()->bookableResource->id,
+            'user_ip' => request()->ip(),
+        ]);
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $resource,
+        booker: $user,
+    );
+```
+
+**Cache Invalidation:**
+
+```php
+use Illuminate\Support\Facades\Cache;
+
+$booking = (new BookResource)
+    ->onBookingSaved(function (Booking $booking) {
+        // Invalidate relevant caches after successful save
+        Cache::forget("bookings:user:{$booking->booker_id}");
+        Cache::forget("availability:resource:{$booking->bookedPeriods->first()->bookableResource->id}");
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $resource,
+        booker: $user,
+    );
+```
+
+**External System Integration:**
+
+```php
+$booking = (new BookResource)
+    ->onBookingSaved(function (Booking $booking) {
+        // Sync with external systems after successful save
+        dispatch(new SyncBookingToExternalSystemJob($booking));
+
+        // Send webhooks
+        Http::post('https://api.example.com/webhooks/booking-created', [
+            'booking_code' => $booking->code,
+            'timestamp' => now()->toISOString(),
+        ]);
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $resource,
+        booker: $user,
+    );
+```
+
+**Custom Validation:**
+
+```php
+use Illuminate\Validation\ValidationException;
+
+$booking = (new BookResource)
+    ->onBookingSaving(function (Booking $booking) {
+        // Additional validation before save
+        if ($booking->booker->hasExceededBookingLimit()) {
+            throw ValidationException::withMessages([
+                'booker' => 'User has exceeded maximum booking limit.',
+            ]);
+        }
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $resource,
+        booker: $user,
+    );
+```
+
+**Chaining Multiple Operations:**
+
+```php
+$booking = (new BookResource)
+    ->onBookingSaving(function (Booking $booking) {
+        // Pre-save modifications
+        $booking->tenant_id = auth()->user()->tenant_id;
+        $booking->status = 'pending';
+    })
+    ->onBookingSaved(function (Booking $booking) {
+        // Post-save operations
+        Log::info("Booking {$booking->code} created");
+        Cache::forget("availability:resource:{$booking->bookedPeriods->first()->bookableResource->id}");
+
+        // Send notification
+        $booking->booker->notify(new BookingConfirmation($booking));
+    })
+    ->run(
+        periods: $periods,
+        bookableResource: $resource,
+        booker: $user,
+    );
+```
+
+**Important Notes:**
+
+- **Transaction Safety**: Both callbacks execute within the same database transaction. If a callback throws an exception, all changes (including the booking save) will be rolled back.
+- **Optional**: Both callbacks are completely optional. If not specified, the action behaves as it always has.
+- **Works with Updates**: The callbacks work identically for both creating new bookings and updating existing ones.
+- **Access to State**: The `onBookingSaving` callback receives the booking before it's persisted, while `onBookingSaved` receives the booking after it's been saved with its ID assigned.
+- **Fluent Interface**: Methods return `$this` for method chaining, allowing you to chain callbacks with the `run()` method.
+
+**When to Use:**
+
+- **Use `onBookingSaving`** when you need to:
+  - Modify booking attributes before save
+  - Add computed values or defaults
+  - Perform pre-save validation
+  - Transform or normalize data
+
+- **Use `onBookingSaved`** when you need to:
+  - Access the saved booking with its ID
+  - Log or audit the operation
+  - Invalidate caches
+  - Send notifications
+  - Trigger background jobs
+  - Update external systems
+
+**Error Handling:**
+
+If a callback throws an exception, the entire transaction is rolled back and a `BookingFailed` or `BookingChangeFailed` event is emitted:
+
+```php
+use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
+
+try {
+    $booking = (new BookResource)
+        ->onBookingSaving(function (Booking $booking) {
+            if (!$booking->booker->isVerified()) {
+                throw new \Exception('User must be verified to make bookings');
+            }
+        })
+        ->run(
+            periods: $periods,
+            bookableResource: $resource,
+            booker: $user,
+        );
+} catch (\Exception $e) {
+    // Handle error - booking was not created/updated
+    return response()->json(['error' => $e->getMessage()], 422);
+}
+```
+
 #### Custom Booking Code Generators
 
 You can specify a custom booking code generator for individual bookings, overriding the default configured generator.
