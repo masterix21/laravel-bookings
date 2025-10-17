@@ -182,31 +182,108 @@ Create context-aware booking codes:
 namespace App\Generators;
 
 use Masterix21\Bookings\Generators\Contracts\BookingCodeGenerator;
-use Masterix21\Bookings\Models\Booking;
 
 class ContextAwareBookingCodeGenerator implements BookingCodeGenerator
 {
-    public function generate(?Booking $booking = null): string
+    public function run(?string $prefix = null, ?string $suffix = null): string
     {
-        $prefix = 'BK';
-        
-        if ($booking && $booking->bookedPeriods->count() > 0) {
-            $resource = $booking->bookedPeriods->first()->bookableResource->resource;
-            
-            // Add resource type prefix
-            if ($resource instanceof \App\Models\Room) {
-                $prefix = 'RM';
-            } elseif ($resource instanceof \App\Models\Vehicle) {
-                $prefix = 'VH';
-            }
-        }
-
+        $prefix ??= 'BK';
         $timestamp = now()->format('ymdHis');
         $random = strtoupper(substr(uniqid(), -4));
 
-        return "{$prefix}-{$timestamp}-{$random}";
+        return "{$prefix}-{$timestamp}-{$random}" . ($suffix ? "-{$suffix}" : '');
     }
 }
+```
+
+### Per-Booking Code Generators
+
+While the configuration file sets the default generator, you can override it for specific bookings:
+
+```php
+use Masterix21\Bookings\Actions\BookResource;
+use App\Generators\VipBookingCodeGenerator;
+use App\Generators\StandardBookingCodeGenerator;
+
+$bookResource = new BookResource();
+
+// Use VIP generator for high-value bookings
+$vipBooking = $bookResource->run(
+    periods: $periods,
+    bookableResource: $resource,
+    booker: $user,
+    codeGenerator: VipBookingCodeGenerator::class,
+);
+
+// Use standard generator for regular bookings
+$standardBooking = $bookResource->run(
+    periods: $periods,
+    bookableResource: $resource,
+    booker: $user,
+    codeGenerator: StandardBookingCodeGenerator::class,
+);
+
+// Use default configured generator
+$defaultBooking = $bookResource->run(
+    periods: $periods,
+    bookableResource: $resource,
+    booker: $user,
+    // No codeGenerator specified - uses config('bookings.generators.booking_code')
+);
+```
+
+### Generator with Constructor Parameters
+
+Create generators that accept configuration:
+
+```php
+<?php
+
+namespace App\Generators;
+
+use Masterix21\Bookings\Generators\Contracts\BookingCodeGenerator;
+
+class SequentialBookingCodeGenerator implements BookingCodeGenerator
+{
+    public function __construct(
+        private string $format = 'BK',
+        private int $startNumber = 1,
+    ) {}
+
+    public function run(?string $prefix = null, ?string $suffix = null): string
+    {
+        $prefix ??= $this->format;
+        $number = $this->getNextNumber();
+        $paddedNumber = str_pad((string) $number, 6, '0', STR_PAD_LEFT);
+
+        return "{$prefix}-{$paddedNumber}" . ($suffix ? "-{$suffix}" : '');
+    }
+
+    private function getNextNumber(): int
+    {
+        // Implementation to get next sequential number
+        // Could use database, cache, or other storage
+        return $this->startNumber + cache()->increment('booking_sequence');
+    }
+}
+```
+
+Use the generator with custom parameters:
+
+```php
+use App\Generators\SequentialBookingCodeGenerator;
+
+$generator = new SequentialBookingCodeGenerator(
+    format: 'CONF',
+    startNumber: 1000
+);
+
+$booking = $bookResource->run(
+    periods: $periods,
+    bookableResource: $resource,
+    booker: $user,
+    codeGenerator: $generator, // Pass instance with custom config
+);
 ```
 
 ## Planning Validation Configuration

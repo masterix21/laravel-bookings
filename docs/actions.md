@@ -46,7 +46,8 @@ $booking = $action->run(
         'equipment' => ['projector', 'microphone'],
         'catering' => true,
         'security_level' => 'high',
-    ]
+    ],
+    codeGenerator: \App\Generators\CustomBookingCode::class, // Custom code generator
 );
 ```
 
@@ -132,6 +133,56 @@ The action fires these events during execution:
 4. `BookingChanging` - When updating starts
 5. `BookingChanged` - On successful update
 6. `BookingChangeFailed` - On update failure
+
+#### Custom Booking Code Generators
+
+You can specify a custom booking code generator for individual bookings, overriding the default configured generator.
+
+**Using a Generator Class:**
+
+```php
+use App\Generators\CustomBookingCode;
+
+$booking = $action->run(
+    periods: $periods,
+    bookableResource: $resource,
+    booker: $user,
+    codeGenerator: CustomBookingCode::class, // Class string
+);
+```
+
+**Using a Generator Instance:**
+
+```php
+use App\Generators\CustomBookingCode;
+
+$generator = new CustomBookingCode(
+    format: 'sequential',
+    startNumber: 1000
+);
+
+$booking = $action->run(
+    periods: $periods,
+    bookableResource: $resource,
+    booker: $user,
+    codeGenerator: $generator, // Instance
+);
+```
+
+**Default Behavior:**
+
+If no `codeGenerator` is specified, the action uses the generator configured in `config/bookings.php`:
+
+```php
+// Uses config('bookings.generators.booking_code')
+$booking = $action->run(
+    periods: $periods,
+    bookableResource: $resource,
+    booker: $user,
+);
+```
+
+This allows you to use different code generation strategies for different types of bookings while maintaining a default for standard bookings.
 
 ### CheckBookingOverlaps
 
