@@ -66,11 +66,11 @@ class Booking extends Model
 
     public function parentBooking(): BelongsTo
     {
-        return $this->belongsTo(self::class, 'parent_booking_id');
+        return $this->belongsTo(config('bookings.models.booking'), 'parent_booking_id');
     }
 
     public function childBookings(): HasMany
     {
-        return $this->hasMany(self::class, 'parent_booking_id');
+        return $this->hasMany(config('bookings.models.booking'), 'parent_booking_id');
     }
 }
