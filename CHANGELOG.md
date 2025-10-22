@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2025-10-22
+
+### Fixed
+- Use configurable model class for parent-child booking relationships
+  - Replace hardcoded `self::class` references with `config('bookings.models.booking')` in `parentBooking()` and `childBookings()` relationships
+  - Ensures custom booking model classes are properly supported in hierarchical relationships
+
 ## [1.2.1] - 2025-10-17
 
 ### Added
@@ -240,7 +247,8 @@ If you were using the synchronization features from version 1.1.0:
 - **Test Coverage**: Extensive test suite with factories
 - **Configuration**: Highly configurable models and generators
 
-[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.2.1...HEAD
+[Unreleased]: https://github.com/masterix21/laravel-bookings/compare/1.2.2...HEAD
+[1.2.2]: https://github.com/masterix21/laravel-bookings/compare/1.2.1...1.2.2
 [1.2.1]: https://github.com/masterix21/laravel-bookings/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/masterix21/laravel-bookings/compare/1.1.1...1.2.0
 [1.1.1]: https://github.com/masterix21/laravel-bookings/compare/1.1.0...1.1.1
