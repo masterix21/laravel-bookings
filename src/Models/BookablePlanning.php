@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
 use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
 use Masterix21\Bookings\Enums\Weekday;
+use Spatie\Period\Period;
 
 /**
  * @property int $id
@@ -32,11 +33,11 @@ use Masterix21\Bookings\Enums\Weekday;
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  *
- * @method static Builder whereWeekdaysDates(\Illuminate\Support\Collection|array|string $dates)
- * @method static Builder whereAllDatesAreWithinPeriods(\Illuminate\Support\Collection|array|string $dates)
- * @method static Builder whereDatesAreWithinPeriods(\Illuminate\Support\Collection|array|string $dates)
- * @method static Builder whereDatesAreValids(\Illuminate\Support\Collection|array|string $dates)
- * @method static Builder wherePeriodIsValid(\Spatie\Period\Period $period)
+ * @method static Builder whereWeekdaysDates(Collection|array|string $dates)
+ * @method static Builder whereAllDatesAreWithinPeriods(Collection|array|string $dates)
+ * @method static Builder whereDatesAreWithinPeriods(Collection|array|string $dates)
+ * @method static Builder whereDatesAreValids(Collection|array|string $dates)
+ * @method static Builder wherePeriodIsValid(Period $period)
  */
 class BookablePlanning extends Model
 {
@@ -145,7 +146,7 @@ class BookablePlanning extends Model
     }
 
     /** @param Builder<self> $builder */
-    public function scopeWherePeriodIsValid(Builder $builder, \Spatie\Period\Period $period): Builder
+    public function scopeWherePeriodIsValid(Builder $builder, Period $period): Builder
     {
         $start = Carbon::parse($period->start());
         $end = Carbon::parse($period->end());

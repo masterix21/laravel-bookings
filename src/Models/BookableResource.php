@@ -30,9 +30,9 @@ use Spatie\Period\Period;
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  *
- * @method static Builder availableSlotForPeriod(\Spatie\Period\Period $period)
- * @method static Builder availableForPeriod(\Spatie\Period\Period $period)
- * @method static Builder withBookingsInPeriod(\Spatie\Period\Period $period)
+ * @method static Builder availableSlotForPeriod(Period $period)
+ * @method static Builder availableForPeriod(Period $period)
+ * @method static Builder withBookingsInPeriod(Period $period)
  */
 class BookableResource extends Model
 {
