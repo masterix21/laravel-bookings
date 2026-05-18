@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Masterix21\Bookings\Models;
 
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,6 +26,7 @@ use Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriods;
  * @property array|null $meta
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
+ * @property-read EloquentCollection<int, BookedPeriod> $bookedPeriods
  */
 class Booking extends Model
 {

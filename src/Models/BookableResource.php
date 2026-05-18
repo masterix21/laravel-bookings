@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\ImplementsBook;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
@@ -115,7 +116,7 @@ class BookableResource extends Model
     /** @param Builder<self> $query */
     public function scopeWithBookingsInPeriod(Builder $query, Period $period): Builder
     {
-        return $query->with(['bookedPeriods' => function ($query) use ($period) {
+        return $query->with(['bookedPeriods' => function (Relation $query) use ($period) {
             $query->where('starts_at', '<', $period->end())
                 ->where('ends_at', '>', $period->start())
                 ->with('booking');
