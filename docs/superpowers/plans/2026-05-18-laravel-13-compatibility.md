@@ -169,48 +169,55 @@ This removes the temporary `laravel/framework` dev entry added in Step 1. The `^
 
 ---
 
-## Task 3: Fix issues surfaced on Laravel 13 (conditional)
+## Task 3: Fix the 19 PHPStan errors
 
-Execute this task ONLY if Task 2 surfaced failures. If Task 2 passed entirely, mark this task complete and skip to Task 4.
+Task 2 results: all 202 tests pass on Laravel 13 (prefer-stable and prefer-lowest);
+no dependency minimum bump needed; Larastan is compatible. The only remaining
+work is the 19 PHPStan errors reported by `composer analyse`. These are
+pre-existing (identical on Laravel 12 and 13) — the user chose to fix them as
+part of this work rather than baseline or ignore them.
 
 **Files:**
-- Modify: `composer.json` (if a dependency minimum needs bumping)
-- Modify: source files under `src/` (if a Laravel 13 breaking change is found)
+- Modify: source files under `src/` (type annotations / docblocks only — no runtime behavior change)
 
-- [ ] **Step 1: Bump dependency minimums if prefer-lowest failed**
+The 19 errors, grouped:
 
-If Task 2 Step 4 failed, raise the minimum of the affected dependency in `composer.json` to its lowest Laravel-13-compatible version. Example for `staudenmeir/belongs-to-through`:
+1. `src/Actions/BookResource.php:80` — `nullCoalesce.variable`: `$booking ??=` where `$booking` is always non-null.
+2. `src/Generators/RandomBookingCode.php:27` — `greater.alwaysTrue`: a `> 0` comparison always true given an `int<1,max>` PHPDoc type.
+3. `src/Models/BookablePlanning.php:133` — `method.notFound`: `whereWeekdaysDates()` custom query scope not recognized.
+4. `src/Models/BookableResource.php:105-111` — `method.notFound` for `availableSlotForPeriod()` and `wherePeriodIsValid()`; `argument.type` for a `with()` closure parameter.
+5. Seven trait files — `trait.unused`: traits flagged as unused in the analysed context.
+6. `src/Models/Concerns/UsesBookablePlannings.php:192,239` — `method.notFound`: `whereDatesAreValids()` custom query scope.
+7. `src/Models/Concerns/UsesBookedPeriods.php:30-31` — `property.notFound`: `$starts_at` / `$ends_at` on `Model`.
 
-```json
-"staudenmeir/belongs-to-through": "^2.17",
-```
+- [ ] **Step 1: Capture the full error list**
 
-If Task 2 Step 3 reported Larastan incompatibility, bump in `require-dev`:
+Run: `composer analyse` and read all 19 errors with exact file:line and message.
 
-```json
-"larastan/larastan": "^3.7",
-```
+- [ ] **Step 2: Fix each error**
 
-Use the exact version identified in Task 2, not the example values.
+Apply the minimal correct fix per error category. Guidance:
+- Custom query scope `method.notFound` (`whereWeekdaysDates`, `wherePeriodIsValid`, `whereDatesAreValids`, `availableSlotForPeriod`): add `@method` PHPDoc annotations on the relevant model class, or properly type the `Builder` generic so the local scope resolves. Prefer annotating the model with `@method static Builder<static> scopeName(...)`-style hints consistent with how the scopes are declared.
+- `property.notFound` for `$starts_at`/`$ends_at`: add typed `@property` PHPDoc on the model, or type the variable to the concrete model instead of the base `Model`.
+- `nullCoalesce.variable` / `greater.alwaysTrue`: simplify the now-redundant code (e.g. plain assignment instead of `??=`) without changing behavior.
+- `trait.unused`: if these are genuine PHPStan false positives for standalone traits, the correct fix is a targeted ignore — but prefer a real fix where one exists. Do not add a blanket ignore.
 
-- [ ] **Step 2: Fix source-level breaking changes**
+Constraints: change ONLY type annotations, docblocks, and trivially-redundant code. Do NOT change runtime behavior. Do NOT touch `phpstan-baseline.neon` (no baseline regeneration — the user chose real fixes).
 
-For each test failure from Task 2 Step 2, identify the Laravel 13 API change causing it and apply the minimal fix in the relevant `src/` file. The fix must keep Laravel 12 working — use compatible APIs, not version branches, unless no shared API exists.
+- [ ] **Step 3: Re-run analysis and tests**
 
-- [ ] **Step 3: Re-run the suite on Laravel 13**
+Run: `composer analyse`
+Expected: `[OK] No errors`.
 
-Run: `vendor/bin/pest && composer analyse`
-Expected: all tests PASS, `[OK] No errors`.
+Run: `vendor/bin/pest`
+Expected: all 202 tests PASS (the current install is the Laravel 13 set from Task 2).
 
-- [ ] **Step 4: Restore composer.json lock state and commit fixes**
+- [ ] **Step 4: Commit**
 
 ```bash
-git diff --stat composer.json
-git add composer.json src/
-git commit -m "Fix Laravel 13 compatibility issues"
+git add src/
+git commit -m "Fix PHPStan errors for clean static analysis"
 ```
-
-Commit only if Step 1 or Step 2 produced changes. If nothing changed, skip the commit.
 
 ---
 
