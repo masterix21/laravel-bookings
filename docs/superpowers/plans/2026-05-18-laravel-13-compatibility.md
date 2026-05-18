@@ -69,6 +69,51 @@ git commit -m "Allow Laravel 13 and Testbench 11 in dependency constraints"
 
 ---
 
+## Task 1b: Bump Pest to v4 for Laravel 13 support
+
+Added after verification revealed Pest 3 does not support Laravel 13. Pest 4
+supports Laravel 11/12/13, so dual support is preserved.
+
+**Files:**
+- Modify: `composer.json`
+
+- [ ] **Step 1: Update the Pest dev constraints**
+
+In `composer.json`, under `require-dev`, change:
+
+```json
+"pestphp/pest": "^3.0",
+"pestphp/pest-plugin-arch": "^3.0",
+"pestphp/pest-plugin-laravel": "^3.0",
+```
+
+to:
+
+```json
+"pestphp/pest": "^4.0",
+"pestphp/pest-plugin-arch": "^4.0",
+"pestphp/pest-plugin-laravel": "^4.1",
+```
+
+`pest-plugin-laravel` needs `^4.1` because `v4.1.0` is the first release that
+allows `laravel/framework ^13.0`. `spatie/pest-plugin-test-time ^2.2` already
+allows Pest 4 and stays unchanged. `larastan/larastan ^3.0` already supports
+Laravel 13 and stays unchanged.
+
+- [ ] **Step 2: Validate composer.json syntax**
+
+Run: `composer validate --no-check-publish`
+Expected: `./composer.json is valid`
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add composer.json
+git commit -m "Bump Pest to v4 for Laravel 13 support"
+```
+
+---
+
 ## Task 2: Verify the suite passes on Laravel 13
 
 This task installs Laravel 13 locally and runs the suite. It does NOT commit `composer.lock` — the lock is a working artifact for verification only.
