@@ -12,6 +12,7 @@ use Staudenmeir\EloquentHasManyDeep\HasManyDeep;
 use Staudenmeir\EloquentHasManyDeep\HasRelationships;
 
 /** @mixin Model */
+// @phpstan-ignore trait.unused
 trait IsBookable
 {
     use HasRelationships;

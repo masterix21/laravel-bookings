@@ -86,6 +86,7 @@ class BookedPeriod extends Model
         return $this->morphTo();
     }
 
+    /** @param Builder<self> $builder */
     public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, PeriodCollection $periods, bool $excluded = false): Builder
     {
         return $builder->where(function (Builder $builder) use ($periods, $excluded) {
@@ -103,6 +104,7 @@ class BookedPeriod extends Model
         });
     }
 
+    /** @param Builder<self> $builder */
     public function scopeWhereDatesAreWithinPeriods(Builder $builder, PeriodCollection $periods, bool $excluded = false): Builder
     {
         return $builder->where(function (Builder $builder) use ($periods, $excluded) {

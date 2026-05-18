@@ -13,6 +13,7 @@ use Masterix21\Bookings\Models\BookableResource;
 use Spatie\Period\PeriodCollection;
 
 /** @mixin BookableArea | BookableResource */
+// @phpstan-ignore trait.unused
 trait ImplementsEnsureIsAvailable
 {
     /**

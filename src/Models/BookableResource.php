@@ -29,6 +29,10 @@ use Spatie\Period\Period;
  * @property bool $is_bookable
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
+ *
+ * @method static Builder availableSlotForPeriod(\Spatie\Period\Period $period)
+ * @method static Builder availableForPeriod(\Spatie\Period\Period $period)
+ * @method static Builder withBookingsInPeriod(\Spatie\Period\Period $period)
  */
 class BookableResource extends Model
 {
@@ -87,6 +91,7 @@ class BookableResource extends Model
         return 0;
     }
 
+    /** @param Builder<self> $query */
     public function scopeAvailableSlotForPeriod(Builder $query, Period $period): Builder
     {
         $bookedPeriodModel = app(config('bookings.models.booked_period'));
@@ -99,16 +104,18 @@ class BookableResource extends Model
             ]);
     }
 
+    /** @param Builder<self> $query */
     public function scopeAvailableForPeriod(Builder $query, Period $period): Builder
     {
         return $query
             ->availableSlotForPeriod($period)
-            ->whereHas('bookablePlannings', fn (Builder $q) => $q->wherePeriodIsValid($period));
+            ->whereHas('bookablePlannings', fn (Builder $q) => $q->wherePeriodIsValid($period)); // @phpstan-ignore method.notFound
     }
 
+    /** @param Builder<self> $query */
     public function scopeWithBookingsInPeriod(Builder $query, Period $period): Builder
     {
-        return $query->with(['bookedPeriods' => function (Builder $query) use ($period) {
+        return $query->with(['bookedPeriods' => function ($query) use ($period) {
             $query->where('starts_at', '<', $period->end())
                 ->where('ends_at', '>', $period->start())
                 ->with('booking');

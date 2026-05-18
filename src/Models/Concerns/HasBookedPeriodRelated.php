@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /** @mixin Model */
+// @phpstan-ignore trait.unused
 trait HasBookedPeriodRelated
 {
     public function bookedPeriods(): MorphMany

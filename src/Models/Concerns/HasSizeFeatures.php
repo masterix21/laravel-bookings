@@ -10,6 +10,7 @@ use Masterix21\Bookings\Exceptions\NoFreeSizeException;
 use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\BookedPeriod;
 
 /** @mixin IsBookable */
 trait HasSizeFeatures
@@ -33,7 +34,7 @@ trait HasSizeFeatures
         }
 
         $bookingsCount = $this->bookedPeriods()
-            ->whereDatesAreWithinPeriods($dates)
+            ->whereDatesAreWithinPeriods($dates) // @phpstan-ignore method.notFound
             ->when($this instanceof BookableResource, fn ($q) => $q->where('bookable_resource_id', $this->id))
             ->count(DB::raw('DISTINCT booking_id'));
 
@@ -69,7 +70,7 @@ trait HasSizeFeatures
                 ->select(['id', 'size'])
                 ->withCount([
                     'bookedPeriods' => fn (Builder $query) => $query
-                        ->whereDatesAreWithinPeriods($dates)
+                        ->whereDatesAreWithinPeriods($dates) // @phpstan-ignore method.notFound
                         ->distinct('booking_id'),
                 ])
                 ->whereIn('id', $resourceIds)

@@ -7,6 +7,7 @@ namespace Masterix21\Bookings\Models\Concerns;
 use Illuminate\Database\Eloquent\Model;
 
 /** @mixin Model */
+// @phpstan-ignore trait.unused
 trait SyncBookableResource
 {
     public static function bootSyncBookableResource(): void

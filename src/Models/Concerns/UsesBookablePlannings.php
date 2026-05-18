@@ -4,6 +4,7 @@ namespace Masterix21\Bookings\Models\Concerns;
 
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -189,7 +190,7 @@ trait UsesBookablePlannings
 
         $validResources = BookableResource::query()
             ->whereIn('id', $resourceIds)
-            ->whereHas('bookablePlannings', fn ($query) => $query->whereDatesAreValids($dates))
+            ->whereHas('bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates)) // @phpstan-ignore method.notFound
             ->get();
 
         if ($validResources->count() !== $bookableResources->count()) {
@@ -236,7 +237,7 @@ trait UsesBookablePlannings
 
         return BookableResource::query()
             ->whereIn('id', $resourceIds)
-            ->whereHas('bookablePlannings', fn ($query) => $query->whereDatesAreValids($dates))
+            ->whereHas('bookablePlannings', fn (Builder $query) => $query->whereDatesAreValids($dates)) // @phpstan-ignore method.notFound
             ->count() === $bookableResources->count();
     }
 

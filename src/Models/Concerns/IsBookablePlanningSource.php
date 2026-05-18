@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /** @mixin Model */
+// @phpstan-ignore trait.unused
 trait IsBookablePlanningSource
 {
     public static function bootIsBookablePlanningSource(): void

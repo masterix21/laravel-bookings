@@ -24,9 +24,7 @@ class RandomBookingCode implements BookingCodeGenerator
 
         $missingCharsLen -= 26;
 
-        if ($missingCharsLen > 0) {
-            $str = $str->append(Str::random($missingCharsLen));
-        }
+        $str = $str->append(Str::random($missingCharsLen));
 
         return $str
             ->append($suffix)
