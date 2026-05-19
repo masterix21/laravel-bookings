@@ -1,31 +1,43 @@
 # Laravel Bookings
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/masterix21/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/masterix21/laravel-bookings/run-tests.yml)](https://img.shields.io/github/actions/workflow/status/masterix21/laravel-bookings/run-tests.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/masterix21/laravel-bookings/run-tests.yml?branch=master&label=tests&style=flat-square)](https://github.com/masterix21/laravel-bookings/actions/workflows/run-tests.yml)
+[![PHP Version](https://img.shields.io/packagist/php-v/masterix21/laravel-bookings?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
 [![Total Downloads](https://img.shields.io/packagist/dt/masterix21/laravel-bookings.svg?style=flat-square)](https://packagist.org/packages/masterix21/laravel-bookings)
 
-A comprehensive Laravel package that adds powerful booking functionality to any Eloquent model. Transform your models into bookable resources with advanced features like time-based reservations, capacity management, planning constraints, overlap detection, and event-driven architecture.
+Add booking functionality to any Eloquent model. Turn your models into bookable resources with time-based reservations, capacity management, planning constraints, overlap detection, and an event-driven architecture.
+
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+- [Advanced Features](#advanced-features)
+- [Documentation](#documentation)
+- [Testing](#testing)
+- [Contributing & Credits](#contributing--credits)
 
 ## Features
 
-- 🚀 **Make any Eloquent model bookable** with simple traits
-- 📅 **Advanced time period management** using Spatie Period library
-- 🏢 **Resource capacity control** with configurable limits
-- 📋 **Planning constraints** with weekday and time restrictions
+- 🚀 **Make any Eloquent model bookable** with a single trait
+- 📅 **Advanced time period management** powered by [spatie/period](https://github.com/spatie/period)
+- 🏢 **Resource capacity control** with configurable concurrency limits
+- 📋 **Planning constraints** for weekday and time-window restrictions
 - 🔍 **Overlap detection** and conflict prevention
 - 🎯 **Event-driven architecture** for audit trails and integrations
 - 🗂️ **Polymorphic relationships** for flexible booker and resource types
-- 🔗 **Related bookings** with parent-child relationships (v1.2.0+)
-- 🧪 **Well tested** with comprehensive test suite
-- ⚡ **Performance optimized** with efficient database queries
+- 🔗 **Related bookings** with parent-child relationships
+- 🔄 **Automatic synchronization** of resources and planning via model events
 - 🛡️ **Transaction safety** with automatic rollback on failures
-- 🔄 **Automatic synchronization** with model events
-- 🔗 **Planning source pattern** for business logic separation
 
 ## Requirements
 
-- PHP 8.4+
-- Laravel 12 or 13
+| Requirement | Version       |
+|-------------|---------------|
+| PHP         | 8.4+          |
+| Laravel     | 12.x or 13.x  |
 
 ## Installation
 
@@ -48,11 +60,13 @@ Optionally, publish the config file:
 php artisan vendor:publish --tag="bookings-config"
 ```
 
+See the [installation guide](docs/installation.md) for optional migrations and upgrade notes.
+
 ## Quick Start
 
-### 1. Make a Model Bookable
+### 1. Make a model bookable
 
-Add the `IsBookable` trait to any model you want to make bookable:
+Add the `IsBookable` trait to any model. A `BookableResource` is created and kept in sync automatically.
 
 ```php
 use Masterix21\Bookings\Models\Concerns\Bookable;
@@ -66,294 +80,42 @@ class Room extends Model implements Bookable
 }
 ```
 
-### 2. Create a Bookable Resource
+### 2. Configure the bookable resource
+
+Each bookable model exposes its `BookableResource`, where you set availability and capacity:
 
 ```php
-use Masterix21\Bookings\Models\BookableResource;
-
-// Create a bookable resource for your room
 $room = Room::create(['name' => 'Deluxe Suite', 'capacity' => 4]);
 
-$bookableResource = BookableResource::create([
-    'resource_type' => Room::class,
-    'resource_id' => $room->id,
-    'max' => 1, // Maximum concurrent bookings
-    'size' => 4, // Resource capacity
+$room->bookableResource->update([
+    'max' => 1,            // Maximum concurrent bookings
+    'size' => 4,           // Resource capacity
     'is_bookable' => true,
     'is_visible' => true,
 ]);
 ```
 
-### 3. Make a Booking
+### 3. Make a booking
 
 ```php
 use Masterix21\Bookings\Actions\BookResource;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 
-// Create booking periods
 $periods = PeriodCollection::make([
-    Period::make('2024-12-25', '2024-12-27'), // 2 nights
+    Period::make('2024-12-25', '2024-12-27'),
 ]);
 
-// Book the resource
 $booking = (new BookResource())->run(
     periods: $periods,
-    bookableResource: $bookableResource,
-    booker: auth()->user(), // The user making the booking
+    bookableResource: $room->bookableResource,
+    booker: auth()->user(),
     label: 'Christmas Holiday',
-    note: 'Special dietary requirements',
-    meta: ['guests' => 2, 'payment_method' => 'credit_card']
+    meta: ['guests' => 2],
 );
 ```
 
-### 4. Hook into the Booking Lifecycle (Optional)
-
-Add custom logic before or after booking is saved:
-
-```php
-use Masterix21\Bookings\Actions\BookResource;
-use Masterix21\Bookings\Models\Booking;
-
-$booking = (new BookResource())
-    ->onBookingSaving(function (Booking $booking) {
-        // Executed before $booking->save()
-        $booking->tenant_id = auth()->user()->tenant_id;
-    })
-    ->onBookingSaved(function (Booking $booking) {
-        // Executed after $booking->save()
-        Log::info("Booking {$booking->code} created");
-    })
-    ->run(
-        periods: $periods,
-        bookableResource: $bookableResource,
-        booker: auth()->user(),
-    );
-```
-
-*For complete documentation, see [docs/actions.md](docs/actions.md#booking-lifecycle-callbacks)*
-
-## Core Concepts
-
-### BookableResource
-The central entity that represents a bookable item. It's linked to your actual model (Room, Car, etc.) via polymorphic relationships.
-
-### Booking
-Represents a reservation with metadata, booker information, and associated time periods.
-
-### BookedPeriod
-Individual time slots within a booking, supporting complex multi-period reservations.
-
-### BookablePlanning
-Defines availability rules, working hours, and constraints for resources.
-
-## Advanced Features
-
-### Custom Resource Synchronization
-
-Automatically sync data from your models to bookable resources:
-
-```php
-use Masterix21\Bookings\Models\BookableResource;
-use Masterix21\Bookings\Models\Concerns\Bookable;
-use Masterix21\Bookings\Models\Concerns\IsBookable;
-use Masterix21\Bookings\Models\Concerns\SyncBookableResource;
-
-class Room extends Model implements Bookable
-{
-    use IsBookable;
-    use SyncBookableResource;
-
-    /**
-     * Called automatically when the room is saved
-     */
-    public function syncBookableResource(BookableResource $resource): void
-    {
-        $resource->update([
-            'is_visible' => $this->is_published,
-            'is_bookable' => $this->is_available && $this->is_clean,
-            'max' => $this->max_concurrent_bookings,
-            'size' => $this->capacity,
-        ]);
-    }
-}
-```
-
-**Key Features:**
-- Opt-in with `SyncBookableResource` trait
-- Automatically called on model save
-- Handles both single resource (`bookableResource`) and multiple resources (`bookableResources`)
-- N+1 query optimized
-
-*For complete documentation, see [docs/synchronization.md](docs/synchronization.md)*
-
-### Related Bookings (v1.2.0+)
-
-Link bookings together using parent-child relationships:
-
-```php
-use Masterix21\Bookings\Actions\BookResource;
-
-// Create a parent booking
-$roomBooking = (new BookResource())->run(
-    periods: PeriodCollection::make([Period::make('2024-12-25', '2024-12-27')]),
-    bookableResource: $room,
-    booker: $user,
-    label: 'Hotel Room'
-);
-
-// Create related child bookings
-$parkingBooking = (new BookResource())->run(
-    periods: PeriodCollection::make([Period::make('2024-12-25', '2024-12-27')]),
-    bookableResource: $parkingSpot,
-    booker: $user,
-    parent: $roomBooking,
-    label: 'Parking Spot'
-);
-
-$spaBooking = (new BookResource())->run(
-    periods: PeriodCollection::make([Period::make('2024-12-26 14:00', '2024-12-26 15:30')]),
-    bookableResource: $spaRoom,
-    booker: $user,
-    parent: $roomBooking,
-    label: 'Spa Treatment'
-);
-
-// Access relationships
-$children = $roomBooking->childBookings; // Collection of related bookings
-$parent = $parkingBooking->parentBooking; // Parent booking instance
-```
-
-**Benefits:**
-- Link related bookings together (room + parking, appointment + follow-up, etc.)
-- Maintain independent booking lifecycle for each resource
-- Children survive parent deletion (`nullOnDelete()` behavior)
-- Query and filter by relationships
-
-**Migration Required:**
-This is an opt-in feature requiring an optional migration:
-
-```bash
-php artisan vendor:publish --tag="bookings-migrations"
-# Then run: update_bookings_add_parent_booking_id.php
-php artisan migrate
-```
-
-*For complete documentation, see [docs/related-bookings.md](docs/related-bookings.md)*
-
-### Planning Source Pattern
-
-Link business models (rates, special offers) directly to planning:
-
-```php
-use Masterix21\Bookings\Models\Concerns\BookablePlanningSource;
-use Masterix21\Bookings\Models\Concerns\IsBookablePlanningSource;
-use Masterix21\Bookings\Models\Concerns\SyncBookablePlanning;
-
-class Rate extends Model implements BookablePlanningSource
-{
-    use IsBookablePlanningSource;
-    use SyncBookablePlanning;
-
-    /**
-     * Called automatically when the rate is saved
-     */
-    public function syncBookablePlanning(): void
-    {
-        $this->planning()->updateOrCreate(
-            ['bookable_resource_id' => $this->room->bookableResource->id],
-            [
-                'starts_at' => $this->valid_from,
-                'ends_at' => $this->valid_to,
-                'monday' => true,
-                'tuesday' => true,
-                'wednesday' => true,
-                'thursday' => true,
-                'friday' => true,
-                'saturday' => $this->includes_weekend,
-                'sunday' => $this->includes_weekend,
-            ]
-        );
-    }
-}
-```
-
-**Benefits:**
-- Opt-in with `SyncBookablePlanning` trait
-- Single source of truth: your business model controls availability
-- Automatic synchronization on save
-- Bidirectional navigation: `$rate->planning` and `$planning->source`
-- Planning auto-deleted when source is deleted
-
-**Migration Required:**
-If you're upgrading from an older version, run this additional migration:
-
-```bash
-php artisan vendor:publish --tag="bookings-migrations"
-# Then manually run: update_bookable_plannings_add_source_columns.php
-php artisan migrate
-```
-
-*For complete documentation, see [docs/synchronization.md](docs/synchronization.md)*
-
-### Planning Constraints
-
-Define when resources are available:
-
-```php
-use Masterix21\Bookings\Models\BookablePlanning;
-
-BookablePlanning::create([
-    'bookable_resource_id' => $bookableResource->id,
-    'monday' => true,
-    'tuesday' => true,
-    'wednesday' => true,
-    'thursday' => true,
-    'friday' => true,
-    'saturday' => false, // Closed on weekends
-    'sunday' => false,
-    'starts_at' => '2024-01-01 09:00:00', // Available from 9 AM
-    'ends_at' => '2024-12-31 18:00:00',   // Until 6 PM
-]);
-```
-
-### Event System
-
-Listen to booking lifecycle events:
-
-```php
-use Masterix21\Bookings\Events\BookingCompleted;
-use Masterix21\Bookings\Events\BookingFailed;
-
-// In your EventServiceProvider
-protected $listen = [
-    BookingCompleted::class => [
-        SendBookingConfirmationEmail::class,
-        UpdateInventory::class,
-    ],
-    BookingFailed::class => [
-        LogBookingFailure::class,
-        NotifyAdministrators::class,
-    ],
-];
-```
-
-### Checking Availability
-
-```php
-// Check if a resource is booked at a specific time
-$isBooked = $room->isBookedAt(now());
-
-// Get booked periods for a specific date
-$bookedPeriods = $room->bookedPeriodsOfDate(today());
-
-// Get all bookings for a resource
-$bookings = $room->bookings;
-```
-
-### Overlap Detection
-
-The package automatically prevents overlapping bookings:
+Overlapping bookings are rejected automatically:
 
 ```php
 use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
@@ -361,90 +123,100 @@ use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 try {
     $booking = (new BookResource())->run(/* ... */);
 } catch (BookingResourceOverlappingException $e) {
-    // Handle booking conflict
     return response()->json(['error' => 'Time slot already booked'], 409);
 }
 ```
 
-## Complete Examples
+See the [getting started guide](docs/getting-started.md) for a full walkthrough.
 
-For comprehensive implementation examples, see:
+## Core Concepts
 
-- 📨 [Hotel Booking System](docs/examples/hotel-booking.md) - Complete hotel reservation system
-- 🚗 [Car Rental System](docs/examples/car-rental.md) - Vehicle rental management 
-- 🍽️ [Restaurant Reservations](docs/examples/restaurant-reservations.md) - Table booking system
-- 📅 [Service Appointments](docs/examples/service-appointments.md) - Appointment scheduling
+| Concept            | Description                                                                         |
+|--------------------|-------------------------------------------------------------------------------------|
+| `BookableResource` | The bookable item, linked to your model (Room, Car, …) via a polymorphic relation.  |
+| `Booking`          | A reservation with booker, metadata, and one or more time periods.                  |
+| `BookedPeriod`     | An individual time slot within a booking, enabling multi-period reservations.       |
+| `BookablePlanning` | Availability rules: working days, time windows, and constraints for a resource.     |
+
+## Advanced Features
+
+Each feature below is summarized here and documented in full under [`docs/`](docs/).
+
+### Booking lifecycle callbacks
+
+Hook custom logic before and after a booking is persisted with `onBookingSaving()` and `onBookingSaved()` — useful for multi-tenancy, logging, or side effects. → [docs/actions.md](docs/actions.md#booking-lifecycle-callbacks)
+
+### Custom resource synchronization
+
+Add the `SyncBookableResource` trait and implement `syncBookableResource()` to push data from your model (visibility, capacity, availability) into its `BookableResource` automatically on save. → [docs/synchronization.md](docs/synchronization.md)
+
+### Planning source pattern
+
+Add the `SyncBookablePlanning` trait so a business model (rate, special offer, seasonal rule) becomes the single source of truth for a resource's availability, with bidirectional navigation between source and planning. → [docs/synchronization.md](docs/synchronization.md)
+
+### Related bookings
+
+Link bookings with parent-child relationships (room + parking, appointment + follow-up). Each booking keeps an independent lifecycle, and children survive parent deletion. Requires an optional migration. → [docs/related-bookings.md](docs/related-bookings.md)
+
+### Planning constraints
+
+Define when a resource can be booked through `BookablePlanning` records — available weekdays plus `starts_at`/`ends_at` windows. → [docs/models.md](docs/models.md)
+
+### Events
+
+The booking lifecycle emits events (`BookingInProgress`, `BookingCompleted`, `BookingFailed`, `BookingChanging`, `BookingChanged`, `BookingChangeFailed`) for audit trails and integrations. → [docs/events.md](docs/events.md)
+
+### Checking availability
+
+```php
+$room->isBookedAt(now());            // bool
+$room->bookedPeriodsOfDate(today()); // booked periods for a date
+$room->bookings;                     // all bookings for the resource
+```
 
 ## Documentation
 
-For detailed documentation, see:
+| Guide                                              | Description                              |
+|----------------------------------------------------|------------------------------------------|
+| [Getting Started](docs/getting-started.md)         | Step-by-step quick start                 |
+| [Installation](docs/installation.md)               | Installation and optional migrations     |
+| [Configuration](docs/configuration.md)             | Configurable models and generators       |
+| [Architecture](docs/architecture.md)               | Package design and structure             |
+| [Models](docs/models.md)                           | Model relationships and usage            |
+| [Actions](docs/actions.md)                         | Core booking operations                  |
+| [Synchronization](docs/synchronization.md)         | Resource and planning synchronization    |
+| [Events](docs/events.md)                           | Event system and listeners               |
+| [Database Schema](docs/database-schema.md)         | Tables and migrations                    |
+| [API Reference](docs/api-reference.md)             | Complete API documentation               |
+| [Migration Guide](docs/migration-guide.md)         | Upgrading between versions               |
+| [Extending](docs/extending.md)                     | Customization and extension points       |
+| [Troubleshooting](docs/troubleshooting.md)         | Common issues and solutions              |
 
-- ⚙️ [Configuration](docs/configuration.md) - Package configuration options
-- 🏗️ [Database Schema](docs/database-schema.md) - Database structure and migrations
-- 📖 [API Reference](docs/api-reference.md) - Complete API documentation
+### Examples
 
-### Key Topics
-
-- 🏛️ [Architecture](docs/architecture.md) - Package design and structure
-- 🚀 [Getting Started](docs/getting-started.md) - Quick start guide
-- 📊 [Models](docs/models.md) - Model relationships and usage
-- ⚡ [Actions](docs/actions.md) - Core booking operations
-- 🔄 [Synchronization](docs/synchronization.md) - Resource and planning synchronization
-- 🎯 [Events](docs/events.md) - Event system and listeners
-- 🧪 [Testing](docs/testing.md) - Testing strategies and examples
-- 🔧 [Extending](docs/extending.md) - Customization and extensions
-- 🚨 [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
-
-## Legacy Quick Reference
-
-*For complete API documentation, see [docs/api-reference.md](docs/api-reference.md)*
-
-The package provides the following core traits and actions:
-
-- `IsBookable` trait - Makes any model bookable
-- `HasBookings` trait - For entities that can make bookings
-- `BookResource` action - Creates and updates bookings
-- `CheckBookingOverlaps` action - Validates booking conflicts
-
-Events are automatically fired during the booking lifecycle for audit trails and integrations.
+- 🏨 [Hotel Booking System](docs/examples/hotel-booking.md)
+- 🚗 [Car Rental System](docs/examples/car-rental.md)
+- 🍽️ [Restaurant Reservations](docs/examples/restaurant-reservations.md)
+- 📅 [Service Appointments](docs/examples/service-appointments.md)
 
 ## Testing
 
-Run the package tests:
-
 ```bash
-composer test
+composer test           # run the test suite
+composer test-coverage  # run with coverage
+composer analyse        # run static analysis (PHPStan)
 ```
 
-Run tests with coverage:
+See [docs/testing.md](docs/testing.md) for testing strategies.
 
-```bash
-composer test-coverage
-```
+## Contributing & Credits
 
-Run static analysis:
+- Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for contribution guidelines.
+- Please see [CHANGELOG](CHANGELOG.md) for recent changes.
+- Report security vulnerabilities via [our security policy](../../security/policy).
 
-```bash
-composer analyse
-```
-
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
-## Contributing
-
-Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
-
-## Credits
-
-- [Luca Longo](https://github.com/masterix21)
-- [All Contributors](../../contributors)
+Created and maintained by [Luca Longo](https://github.com/masterix21) and [all contributors](../../contributors).
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). See the [License File](LICENSE.md) for details.
