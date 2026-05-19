@@ -30,7 +30,7 @@ trait UsesBookablePlannings
     /**
      * Validates that this resource and its relations have valid plannings for the given dates.
      *
-     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<Carbon>  $dates
      * @param  Collection<BookableResource>|EloquentCollection<int, BookableResource>|null  $relations
      *
      * @throws OutOfPlanningsException
@@ -64,7 +64,7 @@ trait UsesBookablePlannings
     /**
      * Validates that the given relations have valid plannings for the specified dates.
      *
-     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<Carbon>  $dates
      * @param  Collection<BookableResource>|EloquentCollection<int, BookableResource>|null  $relations
      *
      * @throws RelationsOutOfPlanningsException
@@ -89,7 +89,7 @@ trait UsesBookablePlannings
     /**
      * Validates input parameters for planning validation methods.
      *
-     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<Carbon>  $dates
      * @param  Collection<BookableResource>|EloquentCollection<int, BookableResource>|null  $relations
      *
      * @throws InvalidArgumentException
@@ -120,7 +120,7 @@ trait UsesBookablePlannings
     /**
      * Checks if this resource has valid plannings for the given dates.
      *
-     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<Carbon>  $dates
      */
     protected function hasValidPlanningsForDates(Collection $dates): bool
     {
@@ -145,7 +145,7 @@ trait UsesBookablePlannings
      * Validates relations with batching support for large collections.
      *
      * @param  Collection<BookableResource>  $bookableResources
-     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<Carbon>  $dates
      *
      * @throws RelationsOutOfPlanningsException
      */
@@ -168,7 +168,7 @@ trait UsesBookablePlannings
      * Validates a chunk of bookable resources have valid plannings for the specified dates.
      *
      * @param  Collection<BookableResource>  $bookableResources
-     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<Carbon>  $dates
      *
      * @throws RelationsOutOfPlanningsException
      */
@@ -223,7 +223,7 @@ trait UsesBookablePlannings
      * A resource is considered valid if it has plannings that cover the requested dates.
      *
      * @param  Collection<BookableResource>  $bookableResources
-     * @param  Collection<\Carbon\Carbon>  $dates
+     * @param  Collection<Carbon>  $dates
      *
      * @deprecated Use validateRelationsWithBatching() instead
      */

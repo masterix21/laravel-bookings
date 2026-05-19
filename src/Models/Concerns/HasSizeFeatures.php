@@ -10,7 +10,6 @@ use Masterix21\Bookings\Exceptions\NoFreeSizeException;
 use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableResource;
-use Masterix21\Bookings\Models\BookedPeriod;
 
 /** @mixin IsBookable */
 trait HasSizeFeatures

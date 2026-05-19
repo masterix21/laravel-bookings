@@ -1,5 +1,11 @@
 <?php
 
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\Booking;
@@ -16,7 +22,7 @@ it('has booker morphTo relationship', function () {
         'booker_id' => $user->id,
     ]);
 
-    expect($booking->booker())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphTo::class)
+    expect($booking->booker())->toBeInstanceOf(MorphTo::class)
         ->and($booking->booker)->toBeInstanceOf(User::class)
         ->and($booking->booker->id)->toBe($user->id);
 });
@@ -25,7 +31,7 @@ it('has bookedPeriod hasOne relationship', function () {
     $booking = BookingFactory::new()->create();
     $bookedPeriod = BookedPeriodFactory::new()->create(['booking_id' => $booking->id]);
 
-    expect($booking->bookedPeriod())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasOne::class)
+    expect($booking->bookedPeriod())->toBeInstanceOf(HasOne::class)
         ->and($booking->bookedPeriod)->toBeInstanceOf(BookedPeriod::class)
         ->and($booking->bookedPeriod->id)->toBe($bookedPeriod->id);
 });
@@ -35,7 +41,7 @@ it('has bookedPeriods hasMany relationship', function () {
     $bookedPeriod1 = BookedPeriodFactory::new()->create(['booking_id' => $booking->id]);
     $bookedPeriod2 = BookedPeriodFactory::new()->create(['booking_id' => $booking->id]);
 
-    expect($booking->bookedPeriods())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class)
+    expect($booking->bookedPeriods())->toBeInstanceOf(HasMany::class)
         ->and($booking->bookedPeriods)->toHaveCount(2)
         ->and($booking->bookedPeriods->pluck('id')->toArray())->toContain($bookedPeriod1->id, $bookedPeriod2->id);
 });
@@ -68,7 +74,7 @@ it('allows mass assignment for all attributes', function () {
 });
 
 it('uses HasFactory trait', function () {
-    expect(Booking::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(Booking::factory())->toBeInstanceOf(Factory::class);
 });
 
 it('uses UsesBookedPeriods trait', function () {
@@ -141,7 +147,7 @@ it('has parentBooking belongsTo relationship', function () {
         'parent_booking_id' => $parentBooking->id,
     ]);
 
-    expect($childBooking->parentBooking())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+    expect($childBooking->parentBooking())->toBeInstanceOf(BelongsTo::class)
         ->and($childBooking->parentBooking)->toBeInstanceOf(Booking::class)
         ->and($childBooking->parentBooking->id)->toBe($parentBooking->id);
 });
@@ -151,7 +157,7 @@ it('has childBookings hasMany relationship', function () {
     $childBooking1 = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
     $childBooking2 = BookingFactory::new()->create(['parent_booking_id' => $parentBooking->id]);
 
-    expect($parentBooking->childBookings())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class)
+    expect($parentBooking->childBookings())->toBeInstanceOf(HasMany::class)
         ->and($parentBooking->childBookings)->toHaveCount(2)
         ->and($parentBooking->childBookings->pluck('id')->toArray())->toContain($childBooking1->id, $childBooking2->id);
 });
@@ -166,7 +172,7 @@ it('returns empty collection for childBookings when booking has no children', fu
     $booking = BookingFactory::new()->create();
 
     expect($booking->childBookings)->toHaveCount(0)
-        ->and($booking->childBookings)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+        ->and($booking->childBookings)->toBeInstanceOf(Collection::class);
 });
 
 it('allows a booking to have multiple child bookings', function () {

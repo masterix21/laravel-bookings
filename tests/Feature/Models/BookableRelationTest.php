@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
@@ -17,7 +19,7 @@ it('has parentBookableResource belongsTo relationship', function () {
         'bookable_resource_id' => $childResource->id,
     ]);
 
-    expect($relation->parentBookableResource())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+    expect($relation->parentBookableResource())->toBeInstanceOf(BelongsTo::class)
         ->and($relation->parentBookableResource)->toBeInstanceOf(BookableResource::class)
         ->and($relation->parentBookableResource->id)->toBe($parentResource->id);
 });
@@ -31,7 +33,7 @@ it('has bookableResource belongsTo relationship', function () {
         'bookable_resource_id' => $childResource->id,
     ]);
 
-    expect($relation->bookableResource())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+    expect($relation->bookableResource())->toBeInstanceOf(BelongsTo::class)
         ->and($relation->bookableResource)->toBeInstanceOf(BookableResource::class)
         ->and($relation->bookableResource->id)->toBe($childResource->id);
 });
@@ -64,7 +66,7 @@ it('can create relations between bookable resources', function () {
 });
 
 it('uses HasFactory trait', function () {
-    expect(BookableRelation::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(BookableRelation::factory())->toBeInstanceOf(Factory::class);
 });
 
 it('persists data correctly', function () {

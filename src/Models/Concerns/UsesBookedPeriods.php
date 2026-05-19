@@ -2,8 +2,8 @@
 
 namespace Masterix21\Bookings\Models\Concerns;
 
-use Masterix21\Bookings\Models\Booking;
 use Masterix21\Bookings\Models\BookedPeriod;
+use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;

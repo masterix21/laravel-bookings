@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Carbon;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\ImplementsBook;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
@@ -28,8 +29,8 @@ use Spatie\Period\Period;
  * @property int $size
  * @property bool $is_visible
  * @property bool $is_bookable
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  *
  * @method static Builder availableSlotForPeriod(Period $period)
  * @method static Builder availableForPeriod(Period $period)

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 use Masterix21\Bookings\Models\Concerns\UsesBookedPeriods;
 use Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriods;
 
@@ -24,8 +25,8 @@ use Masterix21\Bookings\Models\Concerns\UsesGenerateBookedPeriods;
  * @property string|null $label
  * @property string|null $note
  * @property array|null $meta
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read EloquentCollection<int, BookedPeriod> $bookedPeriods
  */
 class Booking extends Model

@@ -1,17 +1,25 @@
 <?php
 
+use Illuminate\Foundation\Auth\User;
+use Masterix21\Bookings\Generators\RandomBookingCode;
+use Masterix21\Bookings\Models\BookablePlanning;
+use Masterix21\Bookings\Models\BookableRelation;
+use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\BookedPeriod;
+use Masterix21\Bookings\Models\Booking;
+
 return [
     'models' => [
-        'user' => \Illuminate\Foundation\Auth\User::class,
-        'bookable_resource' => \Masterix21\Bookings\Models\BookableResource::class,
-        'bookable_planning' => \Masterix21\Bookings\Models\BookablePlanning::class,
-        'bookable_relation' => \Masterix21\Bookings\Models\BookableRelation::class,
-        'booking' => \Masterix21\Bookings\Models\Booking::class,
-        'booked_period' => \Masterix21\Bookings\Models\BookedPeriod::class,
+        'user' => User::class,
+        'bookable_resource' => BookableResource::class,
+        'bookable_planning' => BookablePlanning::class,
+        'bookable_relation' => BookableRelation::class,
+        'booking' => Booking::class,
+        'booked_period' => BookedPeriod::class,
     ],
 
     'generators' => [
-        'booking_code' => \Masterix21\Bookings\Generators\RandomBookingCode::class,
+        'booking_code' => RandomBookingCode::class,
     ],
 
     'planning_validation' => [
