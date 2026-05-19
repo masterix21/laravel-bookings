@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-05-19
+
 ### Added
 - Laravel 13 compatibility — the package now supports both Laravel 12 and Laravel 13.
+- Laravel Boost compatibility — ships package guidelines and an agent skill
+  auto-discovered under `resources/boost/` during `boost:install`, giving AI
+  assistants accurate, package-specific context.
 
 ## [1.2.2] - 2025-10-22
 
