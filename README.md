@@ -22,6 +22,11 @@ A comprehensive Laravel package that adds powerful booking functionality to any 
 - 🔄 **Automatic synchronization** with model events
 - 🔗 **Planning source pattern** for business logic separation
 
+## Requirements
+
+- PHP 8.4+
+- Laravel 12 or 13
+
 ## Installation
 
 Install the package via Composer:

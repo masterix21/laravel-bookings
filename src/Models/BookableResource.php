@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Carbon;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\ImplementsBook;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
@@ -27,8 +29,12 @@ use Spatie\Period\Period;
  * @property int $size
  * @property bool $is_visible
  * @property bool $is_bookable
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ *
+ * @method static Builder availableSlotForPeriod(Period $period)
+ * @method static Builder availableForPeriod(Period $period)
+ * @method static Builder withBookingsInPeriod(Period $period)
  */
 class BookableResource extends Model
 {
@@ -87,6 +93,7 @@ class BookableResource extends Model
         return 0;
     }
 
+    /** @param Builder<self> $query */
     public function scopeAvailableSlotForPeriod(Builder $query, Period $period): Builder
     {
         $bookedPeriodModel = app(config('bookings.models.booked_period'));
@@ -99,16 +106,18 @@ class BookableResource extends Model
             ]);
     }
 
+    /** @param Builder<self> $query */
     public function scopeAvailableForPeriod(Builder $query, Period $period): Builder
     {
         return $query
             ->availableSlotForPeriod($period)
-            ->whereHas('bookablePlannings', fn (Builder $q) => $q->wherePeriodIsValid($period));
+            ->whereHas('bookablePlannings', fn (Builder $q) => $q->wherePeriodIsValid($period)); // @phpstan-ignore method.notFound
     }
 
+    /** @param Builder<self> $query */
     public function scopeWithBookingsInPeriod(Builder $query, Period $period): Builder
     {
-        return $query->with(['bookedPeriods' => function (Builder $query) use ($period) {
+        return $query->with(['bookedPeriods' => function (Relation $query) use ($period) {
             $query->where('starts_at', '<', $period->end())
                 ->where('ends_at', '>', $period->start())
                 ->with('booking');

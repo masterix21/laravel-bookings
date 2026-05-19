@@ -1,6 +1,10 @@
 <?php
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedPeriod;
@@ -19,7 +23,7 @@ it('has booking belongsTo relationship', function () {
     $booking = BookingFactory::new()->create();
     $bookedPeriod = BookedPeriodFactory::new()->create(['booking_id' => $booking->id]);
 
-    expect($bookedPeriod->booking())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+    expect($bookedPeriod->booking())->toBeInstanceOf(BelongsTo::class)
         ->and($bookedPeriod->booking)->toBeInstanceOf(Booking::class)
         ->and($bookedPeriod->booking->id)->toBe($booking->id);
 });
@@ -28,7 +32,7 @@ it('has parent belongsTo relationship', function () {
     $parentPeriod = BookedPeriodFactory::new()->create();
     $childPeriod = BookedPeriodFactory::new()->create(['parent_id' => $parentPeriod->id]);
 
-    expect($childPeriod->parent())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+    expect($childPeriod->parent())->toBeInstanceOf(BelongsTo::class)
         ->and($childPeriod->parent)->toBeInstanceOf(BookedPeriod::class)
         ->and($childPeriod->parent->id)->toBe($parentPeriod->id);
 });
@@ -38,7 +42,7 @@ it('has children hasMany relationship', function () {
     $childPeriod1 = BookedPeriodFactory::new()->create(['parent_id' => $parentPeriod->id]);
     $childPeriod2 = BookedPeriodFactory::new()->create(['parent_id' => $parentPeriod->id]);
 
-    expect($parentPeriod->children())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class)
+    expect($parentPeriod->children())->toBeInstanceOf(HasMany::class)
         ->and($parentPeriod->children)->toHaveCount(2)
         ->and($parentPeriod->children->pluck('id')->toArray())->toContain($childPeriod1->id, $childPeriod2->id);
 });
@@ -47,7 +51,7 @@ it('has bookableResource belongsTo relationship', function () {
     $bookableResource = BookableResourceFactory::new()->create();
     $bookedPeriod = BookedPeriodFactory::new()->create(['bookable_resource_id' => $bookableResource->id]);
 
-    expect($bookedPeriod->bookableResource())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+    expect($bookedPeriod->bookableResource())->toBeInstanceOf(BelongsTo::class)
         ->and($bookedPeriod->bookableResource)->toBeInstanceOf(BookableResource::class)
         ->and($bookedPeriod->bookableResource->id)->toBe($bookableResource->id);
 });
@@ -59,7 +63,7 @@ it('has relatable morphTo relationship', function () {
         'relatable_id' => $product->id,
     ]);
 
-    expect($bookedPeriod->relatable())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphTo::class)
+    expect($bookedPeriod->relatable())->toBeInstanceOf(MorphTo::class)
         ->and($bookedPeriod->relatable)->toBeInstanceOf(Product::class)
         ->and($bookedPeriod->relatable->id)->toBe($product->id);
 });
@@ -232,5 +236,5 @@ it('allows mass assignment for all attributes', function () {
 });
 
 it('uses HasFactory trait', function () {
-    expect(BookedPeriod::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(BookedPeriod::factory())->toBeInstanceOf(Factory::class);
 });

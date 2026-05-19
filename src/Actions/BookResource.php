@@ -77,7 +77,7 @@ class BookResource
         }
 
         /** @var Booking $booking */
-        $booking ??= resolve(config('bookings.models.booking'));
+        $booking = $booking ?? resolve(config('bookings.models.booking'));
 
         return $this->create(
             booking: $booking,

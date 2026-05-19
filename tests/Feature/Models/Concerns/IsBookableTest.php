@@ -1,34 +1,38 @@
 <?php
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Support\Collection;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\Booking;
 use Masterix21\Bookings\Tests\TestClasses\Product;
 use Spatie\Period\Period;
+use Staudenmeir\EloquentHasManyDeep\HasManyDeep;
 
 it('has bookableResources morphMany relationship', function () {
     $product = Product::factory()->create();
 
-    expect($product->bookableResources())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphMany::class);
+    expect($product->bookableResources())->toBeInstanceOf(MorphMany::class);
 });
 
 it('has bookableResource morphOne relationship', function () {
     $product = Product::factory()->create();
 
-    expect($product->bookableResource())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphOne::class);
+    expect($product->bookableResource())->toBeInstanceOf(MorphOne::class);
 });
 
 it('has bookedPeriods hasManyDeep relationship', function () {
     $product = Product::factory()->create();
 
-    expect($product->bookedPeriods())->toBeInstanceOf(\Staudenmeir\EloquentHasManyDeep\HasManyDeep::class);
+    expect($product->bookedPeriods())->toBeInstanceOf(HasManyDeep::class);
 });
 
 it('has bookings hasManyDeep relationship', function () {
     $product = Product::factory()->create();
 
-    expect($product->bookings())->toBeInstanceOf(\Staudenmeir\EloquentHasManyDeep\HasManyDeep::class);
+    expect($product->bookings())->toBeInstanceOf(HasManyDeep::class);
 });
 
 it('can create bookable resources through morphMany relationship', function () {
@@ -129,7 +133,7 @@ it('performs database query when getting bookedPeriodsOfDate without pre-loading
     // Should work without pre-loading the relation (uses database query)
     $periodsOfDate = $product->bookedPeriodsOfDate($date);
 
-    expect($periodsOfDate)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+    expect($periodsOfDate)->toBeInstanceOf(Collection::class)
         ->and($periodsOfDate)->toHaveCount(0);
 });
 
@@ -146,7 +150,7 @@ it('returns empty collection when no booked periods exist for date', function ()
 
     $periodsOfDate = $product->bookedPeriodsOfDate($date);
 
-    expect($periodsOfDate)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+    expect($periodsOfDate)->toBeInstanceOf(Collection::class)
         ->and($periodsOfDate)->toHaveCount(0);
 });
 
@@ -190,7 +194,7 @@ it('returns collection of booked periods for specific date', function () {
 
     $periodsOfDate = $product->bookedPeriodsOfDate($testDate);
 
-    expect($periodsOfDate)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+    expect($periodsOfDate)->toBeInstanceOf(Collection::class)
         ->and($periodsOfDate)->toHaveCount(2)
         ->and($periodsOfDate->pluck('id')->toArray())->toContain($bookedPeriod1->id, $bookedPeriod2->id);
 });
@@ -392,7 +396,7 @@ it('uses eager loaded bookedPeriods for bookedPeriodsOfDate when relation is loa
     // This should use the eager loaded data (lines 62-63)
     $periodsOfDate = $product->bookedPeriodsOfDate($testDate);
 
-    expect($periodsOfDate)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+    expect($periodsOfDate)->toBeInstanceOf(Collection::class)
         ->and($periodsOfDate)->toHaveCount(2)
         ->and($periodsOfDate->pluck('id')->toArray())->toContain($bookedPeriod1->id, $bookedPeriod2->id);
 

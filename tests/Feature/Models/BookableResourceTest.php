@@ -1,10 +1,16 @@
 <?php
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Tests\database\factories\BookingFactory;
 use Masterix21\Bookings\Tests\TestClasses\Product;
+use Spatie\Period\Period;
+use Spatie\Period\Precision;
 
 uses(RefreshDatabase::class);
 
@@ -15,7 +21,7 @@ it('has morphTo resource relationship', function () {
         'resource_id' => $product->id,
     ]);
 
-    expect($bookableResource->resource())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphTo::class)
+    expect($bookableResource->resource())->toBeInstanceOf(MorphTo::class)
         ->and($bookableResource->resource)->toBeInstanceOf(Product::class)
         ->and($bookableResource->resource->id)->toBe($product->id);
 });
@@ -23,13 +29,13 @@ it('has morphTo resource relationship', function () {
 it('has bookableRelations hasMany relationship', function () {
     $bookableResource = BookableResource::factory()->create();
 
-    expect($bookableResource->bookableRelations())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($bookableResource->bookableRelations())->toBeInstanceOf(HasMany::class);
 });
 
 it('has bookedPeriods hasMany relationship', function () {
     $bookableResource = BookableResource::factory()->create();
 
-    expect($bookableResource->bookedPeriods())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($bookableResource->bookedPeriods())->toBeInstanceOf(HasMany::class);
 });
 
 it('can create booked periods through relationship', function () {
@@ -98,7 +104,7 @@ it('allows mass assignment for all attributes', function () {
 });
 
 it('uses HasFactory trait', function () {
-    expect(BookableResource::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(BookableResource::factory())->toBeInstanceOf(Factory::class);
 });
 
 it('uses multiple concerns and traits', function () {
@@ -111,9 +117,9 @@ it('uses multiple concerns and traits', function () {
 });
 
 it('scopeAvailableSlotForPeriod returns resources with available slots', function () {
-    $startTime = \Carbon\Carbon::parse('2024-03-15 14:00:00');
-    $endTime = \Carbon\Carbon::parse('2024-03-15 16:00:00');
-    $period = \Spatie\Period\Period::make($startTime, $endTime, \Spatie\Period\Precision::HOUR());
+    $startTime = Carbon::parse('2024-03-15 14:00:00');
+    $endTime = Carbon::parse('2024-03-15 16:00:00');
+    $period = Period::make($startTime, $endTime, Precision::HOUR());
 
     $availableResource = BookableResource::factory()->create([
         'is_bookable' => true,
@@ -146,7 +152,7 @@ it('scopeAvailableSlotForPeriod returns resources with available slots', functio
 });
 
 it('scopeAvailableSlotForPeriod considers overlapping periods correctly', function () {
-    $period = \Spatie\Period\Period::make(now()->addDay(), now()->addDay()->addHours(2), \Spatie\Period\Precision::HOUR());
+    $period = Period::make(now()->addDay(), now()->addDay()->addHours(2), Precision::HOUR());
 
     $resource = BookableResource::factory()->create([
         'is_bookable' => true,
@@ -168,9 +174,9 @@ it('scopeAvailableSlotForPeriod considers overlapping periods correctly', functi
 });
 
 it('scopeAvailableForPeriod returns resources with available slots and valid planning', function () {
-    $startDate = \Carbon\Carbon::parse('2024-01-15 09:00:00');
-    $endDate = \Carbon\Carbon::parse('2024-01-17 18:00:00');
-    $period = \Spatie\Period\Period::make($startDate, $endDate);
+    $startDate = Carbon::parse('2024-01-15 09:00:00');
+    $endDate = Carbon::parse('2024-01-17 18:00:00');
+    $period = Period::make($startDate, $endDate);
 
     $resourceWithValidPlanning = BookableResource::factory()->create([
         'is_bookable' => true,
@@ -197,9 +203,9 @@ it('scopeAvailableForPeriod returns resources with available slots and valid pla
 });
 
 it('scopeAvailableForPeriod excludes resources with invalid weekdays in planning', function () {
-    $startDate = \Carbon\Carbon::parse('2024-01-15 09:00:00');
-    $endDate = \Carbon\Carbon::parse('2024-01-17 18:00:00');
-    $period = \Spatie\Period\Period::make($startDate, $endDate);
+    $startDate = Carbon::parse('2024-01-15 09:00:00');
+    $endDate = Carbon::parse('2024-01-17 18:00:00');
+    $period = Period::make($startDate, $endDate);
 
     $resource = BookableResource::factory()->create([
         'is_bookable' => true,
@@ -220,9 +226,9 @@ it('scopeAvailableForPeriod excludes resources with invalid weekdays in planning
 });
 
 it('scopeAvailableForPeriod excludes resources with planning outside period', function () {
-    $startDate = \Carbon\Carbon::parse('2024-02-15 09:00:00');
-    $endDate = \Carbon\Carbon::parse('2024-02-17 18:00:00');
-    $period = \Spatie\Period\Period::make($startDate, $endDate);
+    $startDate = Carbon::parse('2024-02-15 09:00:00');
+    $endDate = Carbon::parse('2024-02-17 18:00:00');
+    $period = Period::make($startDate, $endDate);
 
     $resource = BookableResource::factory()->create([
         'is_bookable' => true,
@@ -243,9 +249,9 @@ it('scopeAvailableForPeriod excludes resources with planning outside period', fu
 });
 
 it('scopeAvailableForPeriod handles resources with multiple plannings', function () {
-    $startDate = \Carbon\Carbon::parse('2024-01-15 09:00:00');
-    $endDate = \Carbon\Carbon::parse('2024-01-17 18:00:00');
-    $period = \Spatie\Period\Period::make($startDate, $endDate);
+    $startDate = Carbon::parse('2024-01-15 09:00:00');
+    $endDate = Carbon::parse('2024-01-17 18:00:00');
+    $period = Period::make($startDate, $endDate);
 
     $resource = BookableResource::factory()->create([
         'is_bookable' => true,
@@ -272,9 +278,9 @@ it('scopeAvailableForPeriod handles resources with multiple plannings', function
 });
 
 it('scopeAvailableForPeriod excludes fully booked resources even with valid planning', function () {
-    $startDate = \Carbon\Carbon::parse('2024-01-15 09:00:00');
-    $endDate = \Carbon\Carbon::parse('2024-01-17 18:00:00');
-    $period = \Spatie\Period\Period::make($startDate, $endDate);
+    $startDate = Carbon::parse('2024-01-15 09:00:00');
+    $endDate = Carbon::parse('2024-01-17 18:00:00');
+    $period = Period::make($startDate, $endDate);
 
     $resource = BookableResource::factory()->create([
         'is_bookable' => true,

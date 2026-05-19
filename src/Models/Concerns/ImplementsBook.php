@@ -7,6 +7,7 @@ use Masterix21\Bookings\Actions\BookResource;
 use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\PeriodCollection;
 
+// @phpstan-ignore trait.unused
 trait ImplementsBook
 {
     public function book(

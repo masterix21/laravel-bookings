@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
 use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
 use Masterix21\Bookings\Enums\Weekday;
+use Spatie\Period\Period;
 
 /**
  * @property int $id
@@ -31,6 +32,12 @@ use Masterix21\Bookings\Enums\Weekday;
  * @property PlanningMatchingStrategy $matching_strategy
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
+ *
+ * @method static Builder whereWeekdaysDates(Collection|array|string $dates)
+ * @method static Builder whereAllDatesAreWithinPeriods(Collection|array|string $dates)
+ * @method static Builder whereDatesAreWithinPeriods(Collection|array|string $dates)
+ * @method static Builder whereDatesAreValids(Collection|array|string $dates)
+ * @method static Builder wherePeriodIsValid(Period $period)
  */
 class BookablePlanning extends Model
 {
@@ -75,6 +82,7 @@ class BookablePlanning extends Model
         return $this->morphTo();
     }
 
+    /** @param Builder<self> $builder */
     public function scopeWhereWeekdaysDates(Builder $builder, Collection|array|string $dates): Builder
     {
         return $builder->where(function (Builder $query) use ($dates) {
@@ -93,6 +101,7 @@ class BookablePlanning extends Model
         });
     }
 
+    /** @param Builder<self> $builder */
     public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
     {
         return $builder->where(function ($query) use ($dates) {
@@ -111,6 +120,7 @@ class BookablePlanning extends Model
         });
     }
 
+    /** @param Builder<self> $builder */
     public function scopeWhereDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
     {
         return $builder->where(function (Builder $builder) use ($dates) {
@@ -127,6 +137,7 @@ class BookablePlanning extends Model
         });
     }
 
+    /** @param Builder<self> $builder */
     public function scopeWhereDatesAreValids(Builder $builder, Collection|array|string $dates): Builder
     {
         return $builder
@@ -134,7 +145,8 @@ class BookablePlanning extends Model
             ->whereAllDatesAreWithinPeriods($dates);
     }
 
-    public function scopeWherePeriodIsValid(Builder $builder, \Spatie\Period\Period $period): Builder
+    /** @param Builder<self> $builder */
+    public function scopeWherePeriodIsValid(Builder $builder, Period $period): Builder
     {
         $start = Carbon::parse($period->start());
         $end = Carbon::parse($period->end());

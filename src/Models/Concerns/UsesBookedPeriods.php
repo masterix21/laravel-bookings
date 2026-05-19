@@ -2,12 +2,13 @@
 
 namespace Masterix21\Bookings\Models\Concerns;
 
-use Masterix21\Bookings\Models\BookedResource;
+use Masterix21\Bookings\Models\BookedPeriod;
+use Masterix21\Bookings\Models\Booking;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;
 
-/** @mixin Booking | BookedResource */
+/** @mixin Booking */
 trait UsesBookedPeriods
 {
     public function getBookedPeriods(
@@ -26,7 +27,7 @@ trait UsesBookedPeriods
         }
 
         $periods = $filteredPeriods
-            ->map(fn ($bookedPeriod) => Period::make(
+            ->map(fn (BookedPeriod $bookedPeriod) => Period::make(
                 $bookedPeriod->starts_at,
                 $bookedPeriod->ends_at,
                 Precision::DAY()

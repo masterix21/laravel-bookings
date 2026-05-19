@@ -1,11 +1,15 @@
 <?php
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
 use Masterix21\Bookings\Models\BookablePlanning;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Tests\database\factories\BookablePlanningFactory;
 use Masterix21\Bookings\Tests\database\factories\BookableResourceFactory;
+use Spatie\Period\Period;
 
 uses(RefreshDatabase::class);
 
@@ -13,7 +17,7 @@ it('has bookableResource belongsTo relationship', function () {
     $bookableResource = BookableResourceFactory::new()->create();
     $planning = BookablePlanningFactory::new()->create(['bookable_resource_id' => $bookableResource->id]);
 
-    expect($planning->bookableResource())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+    expect($planning->bookableResource())->toBeInstanceOf(BelongsTo::class)
         ->and($planning->bookableResource)->toBeInstanceOf(BookableResource::class)
         ->and($planning->bookableResource->id)->toBe($bookableResource->id);
 });
@@ -259,7 +263,7 @@ it('allows mass assignment for all attributes', function () {
 });
 
 it('uses HasFactory trait', function () {
-    expect(BookablePlanning::factory())->toBeInstanceOf(\Illuminate\Database\Eloquent\Factories\Factory::class);
+    expect(BookablePlanning::factory())->toBeInstanceOf(Factory::class);
 });
 
 it('handles edge cases with null dates in scopes', function () {
@@ -311,7 +315,7 @@ it('scopeWherePeriodIsValid validates period with all weekdays enabled', functio
         'ends_at' => '2024-01-31 23:59:59',
     ]);
 
-    $period = \Spatie\Period\Period::make('2024-01-15 09:00:00', '2024-01-17 18:00:00');
+    $period = Period::make('2024-01-15 09:00:00', '2024-01-17 18:00:00');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(1)
@@ -327,7 +331,7 @@ it('scopeWherePeriodIsValid excludes planning with disabled weekdays in period',
         'ends_at' => '2024-01-31 23:59:59',
     ]);
 
-    $period = \Spatie\Period\Period::make('2024-01-15 09:00:00', '2024-01-17 18:00:00');
+    $period = Period::make('2024-01-15 09:00:00', '2024-01-17 18:00:00');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(0);
@@ -341,7 +345,7 @@ it('scopeWherePeriodIsValid validates period with null starts_at', function () {
         'ends_at' => '2024-01-31 23:59:59',
     ]);
 
-    $period = \Spatie\Period\Period::make('2023-12-25 09:00:00', '2024-01-10 18:00:00');
+    $period = Period::make('2023-12-25 09:00:00', '2024-01-10 18:00:00');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(1)
@@ -356,7 +360,7 @@ it('scopeWherePeriodIsValid validates period with null ends_at', function () {
         'ends_at' => null,
     ]);
 
-    $period = \Spatie\Period\Period::make('2024-02-15 09:00:00', '2024-02-17 18:00:00');
+    $period = Period::make('2024-02-15 09:00:00', '2024-02-17 18:00:00');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(1)
@@ -372,7 +376,7 @@ it('scopeWherePeriodIsValid validates period with both starts_at and ends_at nul
         'ends_at' => null,
     ]);
 
-    $period = \Spatie\Period\Period::make('2024-01-15 09:00:00', '2024-01-17 18:00:00');
+    $period = Period::make('2024-01-15 09:00:00', '2024-01-17 18:00:00');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(1)
@@ -386,7 +390,7 @@ it('scopeWherePeriodIsValid handles single day period', function () {
         'ends_at' => '2024-01-31 23:59:59',
     ]);
 
-    $period = \Spatie\Period\Period::make('2024-01-15 09:00:00', '2024-01-15 18:00:00');
+    $period = Period::make('2024-01-15 09:00:00', '2024-01-15 18:00:00');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(1)
@@ -402,12 +406,12 @@ it('scopeWherePeriodIsValid with "any" strategy matches if at least one weekday 
         'friday' => true,
         'saturday' => false,
         'sunday' => false,
-        'matching_strategy' => \Masterix21\Bookings\Enums\PlanningMatchingStrategy::Any,
+        'matching_strategy' => PlanningMatchingStrategy::Any,
         'starts_at' => '2026-01-01 00:00:00',
         'ends_at' => '2026-01-31 23:59:59',
     ]);
 
-    $period = \Spatie\Period\Period::make('2026-01-01 00:00:00', '2026-01-31 23:59:59');
+    $period = Period::make('2026-01-01 00:00:00', '2026-01-31 23:59:59');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(1)
@@ -423,12 +427,12 @@ it('scopeWherePeriodIsValid with "any" strategy excludes planning with no matchi
         'friday' => false,
         'saturday' => true,
         'sunday' => true,
-        'matching_strategy' => \Masterix21\Bookings\Enums\PlanningMatchingStrategy::Any,
+        'matching_strategy' => PlanningMatchingStrategy::Any,
         'starts_at' => '2026-01-01 00:00:00',
         'ends_at' => '2026-01-31 23:59:59',
     ]);
 
-    $period = \Spatie\Period\Period::make('2026-01-06 00:00:00', '2026-01-09 23:59:59');
+    $period = Period::make('2026-01-06 00:00:00', '2026-01-09 23:59:59');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(0);
@@ -443,7 +447,7 @@ it('scopeWherePeriodIsValid handles both "all" and "any" strategies in same quer
         'friday' => true,
         'saturday' => false,
         'sunday' => false,
-        'matching_strategy' => \Masterix21\Bookings\Enums\PlanningMatchingStrategy::All,
+        'matching_strategy' => PlanningMatchingStrategy::All,
         'starts_at' => '2026-01-01 00:00:00',
         'ends_at' => '2026-01-31 23:59:59',
     ]);
@@ -456,12 +460,12 @@ it('scopeWherePeriodIsValid handles both "all" and "any" strategies in same quer
         'friday' => true,
         'saturday' => false,
         'sunday' => false,
-        'matching_strategy' => \Masterix21\Bookings\Enums\PlanningMatchingStrategy::Any,
+        'matching_strategy' => PlanningMatchingStrategy::Any,
         'starts_at' => '2026-01-01 00:00:00',
         'ends_at' => '2026-01-31 23:59:59',
     ]);
 
-    $period = \Spatie\Period\Period::make('2026-01-06 00:00:00', '2026-01-09 23:59:59');
+    $period = Period::make('2026-01-06 00:00:00', '2026-01-09 23:59:59');
     $results = BookablePlanning::wherePeriodIsValid($period)->get();
 
     expect($results)->toHaveCount(2)

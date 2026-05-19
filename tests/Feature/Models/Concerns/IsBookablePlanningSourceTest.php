@@ -1,12 +1,13 @@
 <?php
 
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Masterix21\Bookings\Models\BookablePlanning;
 use Masterix21\Bookings\Tests\TestClasses\Rate;
 
 it('has planning morphOne relationship', function () {
     $rate = Rate::factory()->create();
 
-    expect($rate->planning())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphOne::class);
+    expect($rate->planning())->toBeInstanceOf(MorphOne::class);
 });
 
 it('can create planning through morphOne relationship', function () {

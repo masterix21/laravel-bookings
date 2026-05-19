@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /** @mixin Model */
+// @phpstan-ignore trait.unused
 trait HasBookings
 {
     public function bookings(): MorphMany
