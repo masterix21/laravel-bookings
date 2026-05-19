@@ -47,7 +47,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Masterix21\\Bookings\\Tests\\": "tests"
+            "Masterix21\\Bookings\\Tests\\": "tests",
+            "Masterix21\\Bookings\\Tests\\Database\\Factories\\": "tests/database/factories"
         }
     },
     "scripts": {

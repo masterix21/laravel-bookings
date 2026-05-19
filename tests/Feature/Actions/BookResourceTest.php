@@ -28,7 +28,8 @@ beforeEach(function () {
     $this->resource = $this->createsResources(
         startsAt: now()->startOfDay(),
         endsAt: now()->addDays(7)->endOfDay(),
-        resourcesCount: 1
+        resourcesCount: 1,
+        resourcesStates: ['max' => 10]
     )->first();
 
     $this->user = User::factory()->create();
