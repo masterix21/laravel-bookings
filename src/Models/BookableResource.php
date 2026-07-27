@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\ImplementsBook;
@@ -94,14 +95,25 @@ class BookableResource extends Model
     /** @param Builder<self> $query */
     public function scopeAvailableSlotForPeriod(Builder $query, Period $period): Builder
     {
-        $bookedPeriodModel = app(config('bookings.models.booked_period'));
-        $bookedPeriodTable = $bookedPeriodModel->getTable();
+        return $query
+            ->where('is_bookable', true)
+            ->where(function (Builder $query) use ($period) {
+                $query
+                    ->whereNull($this->qualifyColumn('max'))
+                    ->orWhere($this->qualifyColumn('max'), '>', function (QueryBuilder $subQuery) use ($period) {
+                        $bookedPeriodModel = app(config('bookings.models.booked_period'));
+                        $bookingForeignKey = app(config('bookings.models.booking'))->getForeignKey();
 
-        return $query->where('is_bookable', true)
-            ->whereRaw('(bookable_resources.max IS NULL OR bookable_resources.max > (SELECT COUNT(DISTINCT booking_id) FROM '.$bookedPeriodTable.' WHERE bookable_resource_id = bookable_resources.id AND is_excluded = false AND starts_at <= ? AND ends_at >= ? AND deleted_at IS NULL))', [
-                $period->end()->format('Y-m-d H:i:s'),
-                $period->start()->format('Y-m-d H:i:s'),
-            ]);
+                        $subQuery
+                            ->from($bookedPeriodModel->getTable())
+                            ->selectRaw("count(distinct {$bookingForeignKey})")
+                            ->whereColumn($bookedPeriodModel->qualifyColumn($this->getForeignKey()), $this->qualifyColumn('id'))
+                            ->where('is_excluded', false)
+                            ->whereNull('deleted_at')
+                            ->where('starts_at', '<=', $period->end())
+                            ->where('ends_at', '>=', $period->start());
+                    });
+            });
     }
 
     /** @param Builder<self> $query */

@@ -29,9 +29,11 @@ class CheckBookingOverlaps
             return true;
         }
 
+        $lockedResource = $this->lockBookableResource($bookableResource);
+
         $foundOverlaps = $this->maxConcurrentBookings($periods, $bookableResource, $ignoreBooking);
 
-        if ($bookableResource->max > $foundOverlaps) {
+        if (blank($lockedResource->max) || $lockedResource->max > $foundOverlaps) {
             return true;
         }
 
@@ -45,8 +47,6 @@ class CheckBookingOverlaps
         BookableResource $bookableResource,
         ?Booking $ignoreBooking
     ): int {
-        $this->lockBookableResource($bookableResource);
-
         $bookedPeriods = $this->lockOverlappingPeriods($periods, $bookableResource, $ignoreBooking);
 
         if ($bookedPeriods->isEmpty()) {
@@ -58,9 +58,9 @@ class CheckBookingOverlaps
             ->max();
     }
 
-    protected function lockBookableResource(BookableResource $bookableResource): void
+    protected function lockBookableResource(BookableResource $bookableResource): BookableResource
     {
-        $lockedResource = BookableResource::query()
+        $lockedResource = $bookableResource->newQuery()
             ->whereKey($bookableResource->getKey())
             ->lockForUpdate()
             ->first();
@@ -68,6 +68,8 @@ class CheckBookingOverlaps
         if (! $lockedResource) {
             throw new \RuntimeException('BookableResource not found or locked');
         }
+
+        return $lockedResource;
     }
 
     /** @return EloquentCollection<int, BookedPeriod> */

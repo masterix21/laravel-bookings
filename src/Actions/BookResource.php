@@ -6,7 +6,6 @@ namespace Masterix21\Bookings\Actions;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Masterix21\Bookings\Enums\UnbookableReason;
 use Masterix21\Bookings\Events\BookingChanged;
 use Masterix21\Bookings\Events\BookingChangeFailed;
@@ -157,7 +156,7 @@ class BookResource
                     relatable: $relatable,
                 );
 
-            DB::afterCommit(function () use ($booking, $periods) {
+            $booking->getConnection()->afterCommit(function () use ($booking, $periods) {
                 event(new BookingCompleted($booking, $periods));
             });
 
@@ -242,7 +241,7 @@ class BookResource
                     relatable: $relatable,
                 );
 
-            DB::afterCommit(function () use ($booking, $periods) {
+            $booking->getConnection()->afterCommit(function () use ($booking, $periods) {
                 event(new BookingChanged($booking, $periods));
             });
 

@@ -13,11 +13,11 @@ class Bookings
         PeriodCollection $periods,
     ): string {
         $checksumData = [
-            'bookable_resource_id' => $bookableResource->id,
+            'bookable_resource_id' => $bookableResource->getKey(),
             'periods' => $periods,
         ];
 
-        return md5(json_encode($checksumData));
+        return md5(json_encode($checksumData, JSON_THROW_ON_ERROR));
     }
 
     public function periodsToDates(PeriodCollection $periods, bool $removeDuplicates = true): Collection
