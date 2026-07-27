@@ -13,6 +13,11 @@ use Masterix21\Bookings\Tests\TestClasses\Product;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;
+use Spatie\TestTime\TestTime;
+
+beforeEach(function () {
+    TestTime::freeze();
+});
 
 it('returns true when no overlaps exist', function () {
     $product = Product::factory()->create();

@@ -7,8 +7,13 @@ use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Period;
 use Masterix21\Bookings\Tests\Concerns\CreatesResources;
 use Spatie\Period\Period as SpatiePeriod;
+use Spatie\TestTime\TestTime;
 
 uses(CreatesResources::class);
+
+beforeEach(function () {
+    TestTime::freeze();
+});
 
 it('has bookable plannings relationship', function () {
     $this->createsResources();
@@ -41,9 +46,8 @@ it('validates plannings successfully when valid plannings exist', function () {
         )
     );
 
-    $bookableResource->ensureHasValidPlannings(dates: $dates);
-
-    expect(true)->toBeTrue();
+    expect(fn () => $bookableResource->ensureHasValidPlannings(dates: $dates))
+        ->not->toThrow(Exception::class);
 });
 
 it('handles empty relations in ensureRelationsHaveValidPlannings', function () {
@@ -52,10 +56,8 @@ it('handles empty relations in ensureRelationsHaveValidPlannings', function () {
     $bookableResource = BookableResource::first();
     $dates = collect([now()]);
 
-    // This should not throw an exception when relations is empty
-    $bookableResource->ensureRelationsHaveValidPlannings(dates: $dates, relations: collect());
-
-    expect(true)->toBeTrue();
+    expect(fn () => $bookableResource->ensureRelationsHaveValidPlannings(dates: $dates, relations: collect()))
+        ->not->toThrow(Exception::class);
 });
 
 it('throws exception when relations have no plannings', function () {
@@ -96,13 +98,10 @@ it('succeeds when relations have valid plannings through direct bookablePlanning
         )
     );
 
-    // This should not throw an exception - tests the success path in lines 56-78
-    $resourceWithPlannings->ensureRelationsHaveValidPlannings(
+    expect(fn () => $resourceWithPlannings->ensureRelationsHaveValidPlannings(
         dates: $dates,
         relations: collect([$resourceWithPlannings])
-    );
-
-    expect(true)->toBeTrue();
+    ))->not->toThrow(Exception::class);
 });
 
 it('throws exception when mixed relations have some without valid plannings', function () {
@@ -145,14 +144,11 @@ it('filters non-BookableResource objects from relations', function () {
     // Create a resource to call the method on
     $resource = BookableResource::factory()->create();
 
-    // This should not throw an exception because non-BookableResource objects are filtered out
-    // This tests the filter logic in line 58: $relations->filter(fn ($bookable) => $bookable instanceof BookableResource)
-    $resource->ensureRelationsHaveValidPlannings(
+    // Non-BookableResource objects are filtered out of the relations collection.
+    expect(fn () => $resource->ensureRelationsHaveValidPlannings(
         dates: $dates,
         relations: collect([$nonBookableResource])
-    );
-
-    expect(true)->toBeTrue();
+    ))->not->toThrow(Exception::class);
 });
 
 it('handles resources that dont have plannings by throwing exception', function () {
@@ -197,13 +193,11 @@ it('succeeds when all relations have valid plannings', function () {
         )
     );
 
-    // This should succeed because ALL resources have valid plannings
-    $resource1->ensureRelationsHaveValidPlannings(
+    // Succeeds because ALL resources have valid plannings.
+    expect(fn () => $resource1->ensureRelationsHaveValidPlannings(
         dates: $dates,
         relations: collect([$resource1, $resource2])
-    );
-
-    expect(true)->toBeTrue();
+    ))->not->toThrow(Exception::class);
 });
 
 it('throws exception when no BookableResource instances found after filtering', function () {
@@ -255,10 +249,9 @@ it('converts non-Carbon dates to Carbon instances automatically', function () {
         now()->subWeek()->startOf('week')->addDay()->format('Y-m-d'),
     ]);
 
-    // This should work because the method converts strings to Carbon instances
-    $bookableResource->validatePlanningAvailability($dates);
-
-    expect(true)->toBeTrue();
+    // Works because the method converts strings to Carbon instances.
+    expect(fn () => $bookableResource->validatePlanningAvailability($dates))
+        ->not->toThrow(Exception::class);
 });
 
 it('handles batch processing for large collections', function () {
@@ -279,10 +272,9 @@ it('handles batch processing for large collections', function () {
         )
     );
 
-    // This should work with batching since we have more than 100 resources
-    $resources->first()->validatePlanningAvailability($dates, $resources);
-
-    expect(true)->toBeTrue();
+    // Works with batching since we have more than 100 resources.
+    expect(fn () => $resources->first()->validatePlanningAvailability($dates, $resources))
+        ->not->toThrow(Exception::class);
 });
 
 it('provides detailed exception messages with resource IDs and dates', function () {

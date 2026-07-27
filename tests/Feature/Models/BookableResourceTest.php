@@ -12,8 +12,13 @@ use Masterix21\Bookings\Tests\database\factories\BookingFactory;
 use Masterix21\Bookings\Tests\TestClasses\Product;
 use Spatie\Period\Period;
 use Spatie\Period\Precision;
+use Spatie\TestTime\TestTime;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    TestTime::freeze();
+});
 
 it('has morphTo resource relationship', function () {
     $product = Product::factory()->create();
