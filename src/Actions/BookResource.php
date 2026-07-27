@@ -256,6 +256,8 @@ class BookResource
         PeriodCollection $periods,
         callable $callback
     ): ?Booking {
+        $isUpdating = $booking->exists;
+
         try {
             $booking->getConnection()->beginTransaction();
 
@@ -264,17 +266,17 @@ class BookResource
             $booking->getConnection()->commit();
 
             return $result;
-        } catch (\Exception $e) {
-            $this->emitFailureEvent($e, $bookableResource, $periods, $booking->exists ? $booking : null);
-
+        } catch (\Throwable $e) {
             $booking->getConnection()->rollBack();
+
+            $this->emitFailureEvent($e, $bookableResource, $periods, $isUpdating ? $booking : null);
 
             throw $e;
         }
     }
 
     protected function emitFailureEvent(
-        \Exception $e,
+        \Throwable $e,
         BookableResource $bookableResource,
         PeriodCollection $periods,
         ?Booking $booking = null
