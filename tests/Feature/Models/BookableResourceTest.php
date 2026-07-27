@@ -307,3 +307,103 @@ it('scopeAvailableForPeriod excludes fully booked resources even with valid plan
 
     expect($results->pluck('id'))->not->toContain($resource->id);
 });
+
+it('scopeAvailableSlotForPeriod includes resources with unlimited capacity', function () {
+    $period = Period::make(now()->addDay(), now()->addDay()->addHours(2), Precision::HOUR());
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => null,
+    ]);
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod treats touching boundaries as occupied', function () {
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 1,
+    ]);
+
+    $booking = BookingFactory::new()->create();
+
+    $resource->bookedPeriods()->create([
+        'booking_id' => $booking->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(12, 0),
+        'is_excluded' => false,
+    ]);
+
+    // The requested period starts exactly when the booked one ends.
+    $period = Period::make(
+        now()->addDay()->setTime(12, 0),
+        now()->addDay()->setTime(14, 0),
+        Precision::MINUTE()
+    );
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->not->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod ignores excluded periods', function () {
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 1,
+    ]);
+
+    $booking = BookingFactory::new()->create();
+
+    $resource->bookedPeriods()->create([
+        'booking_id' => $booking->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(12, 0),
+        'is_excluded' => true,
+    ]);
+
+    $period = Period::make(
+        now()->addDay()->setTime(11, 0),
+        now()->addDay()->setTime(13, 0),
+        Precision::MINUTE()
+    );
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod counts distinct bookings, not period rows', function () {
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $booking = BookingFactory::new()->create();
+
+    $resource->bookedPeriods()->createMany([
+        [
+            'booking_id' => $booking->id,
+            'starts_at' => now()->addDay()->setTime(10, 0),
+            'ends_at' => now()->addDay()->setTime(12, 0),
+            'is_excluded' => false,
+        ],
+        [
+            'booking_id' => $booking->id,
+            'starts_at' => now()->addDay()->setTime(10, 0),
+            'ends_at' => now()->addDay()->setTime(12, 0),
+            'is_excluded' => false,
+        ],
+    ]);
+
+    $period = Period::make(
+        now()->addDay()->setTime(11, 0),
+        now()->addDay()->setTime(13, 0),
+        Precision::MINUTE()
+    );
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
+});

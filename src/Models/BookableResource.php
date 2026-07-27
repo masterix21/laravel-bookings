@@ -100,7 +100,7 @@ class BookableResource extends Model
         $bookedPeriodTable = $bookedPeriodModel->getTable();
 
         return $query->where('is_bookable', true)
-            ->whereRaw('bookable_resources.max > (SELECT COUNT(*) FROM '.$bookedPeriodTable.' WHERE bookable_resource_id = bookable_resources.id AND starts_at < ? AND ends_at > ? AND deleted_at IS NULL)', [
+            ->whereRaw('(bookable_resources.max IS NULL OR bookable_resources.max > (SELECT COUNT(DISTINCT booking_id) FROM '.$bookedPeriodTable.' WHERE bookable_resource_id = bookable_resources.id AND is_excluded = false AND starts_at <= ? AND ends_at >= ? AND deleted_at IS NULL))', [
                 $period->end()->format('Y-m-d H:i:s'),
                 $period->start()->format('Y-m-d H:i:s'),
             ]);
@@ -118,8 +118,8 @@ class BookableResource extends Model
     public function scopeWithBookingsInPeriod(Builder $query, Period $period): Builder
     {
         return $query->with(['bookedPeriods' => function (Relation $query) use ($period) {
-            $query->where('starts_at', '<', $period->end())
-                ->where('ends_at', '>', $period->start())
+            $query->where('starts_at', '<=', $period->end())
+                ->where('ends_at', '>=', $period->start())
                 ->with('booking');
         }]);
     }
