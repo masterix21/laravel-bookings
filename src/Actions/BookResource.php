@@ -133,7 +133,7 @@ class BookResource
             $booking->fill([
                 'parent_booking_id' => $parent?->getKey(),
                 'code' => $code ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
-                'booker_type' => $booker ? $booker::class : null,
+                'booker_type' => $booker?->getMorphClass(),
                 'booker_id' => $booker?->getKey(),
                 'label' => $label,
                 'note' => $note,
@@ -211,7 +211,7 @@ class BookResource
                     ?: $booking->code
                         ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
                 'booker_type' => $booker
-                    ? $booker::class
+                    ? $booker->getMorphClass()
                     : $booking->booker_type,
                 'booker_id' => $booker?->getKey() ?: $booking->booker_id,
                 'label' => $label ?? $booking->label,
