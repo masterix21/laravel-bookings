@@ -52,10 +52,11 @@ approvato insieme prima dell'implementazione. Spuntare solo dopo verifica
       subquery del builder (cross-db, niente raw hardcoded), max letto dalla
       riga lockata, afterCommit sulla connessione del booking, indice composito
       plannings (`update_bookable_plannings_add_indexes`).
-- [ ] M. Qualità test: sostituire `expect(true)->toBeTrue()`, congelare il
-      tempo dove serve — delegato a subagente, in corso.
-- [ ] N. Documentazione: README + docs con guida upgrade — delegato a
-      subagente, in corso.
+- [x] M. Qualità test — fatto: asserzioni reali (`not->toThrow`) al posto di
+      `expect(true)`, tempo congelato in tutti i file che usano now().
+- [x] N. Documentazione — fatto: guida "Upgrading from 1.x" in
+      migration-guide.md (cleanup NULL, nuove migration, cambio FK, tabella
+      before/after), docs allineate al codice.
 
 ## Review
 
