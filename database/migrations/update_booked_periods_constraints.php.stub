@@ -1,0 +1,46 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $bookedPeriodsTable = app(config('bookings.models.booked_period'))->getTable();
+
+        Schema::table($bookedPeriodsTable, function (Blueprint $table) {
+            $table->dateTime('starts_at')->nullable(false)->change();
+            $table->dateTime('ends_at')->nullable(false)->change();
+        });
+
+        /*
+         * SQLite cannot drop foreign keys; fresh installations already get the
+         * right constraints from the create migration.
+         */
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
+        $bookingForeignKey = app(config('bookings.models.booking'))->getForeignKey();
+        $resourceForeignKey = app(config('bookings.models.bookable_resource'))->getForeignKey();
+
+        Schema::table($bookedPeriodsTable, function (Blueprint $table) use ($bookingForeignKey, $resourceForeignKey) {
+            $table->dropForeign([$bookingForeignKey]);
+            $table->dropForeign([$resourceForeignKey]);
+        });
+
+        Schema::table($bookedPeriodsTable, function (Blueprint $table) use ($bookingForeignKey, $resourceForeignKey) {
+            $table->foreign($bookingForeignKey)
+                ->references('id')
+                ->on(app(config('bookings.models.booking'))->getTable())
+                ->restrictOnDelete();
+
+            $table->foreign($resourceForeignKey)
+                ->references('id')
+                ->on(app(config('bookings.models.bookable_resource'))->getTable())
+                ->nullOnDelete();
+        });
+    }
+};
