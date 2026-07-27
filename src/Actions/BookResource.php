@@ -214,9 +214,9 @@ class BookResource
                     ? $booker::class
                     : $booking->booker_type,
                 'booker_id' => $booker?->getKey() ?: $booking->booker_id,
-                'label' => $label,
-                'note' => $note,
-                'meta' => $meta,
+                'label' => $label ?? $booking->label,
+                'note' => $note ?? $booking->note,
+                'meta' => $meta ?? $booking->meta,
             ]);
 
             if ($this->savingCallback) {

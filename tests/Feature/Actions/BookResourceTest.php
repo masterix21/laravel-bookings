@@ -119,6 +119,28 @@ it('can update an existing booking', function () {
     Event::assertDispatched(BookingChanged::class);
 });
 
+it('keeps label, note and meta when not provided on update', function () {
+    $booking = (new BookResource)->run(
+        periods: ($this->createPeriod)(1, 2),
+        bookableResource: $this->resource,
+        booker: $this->user,
+        label: 'Original label',
+        note: 'Original note',
+        meta: ['origin' => 'value']
+    );
+
+    $updatedBooking = (new BookResource)->run(
+        periods: ($this->createPeriod)(3, 4),
+        bookableResource: $this->resource,
+        booker: $this->user,
+        booking: $booking,
+    );
+
+    expect($updatedBooking->label)->toBe('Original label')
+        ->and($updatedBooking->note)->toBe('Original note')
+        ->and($updatedBooking->meta->toArray())->toBe(['origin' => 'value']);
+});
+
 it('fails when booking overlapping periods', function () {
     $resource = $this->createsResources(
         startsAt: now()->startOfDay(),
