@@ -133,6 +133,10 @@ BookableResource::bookable()
     ->get();
 ```
 
+### Availability semantics
+
+`scopeAvailableSlotForPeriod(Period $period)` and `scopeWithBookingsInPeriod(Period $period)` both use inclusive boundaries (`starts_at <= end AND ends_at >= start`), matching `CheckBookingOverlaps` — a resource that shows as available for a period will not then fail to book on a touching/back-to-back period. Both scopes ignore `is_excluded = true` periods when counting occupancy. `max = null` on a `BookableResource` means unlimited capacity in `scopeAvailableSlotForPeriod`, not "never available".
+
 ## Booking
 
 Represents a complete booking with metadata and relationships.
@@ -275,12 +279,12 @@ Individual time slots within a booking, linking bookings to resources.
 ```sql
 CREATE TABLE booked_periods (
     id BIGINT UNSIGNED PRIMARY KEY,
-    booking_id BIGINT UNSIGNED NOT NULL,           -- Parent booking
-    bookable_resource_id BIGINT UNSIGNED NOT NULL, -- Booked resource
-    relatable_type VARCHAR(255),                   -- Optional related model
-    relatable_id BIGINT UNSIGNED,                  -- Optional related model ID
-    starts_at TIMESTAMP NOT NULL,                  -- Period start time
-    ends_at TIMESTAMP NOT NULL,                    -- Period end time
+    booking_id BIGINT UNSIGNED NOT NULL,            -- Parent booking
+    bookable_resource_id BIGINT UNSIGNED NULL,      -- Booked resource (nullable: survives resource deletion)
+    relatable_type VARCHAR(255),                    -- Optional related model
+    relatable_id BIGINT UNSIGNED,                   -- Optional related model ID
+    starts_at TIMESTAMP NOT NULL,                   -- Period start time
+    ends_at TIMESTAMP NOT NULL,                     -- Period end time
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     
@@ -289,10 +293,12 @@ CREATE TABLE booked_periods (
     INDEX idx_period (starts_at, ends_at),
     INDEX idx_relatable (relatable_type, relatable_id),
     
-    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
-    FOREIGN KEY (bookable_resource_id) REFERENCES bookable_resources(id)
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT,
+    FOREIGN KEY (bookable_resource_id) REFERENCES bookable_resources(id) ON DELETE SET NULL
 );
 ```
+
+Deleting a `Booking` that still has `booked_periods` rows now fails (`RESTRICT`) until the application removes the periods first; deleting a `BookableResource` sets `bookable_resource_id` to `null` on its periods instead of deleting them, so booking history survives. See [Upgrading from 1.x](migration-guide.md#upgrading-from-1x).
 
 ### Relationships
 
@@ -453,24 +459,26 @@ $todayPlanning = BookablePlanning::where('bookable_resource_id', $resource->id)
 
 ## BookableRelation
 
-Manages relationships between bookable resources.
+Links a parent `BookableResource` to child resources it depends on or bundles together, with optional required/min/max constraints.
 
 ### Database Schema
 
 ```sql
 CREATE TABLE bookable_relations (
     id BIGINT UNSIGNED PRIMARY KEY,
-    bookable_resource_id BIGINT UNSIGNED NOT NULL,     -- Parent resource
-    related_resource_id BIGINT UNSIGNED NOT NULL,      -- Related resource
-    type VARCHAR(255) DEFAULT 'includes',              -- Relationship type
+    parent_bookable_resource_id BIGINT UNSIGNED NULL,  -- Parent resource
+    bookable_resource_id BIGINT UNSIGNED NULL,         -- Related (child) resource
+    is_required BOOLEAN NOT NULL DEFAULT FALSE,        -- Whether the relation is mandatory
+    min INT UNSIGNED NULL,                             -- Minimum quantity
+    max INT UNSIGNED NULL,                             -- Maximum quantity
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
-    
+
+    INDEX idx_parent (parent_bookable_resource_id),
     INDEX idx_resource (bookable_resource_id),
-    INDEX idx_related (related_resource_id),
-    
-    FOREIGN KEY (bookable_resource_id) REFERENCES bookable_resources(id),
-    FOREIGN KEY (related_resource_id) REFERENCES bookable_resources(id)
+
+    FOREIGN KEY (parent_bookable_resource_id) REFERENCES bookable_resources(id) ON DELETE CASCADE,
+    FOREIGN KEY (bookable_resource_id) REFERENCES bookable_resources(id) ON DELETE CASCADE
 );
 ```
 
@@ -479,28 +487,20 @@ CREATE TABLE bookable_relations (
 ```php
 use Masterix21\Bookings\Models\BookableRelation;
 
-// Conference room includes projector
+// Conference room requires a projector
 BookableRelation::create([
-    'bookable_resource_id' => $conferenceRoom->id,
-    'related_resource_id' => $projector->id,
-    'type' => 'includes',
+    'parent_bookable_resource_id' => $conferenceRoom->bookableResource->id,
+    'bookable_resource_id' => $projector->bookableResource->id,
+    'is_required' => true,
+    'min' => 1,
+    'max' => 1,
 ]);
 
-// Hotel room requires cleaning service
-BookableRelation::create([
-    'bookable_resource_id' => $hotelRoom->id,
-    'related_resource_id' => $cleaningService->id,
-    'type' => 'requires',
-]);
-
-// Get all related resources
-$relatedResources = $resource->relations()->with('relatedResource')->get();
-
-// Check if booking affects related resources
-$affectedResources = BookableRelation::where('bookable_resource_id', $resource->id)
-    ->get()
-    ->pluck('relatedResource');
+// Get all relations declared by a resource
+$relations = $conferenceRoom->bookableResource->bookableRelations()->with('bookableResource')->get();
 ```
+
+`BookableResource::bookableRelations()` is a `hasMany` through `parent_bookable_resource_id`, returning the `BookableRelation` rows owned by that resource. Each `BookableRelation` also exposes `parentBookableResource()` and `bookableResource()` `belongsTo` relations.
 
 ## Model Traits
 
@@ -552,7 +552,12 @@ $periods = $room->bookedPeriodsOfDate(Carbon::today());
 
 // Check general availability
 $isAvailable = $room->isAvailable();
+
+// Throw if the periods aren't available on any of the model's resources
+$room->ensureIsAvailable($periods); // void, throws on failure
 ```
+
+`ensureIsAvailable(PeriodCollection $periods, $relations = null, bool $ignoresUnbookable = false): void` validates planning and capacity. On an `IsBookable` model it passes as soon as **at least one** of the model's `bookableResources` is available, and rethrows the last failure (`NoFreeSizeException`, `OutOfPlanningsException`, `RelationsHaveNoFreeSizeException`, `RelationsOutOfPlanningsException`, or `UnbookableException`) if none are. The same method exists directly on `BookableResource` for single-resource checks.
 
 ### HasBookings Trait
 

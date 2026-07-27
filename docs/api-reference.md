@@ -97,6 +97,8 @@ public function run(
 - `$meta` (?array) - Additional metadata
 - `$codeGenerator` (string|BookingCodeGenerator|null) - Custom booking code generator
 
+**Update semantics:** when `$booking` is an existing booking, `$code`, `$booker`, `$parent`, `$label`, `$note`, and `$meta` are all "null keeps the current value" — passing `null` (or omitting the argument) leaves the existing column untouched instead of clearing it. `$booker->getMorphClass()` is used to store `booker_type`, so a configured `Relation::morphMap()` is honored.
+
 **Returns:** `Booking` - The created or updated booking
 
 **Throws:**
@@ -181,6 +183,8 @@ public function run(
 - `$ignoreBooking` (?Booking) - Booking to ignore in validation
 
 **Returns:** `bool` - True if no conflicts, false otherwise
+
+**Semantics:** counts the highest number of *distinct* bookings (by `booking_id`) active at any single instant of each requested period — not a sum of overlapping rows — under a row lock on the resource and the candidate periods. `is_excluded = true` periods never count, boundaries are inclusive (`starts_at <= end AND ends_at >= start`), and `max = null` on the resource means unlimited capacity. See [Actions → Concurrency Semantics](actions.md#concurrency-semantics) for details.
 
 **Example:**
 ```php
@@ -581,6 +585,22 @@ Get booked periods for a specific date.
 ```php
 public function bookedPeriodsOfDate(Carbon $date): Collection
 ```
+
+##### `ensureIsAvailable()`
+
+Throws unless the periods are available. Delegates to the model's `bookableResources`: passes as soon as at least one resource is available, and rethrows the last failure if none are.
+
+```php
+public function ensureIsAvailable(
+    PeriodCollection $periods,
+    Collection|EloquentCollection|null $relations = null,
+    bool $ignoresUnbookable = false
+): void
+```
+
+**Throws:** `UnbookableException` (no resources at all), or whichever exception the last checked resource raised — `NoFreeSizeException`, `OutOfPlanningsException`, `RelationsHaveNoFreeSizeException`, `RelationsOutOfPlanningsException`.
+
+The same method exists on `BookableResource` for a single-resource check; there it accepts the same `PeriodCollection $periods` parameter (previously an incorrectly-typed `Collection $dates`, which threw a `TypeError`).
 
 ### SyncBookableResource
 

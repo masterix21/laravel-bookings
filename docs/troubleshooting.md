@@ -65,6 +65,12 @@ php artisan route:clear
 
 **Problem:** Bookings created despite existing overlaps.
 
+Before debugging further, rule out expected behavior first:
+
+- `max = null` on the resource means **unlimited** capacity — it will never reject a booking. Set an explicit `max` if you want a concurrency limit.
+- Periods with `is_excluded = true` never count as occupancy, by design.
+- A resource is only "full" when the number of *distinct bookings* concurrently active at some instant reaches `max` — several periods belonging to the same booking never count more than once.
+
 **Debugging Steps:**
 
 1. **Check BookableResource configuration:**
@@ -139,6 +145,8 @@ try {
 
 **Problem:** Partial booking data remains after transaction failure.
 
+`BookResource` catches `\Throwable` (not just `\Exception`) around the whole create/update flow, so a `TypeError` or other `\Error` raised inside `onBookingSaving`/`onBookingSaved` still rolls back the transaction. It rolls back **before** emitting `BookingFailed`/`BookingChangeFailed`, so listeners never observe a partially-committed state. If you still see partial data, check for code outside `BookResource` (raw model writes, a separate connection) that isn't part of its transaction — and catch `\Throwable` yourself when wrapping `run()`, not just `\Exception`:
+
 **Debugging:**
 ```php
 // Enable database query logging
@@ -146,7 +154,7 @@ DB::enableQueryLog();
 
 try {
     $booking = (new BookResource())->run(/* ... */);
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     // Check what queries were executed
     $queries = DB::getQueryLog();
     Log::error('Booking transaction failed', [
@@ -335,6 +343,8 @@ dump([
        'organization' => \App\Models\Organization::class,
    ]);
    ```
+
+   `booker_type` and `relatable_type` are written via `$model->getMorphClass()`, so a configured morph map — including `Relation::enforceMorphMap()` — is honored automatically for new and updated bookings. If existing rows still hold the fully-qualified class name from before the morph map was configured, backfill them manually; the package does not rewrite historical data.
 
 2. **Check database data:**
    ```sql

@@ -33,20 +33,29 @@ approvato insieme prima dell'implementazione. Spuntare solo dopo verifica
 
 ## Feature rotte (richiedono scelta: riparare o rimuovere)
 
-- [ ] I. Rename `BookableArea` incompiuto — `bookableRelations()`, fillable di
-      `BookableRelation`, migration fantasma nel provider, factory morte.
-- [ ] J. Percorso `ensureIsAvailable`/`ensureHasFreeSize` — trait montato sul
-      modello sbagliato + TypeError Collection/PeriodCollection; zero test.
+- [x] I. Concetto "Area" abolito (non un rename) — fatto: bookableRelations()
+      ora è hasMany su parent_bookable_resource_id; fillable/docblock reali +
+      cast is_required; migration fantasma rimossa dal provider; factory morte
+      cancellate. Test che esegue la query.
+- [x] J. `ensureIsAvailable` — fatto: trait su BookableResource, tipi
+      PeriodCollection fino in fondo, delega "almeno una risorsa" su
+      IsBookable. 7 test nuovi sul percorso completo.
 
 ## Schema e robustezza
 
-- [ ] K. `booked_periods.starts_at/ends_at` NOT NULL (nuova migration di update
-      per gli utenti esistenti).
-- [ ] L. Minori: messaggio errore RandomBookingCode, `Bookings::checksum`
-      (`getKey()` + json_encode), tabelle hardcoded, indice composito su
-      `bookable_plannings`, `cascadeOnDelete` vs SoftDeletes su booked_periods.
-- [ ] M. Qualità test: sostituire `expect(true)->toBeTrue()`, introdurre
-      `testTime()`, test che eseguano davvero le query delle relazioni.
+- [x] K. `booked_periods.starts_at/ends_at` NOT NULL — fatto: stub aggiornati +
+      migration update `update_booked_periods_constraints`. FK: booking_id →
+      restrict, bookable_resource_id → nullOnDelete (storico preservato);
+      swap FK saltato su SQLite.
+- [x] L. Minori — fatto: messaggio RandomBookingCode (soglia 38), checksum con
+      getKey() + JSON_THROW_ON_ERROR, scope disponibilità riscritto come
+      subquery del builder (cross-db, niente raw hardcoded), max letto dalla
+      riga lockata, afterCommit sulla connessione del booking, indice composito
+      plannings (`update_bookable_plannings_add_indexes`).
+- [ ] M. Qualità test: sostituire `expect(true)->toBeTrue()`, congelare il
+      tempo dove serve — delegato a subagente, in corso.
+- [ ] N. Documentazione: README + docs con guida upgrade — delegato a
+      subagente, in corso.
 
 ## Review
 

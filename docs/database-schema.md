@@ -146,7 +146,7 @@ Individual time periods within bookings, supporting multi-slot reservations.
 CREATE TABLE `booked_periods` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `booking_id` bigint unsigned NOT NULL,
-  `bookable_resource_id` bigint unsigned NOT NULL,
+  `bookable_resource_id` bigint unsigned NULL,
   `relatable_type` varchar(255) NULL,
   `relatable_id` bigint unsigned NULL,
   `starts_at` timestamp NOT NULL,
@@ -160,31 +160,31 @@ CREATE TABLE `booked_periods` (
   KEY `booked_periods_starts_at_index` (`starts_at`),
   KEY `booked_periods_ends_at_index` (`ends_at`),
   KEY `booked_periods_resource_dates_index` (`bookable_resource_id`, `starts_at`, `ends_at`),
-  CONSTRAINT `booked_periods_booking_id_foreign` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `booked_periods_bookable_resource_id_foreign` FOREIGN KEY (`bookable_resource_id`) REFERENCES `bookable_resources` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `booked_periods_dates_check` CHECK (`starts_at` < `ends_at`)
+  CONSTRAINT `booked_periods_booking_id_foreign` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `booked_periods_bookable_resource_id_foreign` FOREIGN KEY (`bookable_resource_id`) REFERENCES `bookable_resources` (`id`) ON DELETE SET NULL
 );
 ```
+
+> On fresh installs these are the constraints from `create_booked_periods_table`. Existing installations upgrade through the `update_booked_periods_constraints` migration — see [Upgrading from 1.x](migration-guide.md#upgrading-from-1x) for the required NULL-cleanup step and SQLite caveat.
 
 #### Column Descriptions
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | bigint unsigned | Primary key |
-| `booking_id` | bigint unsigned | Foreign key to bookings table |
-| `bookable_resource_id` | bigint unsigned | Foreign key to bookable_resources |
+| `booking_id` | bigint unsigned | Foreign key to bookings table; `RESTRICT` on delete — deleting a booking with periods fails until they are removed explicitly |
+| `bookable_resource_id` | bigint unsigned, nullable | Foreign key to bookable_resources; `SET NULL` on delete — deleting the resource preserves booking history |
 | `relatable_type` | varchar(255) | Optional polymorphic relation |
 | `relatable_id` | bigint unsigned | Optional polymorphic relation ID |
-| `starts_at` | timestamp | Period start time (UTC) |
-| `ends_at` | timestamp | Period end time (UTC) |
+| `starts_at` | timestamp | Period start time (UTC), required |
+| `ends_at` | timestamp | Period end time (UTC), required |
 
 #### Constraints
 
 ```sql
--- Data integrity constraints
-CONSTRAINT `booked_periods_dates_check` CHECK (`starts_at` < `ends_at`);
-CONSTRAINT `booked_periods_booking_id_foreign` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE;
-CONSTRAINT `booked_periods_bookable_resource_id_foreign` FOREIGN KEY (`bookable_resource_id`) REFERENCES `bookable_resources` (`id`) ON DELETE CASCADE;
+-- Foreign keys
+CONSTRAINT `booked_periods_booking_id_foreign` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE RESTRICT;
+CONSTRAINT `booked_periods_bookable_resource_id_foreign` FOREIGN KEY (`bookable_resource_id`) REFERENCES `bookable_resources` (`id`) ON DELETE SET NULL;
 ```
 
 #### Performance Indexes
@@ -228,11 +228,14 @@ CREATE TABLE `bookable_plannings` (
   KEY `bookable_plannings_starts_at_index` (`starts_at`),
   KEY `bookable_plannings_ends_at_index` (`ends_at`),
   KEY `bookable_plannings_booking_window_index` (`booking_starts_at`, `booking_ends_at`),
+  KEY `bookable_plannings_resource_dates_index` (`bookable_resource_id`, `starts_at`, `ends_at`),
   CONSTRAINT `bookable_plannings_bookable_resource_id_foreign` FOREIGN KEY (`bookable_resource_id`) REFERENCES `bookable_resources` (`id`) ON DELETE CASCADE,
   CONSTRAINT `bookable_plannings_dates_check` CHECK (`starts_at` < `ends_at`),
   CONSTRAINT `bookable_plannings_booking_dates_check` CHECK (`booking_starts_at` IS NULL OR `booking_ends_at` IS NULL OR `booking_starts_at` < `booking_ends_at`)
 );
 ```
+
+> `bookable_plannings_resource_dates_index` is new. Fresh installs get it from `create_bookable_plannings_table`; existing installations add it via the publishable `update_bookable_plannings_add_indexes` migration — see [Upgrading from 1.x](migration-guide.md#upgrading-from-1x).
 
 #### Column Descriptions
 

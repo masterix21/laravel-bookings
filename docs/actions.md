@@ -65,6 +65,10 @@ $updatedBooking = $action->run(
 );
 ```
 
+On update, `code`, `booker`, `parent`, `label`, `note`, and `meta` all follow the same rule: passing `null` (or omitting the argument) keeps the booking's current value — only a non-null value overwrites it. To clear `label`, `note`, or `meta`, update the booking directly rather than through `run()`.
+
+`booker_type` (and `relatable_type` on booked periods) are stored via `$booker->getMorphClass()`, so a configured `Relation::morphMap()` — including `Relation::enforceMorphMap()` — is honored instead of always storing the fully-qualified class name.
+
 #### Error Handling
 
 ```php
@@ -119,9 +123,10 @@ The BookResource action automatically handles database transactions:
 // All operations are wrapped in a transaction
 $booking = $action->run(/* parameters */);
 
-// If any step fails, all changes are rolled back
-// Events are only fired on successful completion
+// Any \Throwable — not just \Exception — rolls back the transaction
 ```
+
+On failure, the transaction is rolled back **first**, then a `BookingFailed` (creation) or `BookingChangeFailed` (update) event is emitted with the exception's message and stack trace. A creation that fails after the booking's `save()` call still emits `BookingFailed`, not `BookingChangeFailed`.
 
 #### Event Flow
 
@@ -494,14 +499,21 @@ foreach ($resources as $resource) {
 }
 ```
 
-#### Performance Notes
+#### Concurrency Semantics
 
-The `CheckBookingOverlaps` action is optimized for multiple periods:
+`CheckBookingOverlaps` measures real concurrency, not a raw row count:
 
-- **Single Query**: Uses one database query regardless of the number of periods
-- **Efficient Counting**: Leverages database aggregation with `SUM` and `CASE` statements
-- **Scalable**: Performance remains consistent whether checking 1 period or 100 periods
-- **Resource-Aware**: Properly considers the `max` parameter of each BookableResource
+1. It locks the `BookableResource` row (`lockForUpdate`) and reads `max` from that locked row, not from the instance passed in.
+2. It loads every non-excluded (`is_excluded = false`) `booked_periods` row that overlaps any of the requested periods, also under `lockForUpdate`, using inclusive boundaries (`starts_at <= end AND ends_at >= start`).
+3. For each requested period, it computes the highest number of **distinct bookings** (by `booking_id`) active at any single instant within that period, and takes the maximum across all requested periods.
+4. The booking is allowed when `max` is `null` (unlimited) or greater than that maximum.
+
+Practical consequences:
+
+- Multiple `booked_periods` rows belonging to the same booking count once, not once per row.
+- A multi-period request whose individual overlaps never coincide in time is no longer rejected just because the *sum* of overlaps would exceed `max`.
+- `is_excluded = true` periods never count as occupancy.
+- Touching/back-to-back periods overlap (inclusive boundaries), consistent with `scopeAvailableSlotForPeriod` and `scopeWithBookingsInPeriod` — a resource that shows as available won't then fail to book.
 
 This makes it ideal for complex booking scenarios like recurring appointments or multi-day reservations.
 

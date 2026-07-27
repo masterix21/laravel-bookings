@@ -62,6 +62,10 @@ php artisan vendor:publish --tag="bookings-config"
 
 See the [installation guide](docs/installation.md) for optional migrations and upgrade notes.
 
+### Upgrading
+
+Upgrading an existing installation? See the [migration guide](docs/migration-guide.md#upgrading-from-1x) — it covers a required data cleanup step and a foreign key behavior change before you run `php artisan migrate`.
+
 ## Quick Start
 
 ### 1. Make a model bookable
