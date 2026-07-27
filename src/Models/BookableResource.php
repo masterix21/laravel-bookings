@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Carbon;
 use Masterix21\Bookings\Models\Concerns\HasSizeFeatures;
 use Masterix21\Bookings\Models\Concerns\ImplementsBook;
+use Masterix21\Bookings\Models\Concerns\ImplementsEnsureIsAvailable;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsBookableScopes;
 use Masterix21\Bookings\Models\Concerns\Scopes\ImplementsVisibleScopes;
 use Masterix21\Bookings\Models\Concerns\UsesBookablePlannings;
@@ -42,6 +43,7 @@ class BookableResource extends Model
     use HasSizeFeatures;
     use ImplementsBook;
     use ImplementsBookableScopes;
+    use ImplementsEnsureIsAvailable;
     use ImplementsVisibleScopes;
     use UsesBookablePlannings;
 
@@ -71,12 +73,8 @@ class BookableResource extends Model
     {
         return $this->hasMany(
             config('bookings.models.bookable_relation'),
-            'parent_bookable_area_id',
-            'bookable_area_id'
-        )->where(function (Builder $query) {
-            $query->whereNull('parent_bookable_resource_id')
-                ->orWhereColumn('parent_bookable_resource_id', 'bookable_resources.id');
-        });
+            'parent_bookable_resource_id'
+        );
     }
 
     public function bookedPeriods(): HasMany

@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Tests\database\factories\BookingFactory;
@@ -27,9 +28,24 @@ it('has morphTo resource relationship', function () {
 });
 
 it('has bookableRelations hasMany relationship', function () {
-    $bookableResource = BookableResource::factory()->create();
+    $parentResource = BookableResource::factory()->create();
+    $childResource1 = BookableResource::factory()->create();
+    $childResource2 = BookableResource::factory()->create();
 
-    expect($bookableResource->bookableRelations())->toBeInstanceOf(HasMany::class);
+    BookableRelation::create([
+        'parent_bookable_resource_id' => $parentResource->id,
+        'bookable_resource_id' => $childResource1->id,
+    ]);
+
+    BookableRelation::create([
+        'parent_bookable_resource_id' => $parentResource->id,
+        'bookable_resource_id' => $childResource2->id,
+    ]);
+
+    expect($parentResource->bookableRelations())->toBeInstanceOf(HasMany::class)
+        ->and($parentResource->bookableRelations()->get())->toHaveCount(2)
+        ->and($parentResource->bookableRelations()->pluck('bookable_resource_id'))
+        ->toContain($childResource1->id, $childResource2->id);
 });
 
 it('has bookedPeriods hasMany relationship', function () {

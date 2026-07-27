@@ -10,8 +10,9 @@ use Masterix21\Bookings\Exceptions\NoFreeSizeException;
 use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableResource;
+use Spatie\Period\PeriodCollection;
 
-/** @mixin IsBookable */
+/** @mixin BookableResource */
 trait HasSizeFeatures
 {
     abstract public function size(bool $ignoresUnbookable = false): int;
@@ -22,7 +23,7 @@ trait HasSizeFeatures
      * @throws UnbookableException
      */
     public function ensureHasFreeSize(
-        Collection $dates,
+        PeriodCollection $periods,
         Collection|EloquentCollection|null $relations = null,
         bool $ignoresUnbookable = false
     ): void {
@@ -33,8 +34,7 @@ trait HasSizeFeatures
         }
 
         $bookingsCount = $this->bookedPeriods()
-            ->whereDatesAreWithinPeriods($dates) // @phpstan-ignore method.notFound
-            ->when($this instanceof BookableResource, fn ($q) => $q->where('bookable_resource_id', $this->id))
+            ->whereDatesAreWithinPeriods($periods) // @phpstan-ignore method.notFound
             ->count(DB::raw('DISTINCT booking_id'));
 
         if ($size <= $bookingsCount) {
@@ -42,7 +42,7 @@ trait HasSizeFeatures
         }
 
         $this->ensureRelationsHaveFreeSize(
-            dates: $dates,
+            periods: $periods,
             relations: $relations,
             ignoresUnbookable: $ignoresUnbookable
         );
@@ -52,7 +52,7 @@ trait HasSizeFeatures
      * @throws RelationsHaveNoFreeSizeException
      */
     public function ensureRelationsHaveFreeSize(
-        Collection $dates,
+        PeriodCollection $periods,
         Collection|EloquentCollection|null $relations = null,
         bool $ignoresUnbookable = false
     ): void {
@@ -69,7 +69,7 @@ trait HasSizeFeatures
                 ->select(['id', 'size'])
                 ->withCount([
                     'bookedPeriods' => fn (Builder $query) => $query
-                        ->whereDatesAreWithinPeriods($dates) // @phpstan-ignore method.notFound
+                        ->whereDatesAreWithinPeriods($periods) // @phpstan-ignore method.notFound
                         ->distinct('booking_id'),
                 ])
                 ->whereIn('id', $resourceIds)

@@ -103,7 +103,7 @@ class CheckBookingOverlaps
      * instant within the given period. The maximum of the concurrency step
      * function always falls on the (clamped) start of one of the candidates.
      *
-     * @param EloquentCollection<int, BookedPeriod> $bookedPeriods
+     * @param  EloquentCollection<int, BookedPeriod>  $bookedPeriods
      */
     protected function maxConcurrencyWithin(Period $period, EloquentCollection $bookedPeriods): int
     {
