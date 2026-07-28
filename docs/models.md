@@ -367,7 +367,8 @@ $isActive = $bookedPeriod->starts_at <= now() && $bookedPeriod->ends_at >= now()
 
 // Check for overlaps (matches the package's own inclusive-boundary semantics;
 // for real overlap/capacity checks prefer Actions\CheckBookingOverlaps, which
-// also ignores is_excluded periods and counts distinct bookings, not rows)
+// also ignores is_excluded periods and measures the peak per-instant
+// concurrency of distinct bookings, not row counts)
 $overlapping = BookedPeriod::where('bookable_resource_id', $resource->id)
     ->where('is_excluded', false)
     ->where('starts_at', '<=', $bookedPeriod->ends_at)
