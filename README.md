@@ -70,7 +70,7 @@ Upgrading an existing installation? See the [migration guide](docs/migration-gui
 
 ### 1. Make a model bookable
 
-Add the `IsBookable` trait to any model. A `BookableResource` is created and kept in sync automatically.
+Add the `IsBookable` trait to any model:
 
 ```php
 use Masterix21\Bookings\Models\Concerns\Bookable;
@@ -84,15 +84,15 @@ class Room extends Model implements Bookable
 }
 ```
 
-### 2. Configure the bookable resource
+### 2. Create its bookable resource
 
-Each bookable model exposes its `BookableResource`, where you set availability and capacity:
+Create the `BookableResource` that defines availability and capacity. To keep it in sync with your model on every save, add the optional [`SyncBookableResource` trait](docs/synchronization.md).
 
 ```php
 $room = Room::create(['name' => 'Deluxe Suite', 'capacity' => 4]);
 
-$room->bookableResource->update([
-    'max' => 1,            // Maximum concurrent bookings
+$room->bookableResource()->create([
+    'max' => 1,            // Maximum concurrent bookings (null = unlimited)
     'size' => 4,           // Resource capacity
     'is_bookable' => true,
     'is_visible' => true,
@@ -107,7 +107,7 @@ use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 
 $periods = PeriodCollection::make([
-    Period::make('2024-12-25', '2024-12-27'),
+    Period::make('2026-12-25', '2026-12-27'),
 ]);
 
 $booking = (new BookResource())->run(
