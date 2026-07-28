@@ -30,12 +30,21 @@ class TestCase extends Orchestra
 
     protected function setUpDatabase($app)
     {
-        $app['config']->set('database.default', 'sqlite');
-        $app['config']->set('database.connections.sqlite', [
-            'driver' => 'sqlite',
-            'database' => ':memory:',
-            'prefix' => '',
-        ]);
+        $connection = env('DB_CONNECTION', 'sqlite');
+
+        $app['config']->set('database.default', $connection);
+
+        if ($connection === 'sqlite') {
+            $app['config']->set('database.connections.sqlite', [
+                'driver' => 'sqlite',
+                'database' => ':memory:',
+                'prefix' => '',
+            ]);
+        }
+
+        if ($connection !== 'sqlite') {
+            Schema::dropAllTables();
+        }
 
         Schema::disableForeignKeyConstraints();
 
