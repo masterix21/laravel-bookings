@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-28
+
+### Breaking changes
+- `booked_periods.starts_at`/`ends_at` are now `NOT NULL`. The upgrade migration fails if existing rows contain NULLs — clean them up first (see the [upgrade guide](docs/migration-guide.md#upgrading-from-1x)).
+- `booked_periods` foreign keys no longer cascade: `booking_id` is `ON DELETE RESTRICT` (hard-deleting a booking with periods fails until the application handles them) and `bookable_resource_id` is `ON DELETE SET NULL` (booking history survives resource deletion). Two new publishable migrations perform the upgrade (`update_booked_periods_constraints`, `update_bookable_plannings_add_indexes`); the foreign key swap is skipped on SQLite.
+- `ensureHasFreeSize()`/`ensureRelationsHaveFreeSize()` now take a `PeriodCollection $periods` parameter (was `Collection $dates`).
+- `Bookings::checksum()` values change: periods are now serialized canonically (previously every period set produced the same hash). Recompute any stored checksums.
+- Soft deletes of `IsBookable`/`IsBookablePlanningSource` models no longer delete their bookable resources and plannings — only force deletes cascade, and `restore()` finds everything intact.
+- `BookableRelation` `$fillable` now matches the real schema (`parent_bookable_resource_id`, `bookable_resource_id`, `is_required`, `min`, `max`); the phantom Area columns are gone.
+
+### Added
+- MySQL coverage: the test suite runs against SQLite and MySQL in CI.
+- PHP 8.3 and 8.5 support — the requirement is now `^8.3`, tested on 8.3/8.4/8.5 across Laravel 12 and 13.
+- Composite index on `bookable_plannings (bookable_resource_id, starts_at, ends_at)`.
+
+### Fixed
+- Overlap checking measures the peak per-instant concurrency of distinct bookings (under `lockForUpdate`) instead of summing overlapping rows: multi-period requests are no longer over-blocked and multiple rows of the same booking count once. `scopeAvailableSlotForPeriod` applies the exact same semantics, so search results and booking outcomes always agree.
+- `is_excluded` periods no longer count as occupancy anywhere.
+- Boundary comparisons are inclusive everywhere: touching/back-to-back periods behave consistently in booking checks and availability scopes.
+- `max = null` consistently means unlimited capacity, including in `scopeAvailableSlotForPeriod`; `max = 0` consistently means zero capacity.
+- `BookResource` rolls back on any `Throwable` (previously only `Exception`) and emits failure events after the rollback; a creation that fails after `save()` emits `BookingFailed` instead of `BookingChangeFailed`; `afterCommit` callbacks register on the booking's own connection.
+- `BookResource::run()` on update keeps `label`, `note` and `meta` when they are omitted.
+- `booker_type`/`relatable_type` are stored via `getMorphClass()`, honoring custom morph maps.
+- `ensureIsAvailable()` repaired end-to-end: it lives on `BookableResource` with `PeriodCollection` typing, and `IsBookable` models delegate to their resources (available when at least one resource is available).
+- `BookableResource::bookableRelations()` works through `parent_bookable_resource_id`; all leftovers of the abolished Area concept removed, including a phantom migration that broke `vendor:publish`.
+- `RandomBookingCode` exception message states the real threshold (combined prefix and suffix below 38 characters).
+
+### Changed
+- Documentation fully verified against the codebase (fictional APIs removed) with a complete "Upgrading from 1.x" guide.
+
 ## [1.3.0] - 2026-05-19
 
 ### Added
