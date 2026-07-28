@@ -27,6 +27,10 @@ trait IsBookable
     public static function bootIsBookable(): void
     {
         static::deleting(static function (Bookable $model) {
+            if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                return;
+            }
+
             $model->bookableResource()->delete();
         });
     }

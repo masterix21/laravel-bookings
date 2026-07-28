@@ -12,6 +12,10 @@ trait IsBookablePlanningSource
     public static function bootIsBookablePlanningSource(): void
     {
         static::deleting(static function (BookablePlanningSource $model) {
+            if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                return;
+            }
+
             $model->planning()->delete();
         });
     }

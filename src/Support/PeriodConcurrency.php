@@ -16,7 +16,7 @@ class PeriodConcurrency
      * Highest number of distinct bookings active at any single instant within
      * any of the given periods.
      *
-     * @param EloquentCollection<int, BookedPeriod> $bookedPeriods
+     * @param  EloquentCollection<int, BookedPeriod>  $bookedPeriods
      */
     public static function maxConcurrentBookings(PeriodCollection $periods, EloquentCollection $bookedPeriods): int
     {
@@ -33,7 +33,7 @@ class PeriodConcurrency
      * The maximum of the concurrency step function always falls on the
      * (clamped) start of one of the candidate periods.
      *
-     * @param EloquentCollection<int, BookedPeriod> $bookedPeriods
+     * @param  EloquentCollection<int, BookedPeriod>  $bookedPeriods
      */
     protected static function maxConcurrencyWithin(Period $period, EloquentCollection $bookedPeriods): int
     {
