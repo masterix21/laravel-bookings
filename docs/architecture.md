@@ -48,25 +48,26 @@ The model layer follows Laravel's Eloquent ORM patterns with additional bookings
 ```php
 BookableResource  (Main bookable entity)
 ├── resource (polymorphic to any Model)
-├── bookings (through BookedPeriods)
 ├── bookedPeriods (direct relationship)
-└── bookablePlannings (availability rules)
+├── bookablePlannings (availability rules)
+└── bookableRelations (data-only, not enforced by the package)
 
 Booking  (Reservation record)
 ├── booker (polymorphic - User, Organization, etc.)
-├── creator (optional - who created the booking)
 ├── bookedPeriods (time slots)
-└── relatable (optional polymorphic relation)
+├── parentBooking / childBookings (self-referencing, optional)
 
 BookedPeriod  (Individual time slot)
 ├── booking (parent booking)
-├── bookableResource (what's being booked)
+├── bookableResource (what's being booked, nullable)
 └── relatable (optional polymorphic relation)
 
 BookablePlanning  (Availability rules)
 ├── bookableResource (resource it applies to)
-└── periods (available time periods)
+└── source (optional polymorphic origin — the planning-source pattern)
 ```
+
+There is no `bookings` relation directly on `BookableResource`, and `Booking` has no `creator` or `relatable` relation — the "related model" concept lives one level down, on `BookedPeriod`.
 
 #### Model Responsibilities
 
@@ -82,27 +83,7 @@ Actions encapsulate complex business logic and provide a clean API for booking o
 
 #### Action Pattern Implementation
 
-```php
-abstract class Action
-{
-    abstract public function run(...$parameters);
-    
-    protected function validate(...$parameters): void
-    {
-        // Validation logic
-    }
-    
-    protected function execute(...$parameters)
-    {
-        // Core business logic
-    }
-    
-    protected function afterExecution($result): void
-    {
-        // Post-processing hooks
-    }
-}
-```
+There is no abstract `Action`/`BaseBookingAction` base class — actions are plain classes with a public `run()` method and whatever protected helpers they need. `BookResource`, for example, has `run()`, plus protected `create()`, `update()`, `executeInTransaction()`, and `emitFailureEvent()` helpers — but nothing enforces that shape on other actions. `CheckBookingOverlaps` is a different plain class with just `run()` and its own protected helpers. If you write a custom action, you're free to structure it however fits — there's no interface or base class to extend.
 
 #### Core Actions
 
@@ -160,10 +141,11 @@ Centralized configuration allows customization without code changes.
 config/bookings.php
 ├── models (customizable model classes)
 ├── generators (code generation strategies)
-├── cache (performance settings)
-├── validation (business rules)
-└── events (event system configuration)
+├── planning_validation (batch_size for relation checks)
+└── booking_update (preserve_deleted_periods on update)
 ```
+
+There is no `cache`, `validation`, or `events` key — see [Configuration](configuration.md) for the complete, real config file.
 
 ## Design Patterns
 
@@ -173,27 +155,30 @@ Eloquent models act as repositories with additional query scopes:
 
 ```php
 // Model acts as repository
-BookableResource::bookable()->visible()->ofType(Room::class)->get();
+BookableResource::bookable()->visible()->where('resource_type', Room::class)->get();
 
-// Custom scopes provide domain-specific queries
-$resource->bookings()->forDateRange($start, $end);
+// Real domain-specific scopes ship with the package
+BookableResource::availableForPeriod($period)->get();
 ```
+
+There is no `ofType()` scope, and `BookableResource` has no `bookings()` relation to call `forDateRange()` on.
 
 ### 2. Factory Pattern
 
-Used for generating booking codes and creating model instances:
+Used for generating booking codes:
 
 ```php
 interface BookingCodeGenerator
 {
-    public function generate(): string;
+    public function run(?string $prefix = null, ?string $suffix = null): string;
 }
 
 class RandomBookingCode implements BookingCodeGenerator
 {
-    public function generate(): string
+    public function run(?string $prefix = null, ?string $suffix = null): string
     {
-        return Str::random(8);
+        // Builds a 64-character code from prefix + ULID + random chars + suffix
+        // — see the RandomBookingCode source for the exact algorithm.
     }
 }
 ```
@@ -203,8 +188,8 @@ class RandomBookingCode implements BookingCodeGenerator
 Events and listeners implement the observer pattern:
 
 ```php
-// Event publisher
-Event::dispatch(new BookingCompleted($booking, $periods, $resource));
+// Event publisher (inside BookResource, after the transaction commits)
+Event::dispatch(new BookingCompleted($booking, $periods));
 
 // Observers (listeners)
 class SendBookingConfirmation
@@ -243,34 +228,18 @@ class RecurringBookingStrategy implements BookingStrategy
 }
 ```
 
-### 5. Template Method Pattern
+### 5. Callback Hooks (not Template Method)
 
-Actions use template method pattern:
+`BookResource` doesn't use the Template Method pattern — there's no abstract base class with `validate()`/`execute()`/`afterExecution()` hooks to override. Instead it exposes two chainable callback setters, `onBookingSaving(callable $callback)` and `onBookingSaved(callable $callback)`, both invoked with the `Booking` instance from inside the same database transaction as the save itself:
 
 ```php
-abstract class BaseBookingAction
-{
-    public function run(...$params)
-    {
-        $this->validate($params);
-        $result = $this->execute($params);
-        $this->afterExecution($result);
-        return $result;
-    }
-    
-    abstract protected function execute(...$params);
-    
-    protected function validate(...$params): void
-    {
-        // Default validation
-    }
-    
-    protected function afterExecution($result): void
-    {
-        // Default post-processing
-    }
-}
+(new BookResource)
+    ->onBookingSaving(fn (Booking $booking) => $booking->tenant_id = auth()->user()->tenant_id)
+    ->onBookingSaved(fn (Booking $booking) => Log::info("Booking {$booking->code} created"))
+    ->run(/* ... */);
 ```
+
+See [Actions → Booking Lifecycle Callbacks](actions.md#booking-lifecycle-callbacks) for the full guide.
 
 ## Data Flow
 
@@ -350,20 +319,23 @@ Replace default models with custom implementations:
 
 ### 2. Custom Actions
 
-Implement custom booking logic:
+`BookResource` has no `execute()` hook to override — its create/update logic lives in protected `create()`/`update()` methods that are not designed for subclassing. Instead, wrap it and use the lifecycle callbacks:
 
 ```php
-class CustomBookingAction extends BookResource
+class CustomBookingAction
 {
-    protected function execute($periods, $resource, $booker, ...$options)
+    public function __construct(private BookResource $bookResource) {}
+
+    public function run(PeriodCollection $periods, BookableResource $resource, $booker, array $options = []): ?Booking
     {
-        // Custom booking logic
-        $booking = parent::execute($periods, $resource, $booker, ...$options);
-        
+        return $this->bookResource
+            ->onBookingSaved(fn (Booking $booking) => $this->processCustomLogic($booking))
+            ->run(periods: $periods, bookableResource: $resource, booker: $booker, ...$options);
+    }
+
+    private function processCustomLogic(Booking $booking): void
+    {
         // Additional custom processing
-        $this->processCustomLogic($booking);
-        
-        return $booking;
     }
 }
 ```

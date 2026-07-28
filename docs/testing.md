@@ -2,6 +2,8 @@
 
 This guide covers how to effectively test applications built with Laravel Bookings, including unit tests, feature tests, and integration tests.
 
+> The package's own test suite runs against **SQLite** (in-memory, the default) and **MySQL 8.0** in CI — see `.github/workflows/run-tests.yml`. There is no PostgreSQL job, even though PostgreSQL is a generically supported Laravel database driver.
+
 ## Test Setup
 
 ### Test Environment Configuration
@@ -152,12 +154,13 @@ class BookableResourceTest extends TestCase
         $this->assertTrue($visibleResources->first()->is_visible);
     }
 
-    public function test_scope_of_type(): void
+    public function test_filter_by_resource_type(): void
     {
+        // There is no ofType() scope — filter resource_type directly.
         BookableResource::factory()->create(['resource_type' => Room::class]);
         BookableResource::factory()->create(['resource_type' => 'App\\Models\\Vehicle']);
 
-        $roomResources = BookableResource::ofType(Room::class)->get();
+        $roomResources = BookableResource::where('resource_type', Room::class)->get();
 
         $this->assertCount(1, $roomResources);
         $this->assertEquals(Room::class, $roomResources->first()->resource_type);
@@ -604,10 +607,11 @@ class BookingEventsTest extends TestCase
             booker: $user
         );
 
-        Event::assertDispatched(BookingInProgress::class, function ($event) use ($periods, $resource, $user) {
+        // BookingInProgress only carries $bookableResource and $periods — it
+        // has no $booker property.
+        Event::assertDispatched(BookingInProgress::class, function ($event) use ($periods, $resource) {
             return $event->periods->equals($periods) &&
-                   $event->bookableResource->is($resource) &&
-                   $event->booker->is($user);
+                   $event->bookableResource->is($resource);
         });
     }
 
@@ -627,10 +631,13 @@ class BookingEventsTest extends TestCase
             booker: $user
         );
 
+        // BookingCompleted only carries $booking and $periods — it has no
+        // $bookableResource property. Resolve the resource via the booking's
+        // periods if you need to assert on it.
         Event::assertDispatched(BookingCompleted::class, function ($event) use ($booking, $periods, $resource) {
             return $event->booking->is($booking) &&
                    $event->periods->equals($periods) &&
-                   $event->bookableResource->is($resource);
+                   $event->booking->bookedPeriods->first()?->bookableResource?->is($resource);
         });
     }
 }
@@ -672,7 +679,7 @@ class SendBookingConfirmationTest extends TestCase
             Period::make('2024-01-01 09:00', '2024-01-01 11:00')
         ]);
 
-        $event = new BookingCompleted($booking, $periods, $resource);
+        $event = new BookingCompleted($booking, $periods);
         $listener = new SendBookingConfirmation();
         
         $listener->handle($event);
@@ -696,7 +703,7 @@ class SendBookingConfirmationTest extends TestCase
             Period::make('2024-01-01 09:00', '2024-01-01 11:00')
         ]);
 
-        $event = new BookingCompleted($booking, $periods, $resource);
+        $event = new BookingCompleted($booking, $periods);
         $listener = new SendBookingConfirmation();
         
         $listener->handle($event);
@@ -812,11 +819,15 @@ class BookingWorkflowTest extends TestCase
         );
     }
 
-    public function test_can_book_adjacent_periods(): void
+    public function test_touching_periods_overlap_with_inclusive_boundaries(): void
     {
+        // Overlap checks are inclusive (starts_at <= end AND ends_at >= start),
+        // so a period ending at 11:00 and one starting at 11:00 DO overlap —
+        // they are not treated as "adjacent, therefore free". With max = 1
+        // the second booking must fail.
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
-        $resource = BookableResource::factory()->create();
+        $resource = BookableResource::factory()->create(['max' => 1]);
 
         $periods1 = PeriodCollection::make([
             Period::make(
@@ -832,7 +843,45 @@ class BookingWorkflowTest extends TestCase
             )
         ]);
 
-        // Both bookings should succeed
+        $booking1 = (new BookResource())->run(
+            periods: $periods1,
+            bookableResource: $resource,
+            booker: $user1
+        );
+
+        $this->assertNotNull($booking1);
+
+        $this->expectException(BookingResourceOverlappingException::class);
+
+        (new BookResource())->run(
+            periods: $periods2,
+            bookableResource: $resource,
+            booker: $user2
+        );
+    }
+
+    public function test_can_book_genuinely_separate_periods(): void
+    {
+        // A gap of even one second between the two periods means no instant
+        // is shared, so both bookings succeed even with max = 1.
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $resource = BookableResource::factory()->create(['max' => 1]);
+
+        $periods1 = PeriodCollection::make([
+            Period::make(
+                Carbon::tomorrow()->setTime(9, 0),
+                Carbon::tomorrow()->setTime(10, 59, 59)
+            )
+        ]);
+
+        $periods2 = PeriodCollection::make([
+            Period::make(
+                Carbon::tomorrow()->setTime(11, 0),
+                Carbon::tomorrow()->setTime(13, 0)
+            )
+        ]);
+
         $booking1 = (new BookResource())->run(
             periods: $periods1,
             bookableResource: $resource,
@@ -1004,7 +1053,7 @@ class BookingFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => (new RandomBookingCode())->generate(),
+            'code' => (new RandomBookingCode())->run(),
             'booker_type' => User::class,
             'booker_id' => User::factory(),
             'label' => $this->faker->sentence(3),

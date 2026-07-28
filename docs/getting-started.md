@@ -310,10 +310,10 @@ try {
         booker: $user
     );
 } catch (BookingResourceOverlappingException $e) {
-    // Handle conflict
+    // Handle conflict — the exception carries no data beyond getMessage(),
+    // there is no getConflictingBookings() accessor.
     return response()->json([
         'error' => 'The requested time slot is not available',
-        'conflicting_bookings' => $e->getConflictingBookings(),
     ], 409);
 }
 ```

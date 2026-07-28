@@ -60,8 +60,24 @@ return [
     'planning_validation' => [
         'batch_size' => 100,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Booking Update
+    |--------------------------------------------------------------------------
+    |
+    | Controls what happens to a booking's existing booked periods when it is
+    | updated through BookResource::run(). When true, the old periods are soft
+    | deleted; when false (the default) they are force-deleted.
+    |
+    */
+    'booking_update' => [
+        'preserve_deleted_periods' => false,
+    ],
 ];
 ```
+
+This is the complete, real `config/bookings.php` — there are no other top-level keys (no `cache`, `events`, `performance`, or `validation` sections shipped by the package).
 
 ## Model Configuration
 
@@ -155,15 +171,17 @@ use Masterix21\Bookings\Models\Booking;
 
 class CustomBookingCodeGenerator implements BookingCodeGenerator
 {
-    public function generate(?Booking $booking = null): string
+    public function run(?string $prefix = null, ?string $suffix = null): string
     {
-        $prefix = date('Y');
+        $year = date('Y');
         $random = strtoupper(substr(md5(uniqid()), 0, 6));
-        
-        return "{$prefix}-{$random}";
+
+        return ($prefix ?? '')."{$year}-{$random}".($suffix ?? '');
     }
 }
 ```
+
+`BookingCodeGenerator` only requires `run(?string $prefix = null, ?string $suffix = null): string` — there is no `generate()` method on the contract.
 
 ```php
 // config/bookings.php
@@ -290,23 +308,24 @@ $booking = $bookResource->run(
 
 ### Batch Processing
 
-Configure batch sizes for large datasets:
+`UsesBookablePlannings::validateRelationsWithBatching()` chunks related resources into batches of this size before validating their planning — this is the only key under `planning_validation`. The shipped default is a plain integer, not wrapped in `env()`:
 
 ```php
 // config/bookings.php
 'planning_validation' => [
-    'batch_size' => env('BOOKINGS_VALIDATION_BATCH_SIZE', 100),
-    'timeout' => env('BOOKINGS_VALIDATION_TIMEOUT', 300), // seconds
+    'batch_size' => 100,
 ],
 ```
 
-### Environment Variables
+If you want it configurable per environment, publish the config and change it yourself:
 
-```env
-# .env
-BOOKINGS_VALIDATION_BATCH_SIZE=200
-BOOKINGS_VALIDATION_TIMEOUT=600
+```php
+'planning_validation' => [
+    'batch_size' => env('BOOKINGS_VALIDATION_BATCH_SIZE', 100),
+],
 ```
+
+There is no `timeout` key — batching only affects how many resources are checked per query, it does not impose a time limit.
 
 ## Database Configuration
 
@@ -449,27 +468,7 @@ class ProcessBookingJob implements ShouldQueue
 
 ## Event Configuration
 
-### Event Listeners
-
-```php
-// config/bookings.php (extended)
-return [
-    // ... existing config
-
-    'events' => [
-        'listeners' => [
-            \Masterix21\Bookings\Events\BookingCompleted::class => [
-                \App\Listeners\SendBookingConfirmation::class,
-                \App\Listeners\UpdateInventory::class,
-            ],
-            \Masterix21\Bookings\Events\BookingFailed::class => [
-                \App\Listeners\LogBookingFailure::class,
-                \App\Listeners\NotifyAdministrators::class,
-            ],
-        ],
-    ],
-];
-```
+`config/bookings.php` has no `events` key — the package does not read listener configuration from its own config file. Register listeners the normal Laravel way: an `EventServiceProvider::$listen` array, or `Event::listen()`/`$this->app['events']->listen()` in any service provider's `boot()` method. See [Events and Listeners](events.md) for the full list of events and their real constructor signatures.
 
 ### Custom Event Configuration
 
@@ -624,35 +623,7 @@ return [
 
 ## Performance Configuration
 
-### Optimization Settings
-
-```php
-// config/bookings.php (extended)
-return [
-    // ... existing config
-
-    'performance' => [
-        'cache_availability' => env('BOOKINGS_CACHE_AVAILABILITY', true),
-        'cache_ttl' => env('BOOKINGS_CACHE_TTL', 3600),
-        'eager_load_relations' => env('BOOKINGS_EAGER_LOAD', true),
-        'chunk_size' => env('BOOKINGS_CHUNK_SIZE', 1000),
-    ],
-];
-```
-
-### Environment Variables
-
-```env
-# Performance settings
-BOOKINGS_CACHE_AVAILABILITY=true
-BOOKINGS_CACHE_TTL=7200
-BOOKINGS_EAGER_LOAD=true
-BOOKINGS_CHUNK_SIZE=500
-
-# Database optimization
-DB_SLOW_QUERY_LOG=true
-DB_SLOW_QUERY_TIME=2
-```
+`config/bookings.php` has no `performance` key and the package does not cache availability results itself — every `CheckBookingOverlaps`/`availableForPeriod()` call hits the database. If you want to cache availability, layer it in your own application code (see the [Cache Configuration](#cache-configuration) example above) rather than expecting a package-level toggle. The only genuinely configurable knobs the package ships are `models`, `generators`, `planning_validation.batch_size`, and `booking_update.preserve_deleted_periods` — see [Default Configuration](#default-configuration).
 
 ## Testing Configuration
 

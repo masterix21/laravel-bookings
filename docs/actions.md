@@ -34,8 +34,7 @@ $booking = $action->run(
     periods: $periods,
     bookableResource: $resource,
     booker: $user,
-    creator: auth()->user(),           // Different from booker
-    relatable: $project,               // Related model
+    relatable: $project,               // Related model, stored on the booked periods
     code: 'CUSTOM-2024-001',          // Custom booking code
     codePrefix: 'CONF',               // Code prefix
     codeSuffix: 'VIP',                // Code suffix
@@ -71,34 +70,47 @@ On update, `code`, `booker`, `parent`, `label`, `note`, and `meta` all follow th
 
 #### Error Handling
 
+`BookResource::run()` only calls `CheckBookingOverlaps` internally — it never calls `ensureIsAvailable()`. That means `run()` on its own can throw `BookingResourceOverlappingException` (plus anything your `onBookingSaving`/`onBookingSaved` callbacks throw), but **not** `OutOfPlanningsException`, `NoFreeSizeException`, `RelationsHaveNoFreeSizeException`, `RelationsOutOfPlanningsException`, or `UnbookableException`. If you want planning/capacity validation before persisting, call `ensureIsAvailable()` yourself first:
+
 ```php
 use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
 use Masterix21\Bookings\Exceptions\NoFreeSizeException;
 
 try {
+    // Optional: validates planning + capacity, throws before anything is persisted
+    $resource->ensureIsAvailable($periods);
+
     $booking = $action->run(
         periods: $periods,
         bookableResource: $resource,
         booker: $user
     );
 } catch (BookingResourceOverlappingException $e) {
-    // Handle booking conflicts
-    $conflictingBookings = $e->getConflictingBookings();
+    // The exception itself carries no data beyond getMessage() — it does not
+    // expose a getConflictingBookings() method. Query the conflicting periods
+    // yourself if you need to show them to the caller:
+    $conflicts = $resource->bookedPeriods()
+        ->where('is_excluded', false)
+        ->where(function ($query) use ($periods) {
+            foreach ($periods as $period) {
+                $query->orWhere(
+                    fn ($q) => $q->where('starts_at', '<=', $period->end())
+                        ->where('ends_at', '>=', $period->start())
+                );
+            }
+        })
+        ->with('booking')
+        ->get();
+
     return response()->json([
         'error' => 'Time slot unavailable',
-        'conflicts' => $conflictingBookings->map(function ($booking) {
-            return [
-                'code' => $booking->code,
-                'label' => $booking->label,
-                'periods' => $booking->bookedPeriods->map(function ($period) {
-                    return [
-                        'starts_at' => $period->starts_at,
-                        'ends_at' => $period->ends_at,
-                    ];
-                }),
-            ];
-        }),
+        'conflicts' => $conflicts->map(fn ($period) => [
+            'code' => $period->booking->code,
+            'label' => $period->booking->label,
+            'starts_at' => $period->starts_at,
+            'ends_at' => $period->ends_at,
+        ]),
     ], 409);
 } catch (OutOfPlanningsException $e) {
     // Handle planning constraints
@@ -461,8 +473,8 @@ try {
     echo "Booking periods are available";
     
 } catch (BookingResourceOverlappingException $e) {
-    $conflicts = $e->getConflictingBookings();
-    echo "Found {$conflicts->count()} conflicting bookings";
+    // No getConflictingBookings() accessor exists on the exception — just the message.
+    echo "Booking conflict: {$e->getMessage()}";
 }
 ```
 

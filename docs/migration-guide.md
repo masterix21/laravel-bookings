@@ -8,7 +8,8 @@ This guide helps you migrate between versions of Laravel Bookings and upgrade yo
 
 | Laravel Bookings | Laravel | PHP | Status |
 |------------------|---------|-----|--------|
-| 1.x | 10.x, 11.x, 12.x | 8.3+ | Current |
+| 2.x | 12.x, 13.x | 8.4+ | Current |
+| 1.x | 12.x (13.x added in 1.3.0) | 8.4+ | Previous |
 | 0.x | 9.x, 10.x | 8.1+ | Legacy |
 
 ## Upgrading from 1.x
@@ -372,65 +373,7 @@ Event::listen(BookingCompleted::class, function ($event) {
 
 #### Required Schema Updates
 
-**1. Add new columns to existing tables:**
-
-```php
-<?php
-// database/migrations/2024_01_01_000001_upgrade_bookings_to_v1.php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        // Update bookable_resources table
-        Schema::table('bookable_resources', function (Blueprint $table) {
-            if (!Schema::hasColumn('bookable_resources', 'is_visible')) {
-                $table->boolean('is_visible')->default(true)->after('is_bookable');
-            }
-        });
-
-        // Update bookings table
-        Schema::table('bookings', function (Blueprint $table) {
-            if (!Schema::hasColumn('bookings', 'creator_id')) {
-                $table->foreignId('creator_id')->nullable()->after('booker_id');
-            }
-            if (!Schema::hasColumn('bookings', 'relatable_type')) {
-                $table->string('relatable_type')->nullable()->after('creator_id');
-                $table->bigInteger('relatable_id')->nullable()->after('relatable_type');
-                $table->index(['relatable_type', 'relatable_id']);
-            }
-        });
-
-        // Update booked_periods table
-        Schema::table('booked_periods', function (Blueprint $table) {
-            if (!Schema::hasColumn('booked_periods', 'relatable_type')) {
-                $table->string('relatable_type')->nullable()->after('bookable_resource_id');
-                $table->bigInteger('relatable_id')->nullable()->after('relatable_type');
-                $table->index(['relatable_type', 'relatable_id']);
-            }
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('bookable_resources', function (Blueprint $table) {
-            $table->dropColumn('is_visible');
-        });
-
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->dropColumn(['creator_id', 'relatable_type', 'relatable_id']);
-        });
-
-        Schema::table('booked_periods', function (Blueprint $table) {
-            $table->dropColumn(['relatable_type', 'relatable_id']);
-        });
-    }
-};
-```
+The exact schema diff between your pre-1.0 fork and the current package depends entirely on what your custom implementation looked like — there's no single migration that fits everyone, and reproducing one here would just invent columns that were never actually part of this package (there is, for instance, no `creator_id` and no `relatable_type`/`relatable_id` on `bookings` at any released version — `relatable` has only ever lived on `booked_periods`). Compare your existing tables against [Database Schema](database-schema.md) and the real migration stubs in `database/migrations/*.php.stub`, and write a migration that reconciles the two for your specific case. Check the [CHANGELOG](../CHANGELOG.md) for the column-level history of each table.
 
 **2. Run the migration:**
 ```bash
@@ -713,6 +656,8 @@ $booking = (new BookResource())->run(
 
 ## Automated Migration Tools
 
+The package does not ship any Artisan commands of its own (there is no `bookings:*` command namespace). Everything below — `bookings:migrate-to-v1`, `bookings:validate-migration`, `bookings:optimize-database` — is an example command **you** would write in `app/Console/Commands` for your own one-off migration, following the same pattern shown here.
+
 ### Migration Command
 
 ```php
@@ -900,10 +845,9 @@ php artisan view:clear
 
 ### 3. Performance Optimization
 
-```bash
-# Add recommended indexes
-php artisan bookings:optimize-database
+There is no `bookings:optimize-database` command. Add any extra indexes you need by hand — see [Database Schema → Indexing Strategy](database-schema.md#indexing-strategy) for what's already created by the package's own migrations versus what you might want to add.
 
+```bash
 # Cache configuration
 php artisan config:cache
 php artisan route:cache
@@ -927,8 +871,8 @@ Log::info('Booking created via migration', [
 # 1. Restore database backup
 mysql -u username -p database_name < backup_file.sql
 
-# 2. Downgrade package
-composer require masterix21/laravel-bookings:^0.9
+# 2. Downgrade package (the last pre-1.0 release was 0.0.2 — there was no 0.9.x)
+composer require masterix21/laravel-bookings:0.0.2
 
 # 3. Restore old configuration
 cp config/bookings.php.backup config/bookings.php

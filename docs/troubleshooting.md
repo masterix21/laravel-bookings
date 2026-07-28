@@ -257,10 +257,12 @@ $listeners = Event::getListeners(BookingCompleted::class);
 dump('Registered listeners:', $listeners);
 
 // Add debug logging to events
+// BookingCompleted only carries $booking and $periods, no $bookableResource —
+// resolve the resource from the booking's periods if you need it.
 Event::listen(BookingCompleted::class, function ($event) {
     Log::info('BookingCompleted event fired', [
         'booking_id' => $event->booking->id,
-        'resource_id' => $event->bookableResource->id,
+        'resource_id' => $event->booking->bookedPeriods->first()?->bookable_resource_id,
     ]);
 });
 ```
@@ -471,10 +473,23 @@ BookableResource::factory()
 try {
     $booking = (new BookResource())->run(/* ... */);
 } catch (BookingResourceOverlappingException $e) {
-    $conflicts = $e->getConflictingBookings();
-    
+    // The exception carries no data of its own — no getConflictingBookings().
+    // Query the overlapping periods yourself if you need them in the log.
+    $conflicts = $resource->bookedPeriods()
+        ->where('is_excluded', false)
+        ->where(function ($query) use ($periods) {
+            foreach ($periods as $period) {
+                $query->orWhere(
+                    fn ($q) => $q->where('starts_at', '<=', $period->end())
+                        ->where('ends_at', '>=', $period->start())
+                );
+            }
+        })
+        ->pluck('booking_id');
+
     Log::error('Booking overlap detected', [
-        'conflicting_bookings' => $conflicts->pluck('id'),
+        'message' => $e->getMessage(),
+        'conflicting_booking_ids' => $conflicts,
         'requested_periods' => $periods->map(fn($p) => [
             'start' => $p->start(),
             'end' => $p->end(),
@@ -485,7 +500,7 @@ try {
 
 ### "OutOfPlanningsException"
 
-**Cause:** No valid planning exists for the requested time.
+**Cause:** No valid planning exists for the requested time. Thrown by `ensureIsAvailable()`/`validatePlanningAvailability()` — `BookResource::run()` never calls these itself, so if you're only seeing `BookingResourceOverlappingException` and expected this instead, check whether you're calling `ensureIsAvailable()` before `run()`.
 
 **Debug:**
 ```php
@@ -504,7 +519,7 @@ if ($plannings->isEmpty()) {
 
 ### "NoFreeSizeException"
 
-**Cause:** Resource capacity exceeded.
+**Cause:** Resource capacity exceeded. Thrown by `ensureHasFreeSize()`/`ensureIsAvailable()` — like `OutOfPlanningsException`, this is not thrown by `BookResource::run()` itself.
 
 **Debug:**
 ```php
