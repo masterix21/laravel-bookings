@@ -289,7 +289,7 @@ BookableResource::hidden()->get();
 
 ##### `availableSlotForPeriod(Period $period)`
 
-`is_bookable = true` resources whose peak concurrency stays below `max` at every instant of the given period (distinct bookings, `is_excluded = false`, inclusive boundaries) — the same per-instant semantics `CheckBookingOverlaps` applies at booking time. `max = null` means unlimited and always matches.
+`is_bookable = true` resources whose peak concurrency stays below `max` at every instant of the given period (distinct bookings, `is_excluded = false`, inclusive boundaries) — the same per-instant semantics `CheckBookingOverlaps` applies at booking time. `max = null` means unlimited and always matches; `max = 0` means zero capacity and never matches.
 
 ```php
 BookableResource::availableSlotForPeriod($period)->get();

@@ -553,6 +553,26 @@ it('ignores excluded periods when counting overlaps', function () {
     expect($result)->toBeTrue();
 });
 
+it('rejects bookings when max is zero even without existing bookings', function () {
+    $product = Product::factory()->create();
+    $bookableResource = BookableResource::factory()->create([
+        'resource_type' => Product::class,
+        'resource_id' => $product->id,
+        'max' => 0,
+    ]);
+
+    $periods = PeriodCollection::make(
+        Period::make(Carbon::now()->setTime(10, 0), Carbon::now()->setTime(12, 0), Precision::MINUTE()),
+    );
+
+    $result = (new CheckBookingOverlaps)->run(
+        periods: $periods,
+        bookableResource: $bookableResource,
+    );
+
+    expect($result)->toBeFalse();
+});
+
 it('treats touching boundaries as overlapping', function () {
     $product = Product::factory()->create();
     $bookableResource = BookableResource::factory()->create([

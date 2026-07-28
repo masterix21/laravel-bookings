@@ -93,9 +93,10 @@ class BookableResource extends Model
     }
 
     /**
-     * A resource is available when its max is unlimited or when no instant of
-     * the requested period reaches max concurrent distinct bookings. The peak
-     * of the concurrency step function always falls on the (clamped) start of
+     * A resource is available when its max is unlimited (null) or when no
+     * instant of the requested period reaches max concurrent distinct
+     * bookings; max = 0 means zero capacity and never matches. The peak of
+     * the concurrency step function always falls on the (clamped) start of
      * one of the booked periods, so it is enough to test those instants.
      *
      * @param  Builder<self>  $query
@@ -107,34 +108,38 @@ class BookableResource extends Model
             ->where(function (Builder $query) use ($period) {
                 $query
                     ->whereNull($this->qualifyColumn('max'))
-                    ->orWhereNotExists(function (QueryBuilder $exists) use ($period) {
-                        $grammar = $exists->getGrammar();
-                        $bookedPeriodsTable = app(config('bookings.models.booked_period'))->getTable();
-                        $bookingForeignKey = app(config('bookings.models.booking'))->getForeignKey();
-                        $resourceForeignKey = $this->getForeignKey();
-                        $requestStart = $period->start()->format('Y-m-d H:i:s');
+                    ->orWhere(function (Builder $query) use ($period) {
+                        $query
+                            ->where($this->qualifyColumn('max'), '>', 0)
+                            ->whereNotExists(function (QueryBuilder $exists) use ($period) {
+                                $grammar = $exists->getGrammar();
+                                $bookedPeriodsTable = app(config('bookings.models.booked_period'))->getTable();
+                                $bookingForeignKey = app(config('bookings.models.booking'))->getForeignKey();
+                                $resourceForeignKey = $this->getForeignKey();
+                                $requestStart = $period->start()->format('Y-m-d H:i:s');
 
-                        $clampedInstant = 'CASE WHEN '.$grammar->wrap('p1.starts_at').' > ? THEN '.$grammar->wrap('p1.starts_at').' ELSE ? END';
+                                $clampedInstant = 'CASE WHEN '.$grammar->wrap('p1.starts_at').' > ? THEN '.$grammar->wrap('p1.starts_at').' ELSE ? END';
 
-                        $concurrencySql = 'SELECT COUNT(DISTINCT '.$grammar->wrap("p2.{$bookingForeignKey}").')'
-                            .' FROM '.$grammar->wrapTable("{$bookedPeriodsTable} as p2")
-                            .' WHERE '.$grammar->wrap("p2.{$resourceForeignKey}").' = '.$grammar->wrap($this->qualifyColumn('id'))
-                            .' AND '.$grammar->wrap('p2.is_excluded').' = false'
-                            .' AND '.$grammar->wrap('p2.deleted_at').' IS NULL'
-                            .' AND '.$grammar->wrap('p2.starts_at').' <= ('.$clampedInstant.')'
-                            .' AND '.$grammar->wrap('p2.ends_at').' >= ('.$clampedInstant.')';
+                                $concurrencySql = 'SELECT COUNT(DISTINCT '.$grammar->wrap("p2.{$bookingForeignKey}").')'
+                                    .' FROM '.$grammar->wrapTable("{$bookedPeriodsTable} as p2")
+                                    .' WHERE '.$grammar->wrap("p2.{$resourceForeignKey}").' = '.$grammar->wrap($this->qualifyColumn('id'))
+                                    .' AND '.$grammar->wrap('p2.is_excluded').' = false'
+                                    .' AND '.$grammar->wrap('p2.deleted_at').' IS NULL'
+                                    .' AND '.$grammar->wrap('p2.starts_at').' <= ('.$clampedInstant.')'
+                                    .' AND '.$grammar->wrap('p2.ends_at').' >= ('.$clampedInstant.')';
 
-                        $exists
-                            ->from("{$bookedPeriodsTable} as p1")
-                            ->whereColumn("p1.{$resourceForeignKey}", $this->qualifyColumn('id'))
-                            ->where('p1.is_excluded', false)
-                            ->whereNull('p1.deleted_at')
-                            ->where('p1.starts_at', '<=', $period->end())
-                            ->where('p1.ends_at', '>=', $period->start())
-                            ->whereRaw(
-                                "({$concurrencySql}) >= ".$grammar->wrap($this->qualifyColumn('max')),
-                                [$requestStart, $requestStart, $requestStart, $requestStart]
-                            );
+                                $exists
+                                    ->from("{$bookedPeriodsTable} as p1")
+                                    ->whereColumn("p1.{$resourceForeignKey}", $this->qualifyColumn('id'))
+                                    ->where('p1.is_excluded', false)
+                                    ->whereNull('p1.deleted_at')
+                                    ->where('p1.starts_at', '<=', $period->end())
+                                    ->where('p1.ends_at', '>=', $period->start())
+                                    ->whereRaw(
+                                        "({$concurrencySql}) >= ".$grammar->wrap($this->qualifyColumn('max')),
+                                        [$requestStart, $requestStart, $requestStart, $requestStart]
+                                    );
+                            });
                     });
             });
     }

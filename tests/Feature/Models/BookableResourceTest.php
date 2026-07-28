@@ -395,6 +395,19 @@ it('scopeAvailableSlotForPeriod ignores excluded periods', function () {
     expect($results->pluck('id'))->toContain($resource->id);
 });
 
+it('scopeAvailableSlotForPeriod excludes resources with zero capacity', function () {
+    $period = Period::make(now()->addDay(), now()->addDay()->addHours(2), Precision::HOUR());
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 0,
+    ]);
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->not->toContain($resource->id);
+});
+
 it('scopeAvailableSlotForPeriod uses peak concurrency, not total distinct bookings', function () {
     $resource = BookableResource::factory()->create([
         'is_bookable' => true,
