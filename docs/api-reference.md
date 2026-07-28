@@ -184,7 +184,7 @@ public function run(
 
 **Returns:** `bool` - True if no conflicts (or `$bookableResource->max` is `null`/blank), false otherwise
 
-**Semantics:** counts the highest number of *distinct* bookings (by `booking_id`) active at any single instant of each requested period — not a sum of overlapping rows — under a row lock on the resource and the candidate periods. `is_excluded = true` periods never count, boundaries are inclusive (`starts_at <= end AND ends_at >= start`), and `max = null` on the resource means unlimited capacity. See [Actions → Concurrency Semantics](actions.md#concurrency-semantics) for details.
+**Semantics:** counts the highest number of *distinct* bookings (by `booking_id`) active at any single instant of each requested period — not a sum of overlapping rows — under a row lock on the resource and the candidate periods. `is_excluded = true` periods never count, boundaries are inclusive (`starts_at <= end AND ends_at >= start`), `max = null` on the resource means unlimited capacity, and `max = 0` means zero capacity (every booking is rejected). See [Actions → Concurrency Semantics](actions.md#concurrency-semantics) for details.
 
 **Example:**
 ```php
@@ -218,7 +218,7 @@ protected $fillable = [
     'resource_type',    // Polymorphic type
     'resource_id',      // Polymorphic ID
     'min',              // Minimum concurrent bookings
-    'max',              // Maximum concurrent bookings (null = unlimited)
+    'max',              // Maximum concurrent bookings (null = unlimited, 0 = never bookable)
     'max_nested',       // Maximum nested resources
     'size',             // Resource capacity
     'is_visible',       // Whether resource is visible

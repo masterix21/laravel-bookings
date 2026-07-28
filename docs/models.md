@@ -25,7 +25,7 @@ CREATE TABLE bookable_resources (
     resource_type VARCHAR(255) NOT NULL,   -- Polymorphic type
     resource_id BIGINT UNSIGNED NOT NULL,  -- Polymorphic ID
     min INT UNSIGNED NULL,                 -- Not enforced by the package
-    max INT UNSIGNED NULL,                 -- Max concurrent bookings; NULL = unlimited
+    max INT UNSIGNED NULL,                 -- Max concurrent bookings; NULL = unlimited, 0 = never bookable
     max_nested INT UNSIGNED NULL,          -- Not enforced by the package
     size INT UNSIGNED DEFAULT 1,           -- Resource capacity
     is_visible BOOLEAN DEFAULT TRUE,       -- Visible in queries
@@ -141,7 +141,7 @@ There is no `ofType()` or `available()` scope.
 
 ### Availability semantics
 
-`scopeAvailableSlotForPeriod(Period $period)` and `scopeWithBookingsInPeriod(Period $period)` both use inclusive boundaries (`starts_at <= end AND ends_at >= start`), matching `CheckBookingOverlaps` — a resource that shows as available for a period will not then fail to book on a touching/back-to-back period. Both scopes ignore `is_excluded = true` periods when counting occupancy. `max = null` on a `BookableResource` means unlimited capacity in `scopeAvailableSlotForPeriod`, not "never available".
+`scopeAvailableSlotForPeriod(Period $period)` and `scopeWithBookingsInPeriod(Period $period)` both use inclusive boundaries (`starts_at <= end AND ends_at >= start`), matching `CheckBookingOverlaps` — a resource that shows as available for a period will not then fail to book on a touching/back-to-back period. Both scopes ignore `is_excluded = true` periods when counting occupancy. `scopeAvailableSlotForPeriod` compares `max` against the peak number of *distinct* bookings active at any single instant of the requested period — the exact semantics `CheckBookingOverlaps` applies at booking time. `max = null` on a `BookableResource` means unlimited capacity, not "never available"; `max = 0` means zero capacity and the resource never appears available.
 
 ## Booking
 

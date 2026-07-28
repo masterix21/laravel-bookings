@@ -48,7 +48,7 @@ CREATE TABLE `bookable_resources` (
 | `resource_type` | varchar(255) | Polymorphic type (model class name, or morph map alias) |
 | `resource_id` | bigint unsigned | Polymorphic ID (model instance ID) |
 | `min` | int, nullable | Not enforced by the package's own booking logic — available for application-level use |
-| `max` | int, nullable | Maximum concurrent **bookings**. `null` means unlimited, not "never bookable" |
+| `max` | int, nullable | Maximum concurrent **bookings**. `null` means unlimited, not "never bookable"; `0` means zero capacity (never bookable) |
 | `max_nested` | int, nullable | Not enforced by the package's own booking logic — available for application-level use |
 | `size` | int, default 1 | Resource capacity, checked by `HasSizeFeatures::ensureHasFreeSize()` |
 | `is_visible` | boolean, default true | Filtered by the `visible()`/`hidden()` scopes |

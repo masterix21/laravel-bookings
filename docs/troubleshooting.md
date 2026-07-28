@@ -68,6 +68,7 @@ php artisan route:clear
 Before debugging further, rule out expected behavior first:
 
 - `max = null` on the resource means **unlimited** capacity — it will never reject a booking. Set an explicit `max` if you want a concurrency limit.
+- `max = 0` means **zero** capacity — every booking on that resource is rejected and it never appears in `availableSlotForPeriod()`.
 - Periods with `is_excluded = true` never count as occupancy, by design.
 - A resource is only "full" when the number of *distinct bookings* concurrently active at some instant reaches `max` — several periods belonging to the same booking never count more than once.
 
