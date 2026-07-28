@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Masterix21\Bookings\Actions;
 
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Carbon;
 use Masterix21\Bookings\Enums\UnbookableReason;
 use Masterix21\Bookings\Events\BookingChangeFailed;
 use Masterix21\Bookings\Events\BookingFailed;
@@ -13,7 +12,7 @@ use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\Booking;
-use Spatie\Period\Period;
+use Masterix21\Bookings\Support\PeriodConcurrency;
 use Spatie\Period\PeriodCollection;
 
 class CheckBookingOverlaps
@@ -49,13 +48,7 @@ class CheckBookingOverlaps
     ): int {
         $bookedPeriods = $this->lockOverlappingPeriods($periods, $bookableResource, $ignoreBooking);
 
-        if ($bookedPeriods->isEmpty()) {
-            return 0;
-        }
-
-        return collect($periods)
-            ->map(fn (Period $period) => $this->maxConcurrencyWithin($period, $bookedPeriods))
-            ->max();
+        return PeriodConcurrency::maxConcurrentBookings($periods, $bookedPeriods);
     }
 
     protected function lockBookableResource(BookableResource $bookableResource): BookableResource
@@ -98,35 +91,6 @@ class CheckBookingOverlaps
         }
 
         return $builder->get();
-    }
-
-    /**
-     * Compute the highest number of distinct bookings active at any single
-     * instant within the given period. The maximum of the concurrency step
-     * function always falls on the (clamped) start of one of the candidates.
-     *
-     * @param  EloquentCollection<int, BookedPeriod>  $bookedPeriods
-     */
-    protected function maxConcurrencyWithin(Period $period, EloquentCollection $bookedPeriods): int
-    {
-        $candidates = $bookedPeriods->filter(
-            fn (BookedPeriod $bookedPeriod) => $bookedPeriod->starts_at <= $period->end()
-                && $bookedPeriod->ends_at >= $period->start()
-        );
-
-        return (int) $candidates
-            ->map(function (BookedPeriod $bookedPeriod) use ($period, $candidates) {
-                $instant = $bookedPeriod->starts_at->max(Carbon::instance($period->start()));
-
-                return $candidates
-                    ->filter(
-                        fn (BookedPeriod $candidate) => $candidate->starts_at <= $instant
-                            && $candidate->ends_at >= $instant
-                    )
-                    ->unique('booking_id')
-                    ->count();
-            })
-            ->max();
     }
 
     protected function handleOverlapFailure(

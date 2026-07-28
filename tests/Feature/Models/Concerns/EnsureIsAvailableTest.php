@@ -22,13 +22,13 @@ beforeEach(function () {
         )
     );
 
-    $this->makeResource = function (?Product $product = null, bool $withPlanning = true): BookableResource {
+    $this->makeResource = function (?Product $product = null, bool $withPlanning = true, int $size = 1): BookableResource {
         $product ??= Product::factory()->create();
 
         $resource = BookableResource::factory()->create([
             'resource_type' => Product::class,
             'resource_id' => $product->id,
-            'size' => 1,
+            'size' => $size,
             'is_bookable' => true,
             'max' => null,
         ]);
@@ -82,6 +82,51 @@ it('throws NoFreeSizeException when every size unit is taken', function () {
 
     expect(fn () => $resource->ensureIsAvailable($this->periods))
         ->toThrow(NoFreeSizeException::class);
+});
+
+it('passes when existing bookings occupy the window at different instants', function () {
+    $resource = ($this->makeResource)(size: 2);
+
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $resource->id,
+        'booking_id' => Booking::factory()->create()->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(11, 0),
+    ]);
+
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $resource->id,
+        'booking_id' => Booking::factory()->create()->id,
+        'starts_at' => now()->addDay()->setTime(14, 0),
+        'ends_at' => now()->addDay()->setTime(15, 0),
+    ]);
+
+    // The two bookings never overlap each other: at any instant at most one
+    // size unit is taken, so a resource with size 2 still has room.
+    expect(fn () => $resource->ensureIsAvailable($this->periods))
+        ->not->toThrow(Exception::class);
+});
+
+it('relations free size check uses per-instant concurrency', function () {
+    $resource = ($this->makeResource)();
+    $relatedResource = ($this->makeResource)(size: 2);
+
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $relatedResource->id,
+        'booking_id' => Booking::factory()->create()->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(11, 0),
+    ]);
+
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $relatedResource->id,
+        'booking_id' => Booking::factory()->create()->id,
+        'starts_at' => now()->addDay()->setTime(14, 0),
+        'ends_at' => now()->addDay()->setTime(15, 0),
+    ]);
+
+    expect(fn () => $resource->ensureIsAvailable($this->periods, collect([$relatedResource])))
+        ->not->toThrow(Exception::class);
 });
 
 it('passes on a bookable model when at least one resource is available', function () {
