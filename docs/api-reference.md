@@ -68,7 +68,7 @@ Creates or updates a booking with the specified parameters.
 public function run(
     PeriodCollection $periods,
     BookableResource $bookableResource,
-    ?Model $booker = null,
+    ?Model $booker,
     ?Booking $booking = null,
     ?Booking $parent = null,
     ?Model $relatable = null,
@@ -78,8 +78,8 @@ public function run(
     ?string $label = null,
     ?string $note = null,
     ?array $meta = null,
-    string|BookingCodeGenerator|null $codeGenerator = null
-): Booking
+    string|BookingCodeGenerator|null $codeGenerator = null,
+): ?Booking
 ```
 
 **Parameters:**
@@ -87,8 +87,8 @@ public function run(
 - `$bookableResource` (BookableResource) - Resource to book
 - `$booker` (?Model) - Entity making the booking (polymorphic)
 - `$booking` (?Booking) - Existing booking for updates
-- `$parent` (?Booking) - Parent booking for creating related bookings (v1.2.0+)
-- `$relatable` (?Model) - Related model for the booking
+- `$parent` (?Booking) - Parent booking for creating related bookings
+- `$relatable` (?Model) - Related model for the booked periods
 - `$code` (?string) - Custom booking code
 - `$codePrefix` (?string) - Prefix for generated code
 - `$codeSuffix` (?string) - Suffix for generated code
@@ -97,12 +97,14 @@ public function run(
 - `$meta` (?array) - Additional metadata
 - `$codeGenerator` (string|BookingCodeGenerator|null) - Custom booking code generator
 
-**Returns:** `Booking` - The created or updated booking
+**Update semantics:** when `$booking` is an existing booking, `$code`, `$booker`, `$parent`, `$label`, `$note`, and `$meta` are all "null keeps the current value" — passing `null` (or omitting the argument) leaves the existing column untouched instead of clearing it. `$booker->getMorphClass()` is used to store `booker_type`, so a configured `Relation::morphMap()` is honored.
+
+**Returns:** `?Booking` - The created or updated booking
 
 **Throws:**
 - `BookingResourceOverlappingException` - When booking conflicts exist
-- `OutOfPlanningsException` - When no valid planning exists
-- `NoFreeSizeException` - When resource capacity is exceeded
+- `OutOfPlanningsException` - When no valid planning exists (only if you call `ensureIsAvailable()` yourself first — `run()` does not validate planning)
+- `NoFreeSizeException` - When resource capacity is exceeded (same caveat)
 - Any exception thrown by `onBookingSaving` or `onBookingSaved` callbacks
 
 **Example:**
@@ -123,7 +125,7 @@ $booking = (new BookResource())->run(
 );
 ```
 
-**Example with Related Bookings (v1.2.0+):**
+**Example with Related Bookings:**
 ```php
 // Create parent booking
 $parentBooking = (new BookResource())->run(
@@ -167,20 +169,22 @@ Checks for booking overlaps and validates availability.
 public function run(
     PeriodCollection $periods,
     BookableResource $bookableResource,
-    bool $emitEvent = true,
-    bool $throw = true,
-    ?Booking $ignoreBooking = null
+    bool $emitEvent = false,
+    bool $throw = false,
+    ?Booking $ignoreBooking = null,
 ): bool
 ```
 
 **Parameters:**
 - `$periods` (PeriodCollection) - Periods to check
 - `$bookableResource` (BookableResource) - Resource to check
-- `$emitEvent` (bool) - Whether to emit validation events
-- `$throw` (bool) - Whether to throw exceptions on conflicts
-- `$ignoreBooking` (?Booking) - Booking to ignore in validation
+- `$emitEvent` (bool) - Whether to emit `BookingFailed`/`BookingChangeFailed` on conflict. Defaults to `false`
+- `$throw` (bool) - Whether to throw `BookingResourceOverlappingException` on conflict. Defaults to `false`
+- `$ignoreBooking` (?Booking) - Booking to ignore in validation (used on updates)
 
-**Returns:** `bool` - True if no conflicts, false otherwise
+**Returns:** `bool` - True if no conflicts (or `$bookableResource->max` is `null`/blank), false otherwise
+
+**Semantics:** counts the highest number of *distinct* bookings (by `booking_id`) active at any single instant of each requested period — not a sum of overlapping rows — under a row lock on the resource and the candidate periods. `is_excluded = true` periods never count, boundaries are inclusive (`starts_at <= end AND ends_at >= start`), `max = null` on the resource means unlimited capacity, and `max = 0` means zero capacity (every booking is rejected). See [Actions → Concurrency Semantics](actions.md#concurrency-semantics) for details.
 
 **Example:**
 ```php
@@ -210,17 +214,20 @@ use Masterix21\Bookings\Models\BookableResource;
 
 ```php
 protected $fillable = [
+    'code',
     'resource_type',    // Polymorphic type
     'resource_id',      // Polymorphic ID
-    'max',             // Maximum concurrent bookings
-    'size',            // Resource capacity
-    'is_bookable',     // Whether resource can be booked
-    'is_visible',      // Whether resource is visible
+    'min',              // Minimum concurrent bookings
+    'max',              // Maximum concurrent bookings (null = unlimited, 0 = never bookable)
+    'max_nested',       // Maximum nested resources
+    'size',             // Resource capacity
+    'is_visible',       // Whether resource is visible
+    'is_bookable',      // Whether resource can be booked
 ];
 
 protected $casts = [
-    'is_bookable' => 'boolean',
-    'is_visible' => 'boolean',
+    'is_visible' => 'bool',
+    'is_bookable' => 'bool',
 ];
 ```
 
@@ -232,14 +239,6 @@ Polymorphic relationship to the actual resource model.
 
 ```php
 public function resource(): MorphTo
-```
-
-##### `bookings()`
-
-All bookings for this resource.
-
-```php
-public function bookings(): HasManyDeep
 ```
 
 ##### `bookedPeriods()`
@@ -258,40 +257,101 @@ Availability plannings for this resource.
 public function bookablePlannings(): HasMany
 ```
 
+##### `bookableRelations()`
+
+`BookableRelation` rows owned by this resource (via `parent_bookable_resource_id`).
+
+```php
+public function bookableRelations(): HasMany
+```
+
+There is no `bookings()` relation on `BookableResource` itself — go through `bookedPeriods()->with('booking')`, or use `IsBookable`'s `bookings()` on the resource's owning model.
+
 #### Scopes
 
-##### `bookable()`
+##### `bookable()` / `unbookable()`
 
-Filter only bookable resources.
+Filter by `is_bookable`.
 
 ```php
 BookableResource::bookable()->get();
+BookableResource::unbookable()->get();
 ```
 
-##### `visible()`
+##### `visible()` / `hidden()`
 
-Filter only visible resources.
+Filter by `is_visible`.
 
 ```php
 BookableResource::visible()->get();
+BookableResource::hidden()->get();
 ```
 
-##### `ofType()`
+##### `availableSlotForPeriod(Period $period)`
 
-Filter resources by type.
+`is_bookable = true` resources whose peak concurrency stays below `max` at every instant of the given period (distinct bookings, `is_excluded = false`, inclusive boundaries) — the same per-instant semantics `CheckBookingOverlaps` applies at booking time. `max = null` means unlimited and always matches; `max = 0` means zero capacity and never matches.
 
 ```php
-BookableResource::ofType(Room::class)->get();
+BookableResource::availableSlotForPeriod($period)->get();
 ```
+
+##### `availableForPeriod(Period $period)`
+
+`availableSlotForPeriod()` combined with a check that at least one `bookablePlannings` row is valid for the period (`wherePeriodIsValid`).
+
+```php
+BookableResource::availableForPeriod($period)->get();
+```
+
+##### `withBookingsInPeriod(Period $period)`
+
+Eager-loads `bookedPeriods` (with their `booking`) that overlap the given period. Does not filter which resources are returned.
+
+```php
+BookableResource::withBookingsInPeriod($period)->get();
+```
+
+There is no `ofType()` or `available()` scope — filter by `resource_type` with a normal `where()`, and use `availableSlotForPeriod()`/`availableForPeriod()` for availability.
 
 #### Methods
 
-##### `isBookable()`
+##### `size()`
 
-Check if resource can be booked.
+Returns the resource's `size`, or `0` if `is_bookable` is `false` (unless `$ignoresUnbookable` is `true`).
 
 ```php
-public function isBookable(): bool
+public function size(bool $ignoresUnbookable = false): int
+```
+
+##### `book()`
+
+Shortcut for `(new BookResource())->run(..., bookableResource: $this, ...)`. Added by the `ImplementsBook` trait.
+
+```php
+public function book(
+    PeriodCollection $periods,
+    ?Booking $booking = null,
+    ?Model $booker = null,
+    ?Model $relatable = null,
+    ?string $code = null,
+    ?string $codePrefix = null,
+    ?string $codeSuffix = null,
+    ?string $label = null,
+    ?string $note = null,
+    ?array $meta = null,
+): ?Booking
+```
+
+##### `ensureIsAvailable()`
+
+Validates planning and capacity for this resource. See [IsBookable → `ensureIsAvailable()`](#ensureisavailable) below — the signature is identical.
+
+```php
+public function ensureIsAvailable(
+    PeriodCollection $periods,
+    Collection|EloquentCollection|null $relations = null,
+    bool $ignoresUnbookable = false
+): void
 ```
 
 ### Booking
@@ -306,19 +366,24 @@ use Masterix21\Bookings\Models\Booking;
 
 ```php
 protected $fillable = [
-    'parent_booking_id', // Parent booking ID (v1.2.0+)
-    'code',              // Booking code
-    'booker_type',       // Polymorphic booker type
-    'booker_id',         // Polymorphic booker ID
-    'label',             // Booking label
-    'note',              // Additional notes
-    'meta',              // JSON metadata
+    'parent_booking_id', // Parent booking ID
+    'code',               // Booking code
+    'booker_type',        // Polymorphic booker type
+    'booker_id',          // Polymorphic booker ID
+    'label',               // Booking label
+    'note',                 // Additional notes
+    'meta',                  // JSON metadata
 ];
 
-protected $casts = [
-    'meta' => 'collection',
-];
+protected function casts(): array
+{
+    return [
+        'meta' => \Illuminate\Database\Eloquent\Casts\AsArrayObject::class,
+    ];
+}
 ```
+
+`meta` is cast to `AsArrayObject`, so it behaves like an array (`$booking->meta['attendees']`) and supports `->merge()`, not `Illuminate\Support\Collection`.
 
 #### Relationships
 
@@ -336,11 +401,12 @@ $booking = Booking::find(1);
 $user = $booking->booker; // Returns User instance
 ```
 
-##### `bookedPeriods()`
+##### `bookedPeriod()` / `bookedPeriods()`
 
-Time periods for this booking.
+The (first, via `HasOne`) or all (via `HasMany`) time periods for this booking.
 
 ```php
+public function bookedPeriod(): HasOne
 public function bookedPeriods(): HasMany
 ```
 
@@ -352,7 +418,7 @@ foreach ($periods as $period) {
 }
 ```
 
-##### `parentBooking()` (v1.2.0+)
+##### `parentBooking()`
 
 Get the parent booking if this is a child booking.
 
@@ -374,7 +440,7 @@ if ($parentBooking) {
 }
 ```
 
-##### `childBookings()` (v1.2.0+)
+##### `childBookings()`
 
 Get all child bookings if this booking has children.
 
@@ -406,16 +472,11 @@ if ($booking->childBookings()->exists()) {
 // Count children
 $childCount = $booking->childBookings()->count();
 
-// Filter children
-$activeChildren = $booking->childBookings()
-    ->whereHas('bookedPeriods', function ($query) {
-        $query->where('ends_at', '>', now());
-    })
-    ->get();
-
 // Eager load children
 $bookings = Booking::with('childBookings')->get();
 ```
+
+There is no `creator()`, `relatable()`, or `bookableResources()` relation on `Booking` — resources are reached through `bookedPeriods()->bookableResource`.
 
 ### BookedPeriod
 
@@ -430,36 +491,47 @@ use Masterix21\Bookings\Models\BookedPeriod;
 ```php
 protected $fillable = [
     'booking_id',           // Parent booking
-    'bookable_resource_id', // Booked resource
+    'bookable_resource_id', // Booked resource (nullable)
     'relatable_type',       // Related model type
     'relatable_id',         // Related model ID
-    'starts_at',           // Period start
-    'ends_at',             // Period end
+    'parent_id',            // Self-referencing parent period
+    'starts_at',             // Period start
+    'ends_at',                // Period end
+    'is_excluded',            // Excludes this period from occupancy counting
+    'label',
+    'note',
 ];
 
 protected $casts = [
+    'is_excluded' => 'boolean',
     'starts_at' => 'datetime',
     'ends_at' => 'datetime',
 ];
+```
+
+`BookedPeriod` uses `SoftDeletes`.
+
+#### Relationships
+
+```php
+public function booking(): BelongsTo
+public function bookableResource(): BelongsTo
+public function relatable(): MorphTo
+public function parent(): BelongsTo   // self-referencing
+public function children(): HasMany   // self-referencing
 ```
 
 #### Methods
 
 ##### `period()`
 
-Get Spatie Period object for this booked period.
+Get a Spatie `Period` object for this booked period (an accessor, not a plain method call).
 
 ```php
-public function period(): Period
+public function period(): Attribute // $bookedPeriod->period returns Spatie\Period\Period
 ```
 
-##### `duration()`
-
-Get the duration of this period.
-
-```php
-public function duration(): Duration
-```
+There is no `duration()` method — compute it yourself from `$bookedPeriod->period`, e.g. `Carbon::instance($bookedPeriod->starts_at)->diffInMinutes($bookedPeriod->ends_at)`.
 
 ### BookablePlanning
 
@@ -474,47 +546,43 @@ use Masterix21\Bookings\Models\BookablePlanning;
 ```php
 protected $fillable = [
     'bookable_resource_id', // Target resource
-    'monday',               // Available on Monday
-    'tuesday',              // Available on Tuesday
-    'wednesday',            // Available on Wednesday
-    'thursday',             // Available on Thursday
-    'friday',               // Available on Friday
-    'saturday',             // Available on Saturday
-    'sunday',               // Available on Sunday
-    'starts_at',           // Planning start date
-    'ends_at',             // Planning end date
+    'source_type',          // Optional polymorphic source (planning source pattern)
+    'source_id',
+    'starts_at',             // Planning validity window start
+    'ends_at',                // Planning validity window end
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+    'matching_strategy',       // PlanningMatchingStrategy::All (default) or ::Any
 ];
 
 protected $casts = [
-    'monday' => 'boolean',
-    'tuesday' => 'boolean',
-    'wednesday' => 'boolean',
-    'thursday' => 'boolean',
-    'friday' => 'boolean',
-    'saturday' => 'boolean',
-    'sunday' => 'boolean',
+    'monday' => 'bool', 'tuesday' => 'bool', 'wednesday' => 'bool',
+    'thursday' => 'bool', 'friday' => 'bool', 'saturday' => 'bool', 'sunday' => 'bool',
     'starts_at' => 'datetime',
     'ends_at' => 'datetime',
+    'matching_strategy' => \Masterix21\Bookings\Enums\PlanningMatchingStrategy::class,
 ];
 ```
 
-#### Methods
+All seven weekday columns default to `true` at the database level (a fresh planning row with no explicit weekday values is open every day).
 
-##### `isAvailableOnDate()`
-
-Check if planning allows bookings on a specific date.
+#### Relationships
 
 ```php
-public function isAvailableOnDate(Carbon $date): bool
+public function bookableResource(): BelongsTo
+public function source(): MorphTo // the planning-source model, if any
 ```
 
-##### `getAvailableDays()`
-
-Get array of available weekdays.
+#### Scopes
 
 ```php
-public function getAvailableDays(): array
+public function scopeWhereWeekdaysDates(Builder $builder, Collection|array|string $dates): Builder
+public function scopeWhereAllDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
+public function scopeWhereDatesAreWithinPeriods(Builder $builder, Collection|array|string $dates): Builder
+public function scopeWhereDatesAreValids(Builder $builder, Collection|array|string $dates): Builder // weekdays + within-period, combined
+public function scopeWherePeriodIsValid(Builder $builder, Period $period): Builder // used by scopeAvailableForPeriod
 ```
+
+There is no `isAvailableOnDate()` or `getAvailableDays()` method on `BookablePlanning` — use the `wherePeriodIsValid()`/`whereDatesAreValids()` scopes instead.
 
 ## Traits
 
@@ -539,7 +607,7 @@ class Room extends Model implements Bookable
 Get all bookable resources for this model.
 
 ```php
-public function bookableResources(): HasMany
+public function bookableResources(): MorphMany
 ```
 
 ##### `bookableResource()`
@@ -547,12 +615,12 @@ public function bookableResources(): HasMany
 Get the primary bookable resource.
 
 ```php
-public function bookableResource(): HasOne
+public function bookableResource(): MorphOne
 ```
 
 ##### `bookings()`
 
-Get all bookings for this model.
+Get all bookings for this model, resolved through its bookable resource(s).
 
 ```php
 public function bookings(): HasManyDeep
@@ -571,7 +639,7 @@ public function bookedPeriods(): HasManyDeep
 Check if model is booked at specific time.
 
 ```php
-public function isBookedAt(Carbon $dateTime): bool
+public function isBookedAt(Carbon $date): bool
 ```
 
 ##### `bookedPeriodsOfDate()`
@@ -581,6 +649,24 @@ Get booked periods for a specific date.
 ```php
 public function bookedPeriodsOfDate(Carbon $date): Collection
 ```
+
+There is no `isAvailable()` method on `IsBookable` — use `ensureIsAvailable()` (below) inside a try/catch, or `BookableResource::availableForPeriod()` for a query-level check.
+
+##### `ensureIsAvailable()`
+
+Throws unless the periods are available. Delegates to the model's `bookableResources`: passes as soon as at least one resource is available, and rethrows the last failure if none are.
+
+```php
+public function ensureIsAvailable(
+    PeriodCollection $periods,
+    Collection|EloquentCollection|null $relations = null,
+    bool $ignoresUnbookable = false
+): void
+```
+
+**Throws:** `UnbookableException` (no resources at all), or whichever exception the last checked resource raised — `NoFreeSizeException`, `OutOfPlanningsException`, `RelationsHaveNoFreeSizeException`, `RelationsOutOfPlanningsException`.
+
+The same method exists on `BookableResource` for a single-resource check, with an identical signature.
 
 ### SyncBookableResource
 
@@ -716,154 +802,33 @@ Get all bookings made by this entity.
 public function bookings(): MorphMany
 ```
 
-##### `bookedPeriods()`
-
-Get all periods booked by this entity.
-
-```php
-public function bookedPeriods(): HasManyThrough
-```
+`HasBookings` only adds this one relation — there is no `bookedPeriods()` method on it. To reach periods, go through the bookings: `$user->bookings->flatMap->bookedPeriods`.
 
 ## Events
 
-### Booking Lifecycle Events
+See [Events and Listeners](events.md) for the full guide with real constructor signatures and example listeners. Quick reference:
 
-#### BookingInProgress
+| Event | Constructor parameters |
+|---|---|
+| `BookingInProgress` | `BookableResource $bookableResource, PeriodCollection $periods` |
+| `BookingCompleted` | `Booking $booking, PeriodCollection $periods` |
+| `BookingFailed` | `UnbookableReason $reason, BookableResource $bookableResource, PeriodCollection $periods, ?string $message = null, ?string $stackTrace = null` |
+| `BookingChanging` | `Booking $booking, BookableResource $bookableResource, PeriodCollection $periods` |
+| `BookingChanged` | `Booking $booking, PeriodCollection $periods` |
+| `BookingChangeFailed` | `Booking $booking, UnbookableReason $reason, BookableResource $bookableResource, PeriodCollection $periods, ?string $message = null, ?string $stackTrace = null` |
+| `PlanningValidationStarted` | `Model $resource, Collection $dates, Collection\|EloquentCollection\|null $relations = null` |
+| `PlanningValidationPassed` | `Model $resource, Collection $dates, Collection\|EloquentCollection\|null $relations = null` |
+| `PlanningValidationFailed` | `Model $resource, Collection $dates, Collection\|EloquentCollection\|null $relations, Exception $exception` |
 
-Fired when booking process starts.
-
-```php
-use Masterix21\Bookings\Events\BookingInProgress;
-
-class BookingInProgress
-{
-    public function __construct(
-        public PeriodCollection $periods,
-        public BookableResource $bookableResource,
-        public ?Model $booker = null,
-        public ?Booking $booking = null
-    ) {}
-}
-```
-
-#### BookingCompleted
-
-Fired when booking is successfully created.
-
-```php
-use Masterix21\Bookings\Events\BookingCompleted;
-
-class BookingCompleted
-{
-    public function __construct(
-        public Booking $booking,
-        public PeriodCollection $periods,
-        public BookableResource $bookableResource
-    ) {}
-}
-```
-
-#### BookingFailed
-
-Fired when booking creation fails.
-
-```php
-use Masterix21\Bookings\Events\BookingFailed;
-
-class BookingFailed
-{
-    public function __construct(
-        public PeriodCollection $periods,
-        public BookableResource $bookableResource,
-        public \Exception $exception,
-        public ?Model $booker = null,
-        public ?Booking $booking = null
-    ) {}
-}
-```
-
-#### BookingChanging
-
-Fired when booking update starts.
-
-```php
-use Masterix21\Bookings\Events\BookingChanging;
-
-class BookingChanging
-{
-    public function __construct(
-        public Booking $booking,
-        public PeriodCollection $newPeriods,
-        public PeriodCollection $oldPeriods
-    ) {}
-}
-```
-
-#### BookingChanged
-
-Fired when booking is successfully updated.
-
-```php
-use Masterix21\Bookings\Events\BookingChanged;
-
-class BookingChanged
-{
-    public function __construct(
-        public Booking $booking,
-        public PeriodCollection $newPeriods,
-        public PeriodCollection $oldPeriods
-    ) {}
-}
-```
-
-#### BookingChangeFailed
-
-Fired when booking update fails.
-
-```php
-use Masterix21\Bookings\Events\BookingChangeFailed;
-
-class BookingChangeFailed
-{
-    public function __construct(
-        public Booking $booking,
-        public PeriodCollection $periods,
-        public \Exception $exception
-    ) {}
-}
-```
-
-### Planning Validation Events
-
-#### PlanningValidationStarted
-
-Fired when planning validation begins.
-
-```php
-use Masterix21\Bookings\Events\PlanningValidationStarted;
-```
-
-#### PlanningValidationPassed
-
-Fired when planning validation succeeds.
-
-```php
-use Masterix21\Bookings\Events\PlanningValidationPassed;
-```
-
-#### PlanningValidationFailed
-
-Fired when planning validation fails.
-
-```php
-use Masterix21\Bookings\Events\PlanningValidationFailed;
-```
+None of these events expose a `booker`, `exception` (except `PlanningValidationFailed`), `newPeriods`, `oldPeriods`, or `bookableResource` (except where listed) property — check the table above before referencing an event property.
 
 ## Exceptions
 
+All exceptions below are plain `\Exception` subclasses with no additional properties or methods — there is no `getConflictingBookings()` or similar accessor. Use `$e->getMessage()`, or inspect the request state yourself (resource, periods) to build a response.
+
 ### BookingResourceOverlappingException
 
-Thrown when booking conflicts with existing bookings.
+Thrown by `CheckBookingOverlaps::run()` (and therefore `BookResource::run()`) when the booking would exceed the resource's concurrency limit.
 
 ```php
 use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
@@ -871,40 +836,45 @@ use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 try {
     $booking = (new BookResource())->run(/* ... */);
 } catch (BookingResourceOverlappingException $e) {
-    $conflictingBookings = $e->getConflictingBookings();
     $message = $e->getMessage();
 }
 ```
 
-#### Methods
-
-##### `getConflictingBookings()`
-
-Get bookings that conflict with the requested periods.
-
-```php
-public function getConflictingBookings(): Collection
-```
-
 ### OutOfPlanningsException
 
-Thrown when no valid planning exists for the requested time.
+Thrown by `ensureIsAvailable()`/`validatePlanningAvailability()` when no valid planning exists for the requested dates.
 
 ```php
 use Masterix21\Bookings\Exceptions\OutOfPlanningsException;
 ```
 
+### RelationsOutOfPlanningsException
+
+Thrown by `validateRelationsPlanningAvailability()` when one or more related `BookableResource` instances lack valid planning for the requested dates.
+
+```php
+use Masterix21\Bookings\Exceptions\RelationsOutOfPlanningsException;
+```
+
 ### NoFreeSizeException
 
-Thrown when resource capacity is exceeded.
+Thrown by `ensureHasFreeSize()` when resource capacity is exceeded.
 
 ```php
 use Masterix21\Bookings\Exceptions\NoFreeSizeException;
 ```
 
+### RelationsHaveNoFreeSizeException
+
+Thrown by `ensureRelationsHaveFreeSize()` when none of the related resources have free capacity.
+
+```php
+use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
+```
+
 ### UnbookableException
 
-Thrown when attempting to book an unbookable resource.
+Thrown when attempting to book a resource whose effective `size()` is `0` (not bookable), or when an `IsBookable` model has no bookable resources at all.
 
 ```php
 use Masterix21\Bookings\Exceptions\UnbookableException;
@@ -921,37 +891,70 @@ use Masterix21\Bookings\Generators\Contracts\BookingCodeGenerator;
 
 interface BookingCodeGenerator
 {
-    public function generate(?Booking $booking = null): string;
+    public function run(?string $prefix = null, ?string $suffix = null): string;
 }
 ```
 
 ### RandomBookingCode
 
-Default implementation that generates random booking codes.
+Default implementation. Builds a 64-character uppercase code from an optional prefix, a ULID, random characters, and an optional suffix.
 
 ```php
 use Masterix21\Bookings\Generators\RandomBookingCode;
 
 $generator = new RandomBookingCode();
-$code = $generator->generate(); // Returns: "BK-A1B2C3D4"
+$code = $generator->run(); // e.g. "01ARZ3NDEKTSV4RRFFQ69G5FAV..." (64 chars, uppercase)
+$code = $generator->run(prefix: 'BK-', suffix: '-VIP');
 ```
+
+Throws `\Exception` if the combined `$prefix` + `$suffix` length is 38 characters or more.
 
 ## Enums
 
 ### UnbookableReason
 
-Enum defining reasons why a resource cannot be booked.
+Enum describing why a booking attempt failed, carried on `BookingFailed`/`BookingChangeFailed`.
 
 ```php
 use Masterix21\Bookings\Enums\UnbookableReason;
 
 enum UnbookableReason: string
 {
-    case NotBookable = 'not_bookable';
-    case NotVisible = 'not_visible';
-    case OutOfPlanning = 'out_of_planning';
-    case NoCapacity = 'no_capacity';
-    case Overlapping = 'overlapping';
+    case PERIOD_OVERLAP = 'period_overlap';
+    case EXCEPTION = 'exception';
+}
+```
+
+### PlanningMatchingStrategy
+
+Controls how a `BookablePlanning`'s weekday flags are matched against a period's weekdays in `scopeWherePeriodIsValid()`.
+
+```php
+use Masterix21\Bookings\Enums\PlanningMatchingStrategy;
+
+enum PlanningMatchingStrategy: string
+{
+    case All = 'all';  // every weekday in the period must be enabled on the planning
+    case Any = 'any';  // at least one weekday in the period must be enabled on the planning
+}
+```
+
+### Weekday
+
+Maps Carbon's numeric day-of-week to the `bookable_plannings` boolean columns.
+
+```php
+use Masterix21\Bookings\Enums\Weekday;
+
+enum Weekday: string
+{
+    case Monday = 'monday';
+    case Tuesday = 'tuesday';
+    case Wednesday = 'wednesday';
+    case Thursday = 'thursday';
+    case Friday = 'friday';
+    case Saturday = 'saturday';
+    case Sunday = 'sunday';
 }
 ```
 
@@ -959,16 +962,31 @@ enum UnbookableReason: string
 
 ### Bookings Facade
 
-Provides convenient access to package functionality.
-
 ```php
 use Masterix21\Bookings\BookingsFacade as Bookings;
+```
 
-// Check availability
-$available = Bookings::checkAvailability($resource, $periods);
+The `Bookings` class (bound as the `bookings` singleton) exposes two helper methods — there is no `checkAvailability()` or `book()` on the facade. Use `CheckBookingOverlaps`/`BookResource` directly for those.
 
-// Create booking
-$booking = Bookings::book($resource, $periods, $booker);
+##### `checksum()`
+
+Deterministic hash of a resource + period set, useful for optimistic-concurrency checks in your own code.
+
+```php
+public function checksum(BookableResource $bookableResource, PeriodCollection $periods): string
+```
+
+##### `periodsToDates()`
+
+Expands a `PeriodCollection` into a flat `Collection` of individual dates.
+
+```php
+public function periodsToDates(PeriodCollection $periods, bool $removeDuplicates = true): Collection
+```
+
+```php
+$checksum = Bookings::checksum($resource, $periods);
+$dates = Bookings::periodsToDates($periods);
 ```
 
 ## Configuration Models
@@ -986,4 +1004,4 @@ All model classes can be configured in `config/bookings.php`:
 ],
 ```
 
-This allows you to extend any core model with custom functionality while maintaining compatibility with the package.
+This allows you to extend any core model with custom functionality while maintaining compatibility with the package. See [Configuration](configuration.md) for the complete config file, including `generators`, `planning_validation`, and `booking_update`.

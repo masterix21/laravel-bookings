@@ -13,6 +13,11 @@ use Masterix21\Bookings\Tests\TestClasses\Product;
 use Spatie\Period\Period;
 use Spatie\Period\PeriodCollection;
 use Spatie\Period\Precision;
+use Spatie\TestTime\TestTime;
+
+beforeEach(function () {
+    TestTime::freeze();
+});
 
 it('returns true when no overlaps exist', function () {
     $product = Product::factory()->create();
@@ -404,4 +409,195 @@ it('handles empty periods collection', function () {
     );
 
     expect($result)->toBeTrue();
+});
+
+it('allows multi-period requests whose existing overlaps are never simultaneous', function () {
+    $product = Product::factory()->create();
+    $bookableResource = BookableResource::factory()->create([
+        'resource_type' => Product::class,
+        'resource_id' => $product->id,
+        'max' => 2,
+    ]);
+
+    $booking1 = Booking::factory()->create();
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $bookableResource->id,
+        'booking_id' => $booking1->id,
+        'starts_at' => Carbon::now()->setTime(10, 0),
+        'ends_at' => Carbon::now()->setTime(12, 0),
+    ]);
+
+    $booking2 = Booking::factory()->create();
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $bookableResource->id,
+        'booking_id' => $booking2->id,
+        'starts_at' => Carbon::now()->addDay()->setTime(10, 0),
+        'ends_at' => Carbon::now()->addDay()->setTime(12, 0),
+    ]);
+
+    // Each requested period overlaps one existing booking, never both at once:
+    // at any instant the concurrency is 1 existing + 1 new = 2 <= max.
+    $periods = PeriodCollection::make(
+        Period::make(Carbon::now()->setTime(11, 0), Carbon::now()->setTime(13, 0), Precision::MINUTE()),
+        Period::make(Carbon::now()->addDay()->setTime(11, 0), Carbon::now()->addDay()->setTime(13, 0), Precision::MINUTE()),
+    );
+
+    $result = (new CheckBookingOverlaps)->run(
+        periods: $periods,
+        bookableResource: $bookableResource,
+    );
+
+    expect($result)->toBeTrue();
+});
+
+it('allows a single period whose existing overlaps never coincide', function () {
+    $product = Product::factory()->create();
+    $bookableResource = BookableResource::factory()->create([
+        'resource_type' => Product::class,
+        'resource_id' => $product->id,
+        'max' => 2,
+    ]);
+
+    $booking1 = Booking::factory()->create();
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $bookableResource->id,
+        'booking_id' => $booking1->id,
+        'starts_at' => Carbon::now()->setTime(10, 0),
+        'ends_at' => Carbon::now()->setTime(11, 0),
+    ]);
+
+    $booking2 = Booking::factory()->create();
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $bookableResource->id,
+        'booking_id' => $booking2->id,
+        'starts_at' => Carbon::now()->setTime(14, 0),
+        'ends_at' => Carbon::now()->setTime(15, 0),
+    ]);
+
+    // One long requested period: the two existing bookings never overlap
+    // each other, so the max concurrency at any instant is 1 existing + 1 new.
+    $periods = PeriodCollection::make(
+        Period::make(Carbon::now()->setTime(9, 0), Carbon::now()->setTime(16, 0), Precision::MINUTE()),
+    );
+
+    $result = (new CheckBookingOverlaps)->run(
+        periods: $periods,
+        bookableResource: $bookableResource,
+    );
+
+    expect($result)->toBeTrue();
+});
+
+it('counts multiple rows of the same booking as one concurrent booking', function () {
+    $product = Product::factory()->create();
+    $bookableResource = BookableResource::factory()->create([
+        'resource_type' => Product::class,
+        'resource_id' => $product->id,
+        'max' => 2,
+    ]);
+
+    $booking = Booking::factory()->create();
+
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $bookableResource->id,
+        'booking_id' => $booking->id,
+        'starts_at' => Carbon::now()->setTime(10, 0),
+        'ends_at' => Carbon::now()->setTime(12, 0),
+    ]);
+
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $bookableResource->id,
+        'booking_id' => $booking->id,
+        'starts_at' => Carbon::now()->setTime(10, 0),
+        'ends_at' => Carbon::now()->setTime(12, 0),
+    ]);
+
+    $periods = PeriodCollection::make(
+        Period::make(Carbon::now()->setTime(11, 0), Carbon::now()->setTime(13, 0), Precision::MINUTE()),
+    );
+
+    $result = (new CheckBookingOverlaps)->run(
+        periods: $periods,
+        bookableResource: $bookableResource,
+    );
+
+    expect($result)->toBeTrue();
+});
+
+it('ignores excluded periods when counting overlaps', function () {
+    $product = Product::factory()->create();
+    $bookableResource = BookableResource::factory()->create([
+        'resource_type' => Product::class,
+        'resource_id' => $product->id,
+        'max' => 1,
+    ]);
+
+    $booking = Booking::factory()->create();
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $bookableResource->id,
+        'booking_id' => $booking->id,
+        'is_excluded' => true,
+        'starts_at' => Carbon::now()->setTime(10, 0),
+        'ends_at' => Carbon::now()->setTime(12, 0),
+    ]);
+
+    $periods = PeriodCollection::make(
+        Period::make(Carbon::now()->setTime(11, 0), Carbon::now()->setTime(13, 0), Precision::MINUTE()),
+    );
+
+    $result = (new CheckBookingOverlaps)->run(
+        periods: $periods,
+        bookableResource: $bookableResource,
+    );
+
+    expect($result)->toBeTrue();
+});
+
+it('rejects bookings when max is zero even without existing bookings', function () {
+    $product = Product::factory()->create();
+    $bookableResource = BookableResource::factory()->create([
+        'resource_type' => Product::class,
+        'resource_id' => $product->id,
+        'max' => 0,
+    ]);
+
+    $periods = PeriodCollection::make(
+        Period::make(Carbon::now()->setTime(10, 0), Carbon::now()->setTime(12, 0), Precision::MINUTE()),
+    );
+
+    $result = (new CheckBookingOverlaps)->run(
+        periods: $periods,
+        bookableResource: $bookableResource,
+    );
+
+    expect($result)->toBeFalse();
+});
+
+it('treats touching boundaries as overlapping', function () {
+    $product = Product::factory()->create();
+    $bookableResource = BookableResource::factory()->create([
+        'resource_type' => Product::class,
+        'resource_id' => $product->id,
+        'max' => 1,
+    ]);
+
+    $booking = Booking::factory()->create();
+    BookedPeriod::factory()->create([
+        'bookable_resource_id' => $bookableResource->id,
+        'booking_id' => $booking->id,
+        'starts_at' => Carbon::now()->setTime(10, 0),
+        'ends_at' => Carbon::now()->setTime(12, 0),
+    ]);
+
+    // Starts exactly when the existing period ends: inclusive boundaries.
+    $periods = PeriodCollection::make(
+        Period::make(Carbon::now()->setTime(12, 0), Carbon::now()->setTime(14, 0), Precision::MINUTE()),
+    );
+
+    $result = (new CheckBookingOverlaps)->run(
+        periods: $periods,
+        bookableResource: $bookableResource,
+    );
+
+    expect($result)->toBeFalse();
 });

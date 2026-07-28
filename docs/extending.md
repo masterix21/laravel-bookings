@@ -276,9 +276,9 @@ class BookingPackage extends Model
 
 ## Custom Actions
 
-### Extending Core Actions
+### Wrapping BookResource
 
-Create custom actions by extending the base classes:
+`BookResource` is a plain class with a public `run()` method and non-overridable protected internals (`create()`, `update()`, `executeInTransaction()`, `emitFailureEvent()`) — there is no `beforeExecution()`/`afterExecution()` hook to subclass. Compose around it instead, using the real `onBookingSaving()`/`onBookingSaved()` callbacks for logic that needs to run inside the same transaction:
 
 ```php
 <?php
@@ -292,44 +292,43 @@ use Masterix21\Bookings\Models\BookableResource;
 use Spatie\Period\PeriodCollection;
 use App\Events\BookingApprovalRequired;
 use App\Services\BillingService;
-use App\Services\NotificationService;
 
-class CustomBookResource extends BookResource
+class CustomBookResource
 {
     public function __construct(
+        private BookResource $bookResource,
         private BillingService $billingService,
-        private NotificationService $notificationService
     ) {}
 
-    protected function beforeExecution(
+    public function run(
         PeriodCollection $periods,
         BookableResource $bookableResource,
         $booker,
         array $options = []
-    ): void {
-        // Custom pre-booking validation
+    ): ?Booking {
+        // Pre-booking validation runs before the transaction opens
         $this->validateBusinessRules($periods, $bookableResource, $booker, $options);
-        
-        // Check department budget
+
         if (isset($options['department_id'])) {
             $this->validateDepartmentBudget($options['department_id'], $periods, $bookableResource);
         }
-    }
 
-    protected function afterExecution(Booking $booking): void
-    {
-        parent::afterExecution($booking);
-        
-        // Calculate and store billing information
-        $this->processBilling($booking);
-        
-        // Send custom notifications
-        $this->sendCustomNotifications($booking);
-        
-        // Check if approval is required
-        if ($this->requiresApproval($booking)) {
-            event(new BookingApprovalRequired($booking));
-        }
+        return $this->bookResource
+            ->onBookingSaved(function (Booking $booking) {
+                // Runs inside the same transaction as the save
+                $this->processBilling($booking);
+
+                if ($this->requiresApproval($booking)) {
+                    event(new BookingApprovalRequired($booking));
+                }
+            })
+            ->run(
+                periods: $periods,
+                bookableResource: $bookableResource,
+                booker: $booker,
+                label: $options['label'] ?? null,
+                meta: $options,
+            );
     }
 
     private function validateBusinessRules(
@@ -339,7 +338,7 @@ class CustomBookResource extends BookResource
         array $options
     ): void {
         // Custom business logic validation
-        if ($bookableResource->category === 'executive' && !$booker->hasRole('manager')) {
+        if ($bookableResource->resource?->category === 'executive' && !$booker->hasRole('manager')) {
             throw new UnauthorizedBookingException('Executive resources require manager role');
         }
 
@@ -354,7 +353,7 @@ class CustomBookResource extends BookResource
     {
         $cost = $this->calculateBookingCost($periods, $resource);
         $department = Department::find($departmentId);
-        
+
         if ($department->remaining_budget < $cost) {
             throw new InsufficientBudgetException('Department budget exceeded');
         }
@@ -363,23 +362,20 @@ class CustomBookResource extends BookResource
     private function processBilling(Booking $booking): void
     {
         $totalCost = $this->billingService->calculateBookingCost($booking);
-        
-        $booking->update([
-            'meta' => array_merge($booking->meta ?? [], [
-                'billing' => [
-                    'total_cost' => $totalCost,
-                    'currency' => 'USD',
-                    'calculated_at' => now()->toISOString(),
-                ],
-            ]),
+
+        $booking->meta = $booking->meta->merge([
+            'billing' => [
+                'total_cost' => $totalCost,
+                'currency' => 'USD',
+                'calculated_at' => now()->toISOString(),
+            ],
         ]);
+        $booking->save();
     }
 
     private function requiresApproval(Booking $booking): bool
     {
-        // Custom approval logic
-        $cost = $booking->meta['billing']['total_cost'] ?? 0;
-        return $cost > 500 || $booking->department->requires_approval;
+        return ($booking->meta['billing']['total_cost'] ?? 0) > 500;
     }
 }
 ```
@@ -816,27 +812,27 @@ class ValidBookingWindow implements Rule
 {
     public function __construct(
         private BookableResource $resource,
-        private Carbon $requestedStart
+        private Carbon $requestedStart,
+        private int $minAdvanceMinutes = 0,
+        private int $maxAdvanceMinutes = PHP_INT_MAX,
     ) {}
 
     public function passes($attribute, $value): bool
     {
-        $planning = $this->resource->bookablePlannings()
-            ->where('starts_at', '<=', $this->requestedStart)
-            ->where('ends_at', '>=', $this->requestedStart)
-            ->first();
+        // BookablePlanning only knows about weekdays and a starts_at/ends_at
+        // validity window — there is no min/max "advance booking time" column
+        // on it, so that part of the rule has to be pure application logic.
+        $hasValidPlanning = $this->resource->bookablePlannings()
+            ->wherePeriodIsValid(\Spatie\Period\Period::make($this->requestedStart, $this->requestedStart))
+            ->exists();
 
-        if (!$planning) {
+        if (!$hasValidPlanning) {
             return false;
         }
 
-        // Check advance booking window
-        $minAdvance = $planning->min_time_before_booking ?? 0;
-        $maxAdvance = $planning->max_time_before_booking ?? PHP_INT_MAX;
-        
         $advanceMinutes = now()->diffInMinutes($this->requestedStart);
-        
-        return $advanceMinutes >= $minAdvance && $advanceMinutes <= $maxAdvance;
+
+        return $advanceMinutes >= $this->minAdvanceMinutes && $advanceMinutes <= $this->maxAdvanceMinutes;
     }
 
     public function message(): string

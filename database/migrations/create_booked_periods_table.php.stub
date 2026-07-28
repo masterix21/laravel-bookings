@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('booked_periods', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignIdFor(config('bookings.models.booking'))->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.booking'))->constrained()->restrictOnDelete();
 
-            $table->foreignIdFor(config('bookings.models.bookable_resource'))->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(config('bookings.models.bookable_resource'))->nullable()->constrained()->nullOnDelete();
 
             $table->nullableMorphs('relatable');
 
@@ -21,8 +21,8 @@ return new class extends Migration
 
             $table->string('label')->nullable();
 
-            $table->dateTime('starts_at')->nullable();
-            $table->dateTime('ends_at')->nullable();
+            $table->dateTime('starts_at');
+            $table->dateTime('ends_at');
 
             $table->string('timezone')->nullable();
 

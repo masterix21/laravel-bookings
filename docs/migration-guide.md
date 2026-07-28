@@ -8,8 +8,78 @@ This guide helps you migrate between versions of Laravel Bookings and upgrade yo
 
 | Laravel Bookings | Laravel | PHP | Status |
 |------------------|---------|-----|--------|
-| 1.x | 10.x, 11.x, 12.x | 8.3+ | Current |
+| 2.x | 12.x, 13.x | 8.4+ | Current |
+| 1.x | 12.x (13.x added in 1.3.0) | 8.4+ | Previous |
 | 0.x | 9.x, 10.x | 8.1+ | Legacy |
+
+## Upgrading from 1.x
+
+This release corrects overlap detection, availability scopes, and several database constraints. The behavior changes below take effect immediately after `composer update` — no migration required. The schema changes require publishing and running two new migrations, one of which has a manual prerequisite.
+
+### Step 1: Update the package
+
+```bash
+composer update masterix21/laravel-bookings
+```
+
+### Step 2: Clean up NULL period dates (REQUIRED before migrating)
+
+`booked_periods.starts_at` and `booked_periods.ends_at` become `NOT NULL`. The upgrade migration will **fail** if any existing row has a NULL value in either column. Check for offending rows first:
+
+```sql
+SELECT id FROM booked_periods WHERE starts_at IS NULL OR ends_at IS NULL;
+```
+
+Backfill or delete those rows before continuing — the package has no opinion on which is correct for your data.
+
+### Step 3: Publish and run the new migrations
+
+```bash
+php artisan vendor:publish --tag="bookings-migrations"
+php artisan migrate
+```
+
+Two new publishable migrations ship with this release:
+
+| Migration | What it does |
+|-----------|---------------|
+| `update_booked_periods_constraints` | Makes `starts_at`/`ends_at` `NOT NULL`; swaps `booked_periods` foreign keys from cascading deletes to `booking_id` → `restrictOnDelete()` and `bookable_resource_id` → `nullOnDelete()`. |
+| `update_bookable_plannings_add_indexes` | Adds the composite index `bookable_plannings_resource_dates_index` on `(bookable_resource_id, starts_at, ends_at)`. |
+
+On **SQLite**, the foreign key swap in `update_booked_periods_constraints` is skipped (SQLite cannot drop foreign keys); the `NOT NULL` change still applies. Fresh installations get the correct constraints directly from `create_booked_periods_table` and need no update migration.
+
+### Step 4: Review the foreign key behavior change
+
+`booked_periods` foreign keys no longer cascade. This changes what happens when you delete a `Booking` or a `BookableResource` that still has periods:
+
+| Deleting | Before | After |
+|----------|--------|-------|
+| A `Booking` with `booked_periods` rows | Periods were deleted along with the booking (`cascadeOnDelete`) | The delete fails with a foreign key violation (`restrictOnDelete`) until your application deletes or soft-deletes the periods first |
+| A `BookableResource` with `booked_periods` rows | Periods were deleted along with the resource (`cascadeOnDelete`) | `booked_periods.bookable_resource_id` is set to `null` (`nullOnDelete`), so booking history survives resource deletion |
+
+If your application deletes bookings or resources directly (rather than through `BookResource`), audit those code paths: a raw `Booking::destroy($id)` or `$resource->delete()` on a row with existing periods now behaves differently than before.
+
+### Behavior changes reference
+
+These apply as soon as the package is updated, independent of the schema migrations above:
+
+| # | Area | Before | After |
+|---|------|--------|-------|
+| 1 | `CheckBookingOverlaps` | Summed every overlapping period row across all requested periods, over-blocking multi-period requests; multiple rows from the same booking counted separately | Measures the highest number of *distinct* bookings active at any single instant of each requested period; rows belonging to the same booking count once |
+| 2 | Occupancy counting | `is_excluded` periods still counted toward occupancy in some paths | `is_excluded = true` periods never count as occupancy, in `CheckBookingOverlaps` and in the availability scopes |
+| 3 | Boundary semantics | Availability scopes used strict comparisons (`<`/`>`) while the booking check used inclusive ones, so a resource could show as available and then fail to book | Both use inclusive comparisons (`starts_at <= end AND ends_at >= start`) everywhere; touching/back-to-back periods overlap consistently in booking checks and in `scopeAvailableSlotForPeriod`/`scopeWithBookingsInPeriod` |
+| 4 | `BookableResource.max = null` | Resources with no `max` set never appeared in `scopeAvailableSlotForPeriod` | `null` consistently means unlimited capacity, including in that scope; `max = 0` consistently means zero capacity (rejected at booking, never listed as available) |
+| 4b | Availability scope counting | `scopeAvailableSlotForPeriod` compared `max` against the count of overlapping period *rows* | Compares `max` against the peak number of *distinct* bookings active at any single instant of the requested period — identical to the booking-time check, so search results and booking outcomes can no longer disagree |
+| 5 | `BookResource::run()` on update | Omitting `label`, `note`, or `meta` nulled the existing value | Omitting them (passing `null`) keeps the current value, matching the existing behavior of `code`, `booker`, and `parent` |
+| 6 | `booker_type` / `relatable_type` storage | Always stored the fully qualified class name (`::class`) | Stored via `getMorphClass()`, honoring a configured `Relation::morphMap()` / `enforceMorphMap()` |
+| 7 | Transaction failure handling | Only `\Exception` triggered a rollback; failure events fired inside the still-open, doomed transaction | Any `\Throwable` triggers a rollback; failure events fire *after* the rollback completes. A creation that fails after `save()` now emits `BookingFailed` (previously `BookingChangeFailed`) |
+| 8 | `ensureIsAvailable()` | Broken since introduction: wrong trait placement and a `Collection` passed where a `PeriodCollection` was expected (guaranteed `TypeError`) | Repaired: `BookableResource::ensureIsAvailable()` works end-to-end; `IsBookable` models delegate to their resource(s) and pass if **at least one** is available, rethrowing the last failure otherwise. `ensureHasFreeSize()`/`ensureRelationsHaveFreeSize()` now take a `PeriodCollection $periods` parameter (was `Collection $dates`) and measure occupancy as peak per-instant concurrency of distinct bookings, like the overlap check |
+| 9 | Abolished "Area" concept leftovers | `BookableResource::bookableRelations()` queried non-existent columns and threw an SQL error; `BookableRelation`'s fillable listed the same phantom columns; `vendor:publish` was broken by a reference to a non-existent `create_bookable_areas_table` migration | `bookableRelations()` is a working `hasMany` through `parent_bookable_resource_id`; `BookableRelation`'s fillable matches the real schema (`parent_bookable_resource_id`, `bookable_resource_id`, `is_required`, `min`, `max`); `vendor:publish` works again |
+| 10 | `RandomBookingCode` exception message | Said "keep your prefix and suffix below 26 characters" (wrong threshold) | States the real constraint: combined prefix + suffix length must be below 38 characters |
+| 11 | Soft deletes on host models | The `deleting` hook of `IsBookable`/`IsBookablePlanningSource` also fired on **soft** deletes, permanently destroying the model's bookable resources or planning with no recovery on `restore()` | Soft deletes leave resources and plannings untouched; only real (force) deletes cascade |
+| 12 | `Bookings::checksum()` | The periods part of the hash was silently serialized as an empty object, so every period set produced the same checksum for a given resource | Periods are serialized as sorted start/end pairs: the checksum is canonical, order-independent, and **its values change** — recompute any stored checksums after upgrading |
+
+If you call `ensureHasFreeSize()` or `ensureRelationsHaveFreeSize()` directly (outside of `ensureIsAvailable()`), update the call site to pass a `PeriodCollection` instead of a `Collection` of dates.
 
 ## Upgrading to Version 1.2.0
 
@@ -306,65 +376,7 @@ Event::listen(BookingCompleted::class, function ($event) {
 
 #### Required Schema Updates
 
-**1. Add new columns to existing tables:**
-
-```php
-<?php
-// database/migrations/2024_01_01_000001_upgrade_bookings_to_v1.php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        // Update bookable_resources table
-        Schema::table('bookable_resources', function (Blueprint $table) {
-            if (!Schema::hasColumn('bookable_resources', 'is_visible')) {
-                $table->boolean('is_visible')->default(true)->after('is_bookable');
-            }
-        });
-
-        // Update bookings table
-        Schema::table('bookings', function (Blueprint $table) {
-            if (!Schema::hasColumn('bookings', 'creator_id')) {
-                $table->foreignId('creator_id')->nullable()->after('booker_id');
-            }
-            if (!Schema::hasColumn('bookings', 'relatable_type')) {
-                $table->string('relatable_type')->nullable()->after('creator_id');
-                $table->bigInteger('relatable_id')->nullable()->after('relatable_type');
-                $table->index(['relatable_type', 'relatable_id']);
-            }
-        });
-
-        // Update booked_periods table
-        Schema::table('booked_periods', function (Blueprint $table) {
-            if (!Schema::hasColumn('booked_periods', 'relatable_type')) {
-                $table->string('relatable_type')->nullable()->after('bookable_resource_id');
-                $table->bigInteger('relatable_id')->nullable()->after('relatable_type');
-                $table->index(['relatable_type', 'relatable_id']);
-            }
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('bookable_resources', function (Blueprint $table) {
-            $table->dropColumn('is_visible');
-        });
-
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->dropColumn(['creator_id', 'relatable_type', 'relatable_id']);
-        });
-
-        Schema::table('booked_periods', function (Blueprint $table) {
-            $table->dropColumn(['relatable_type', 'relatable_id']);
-        });
-    }
-};
-```
+The exact schema diff between your pre-1.0 fork and the current package depends entirely on what your custom implementation looked like — there's no single migration that fits everyone, and reproducing one here would just invent columns that were never actually part of this package (there is, for instance, no `creator_id` and no `relatable_type`/`relatable_id` on `bookings` at any released version — `relatable` has only ever lived on `booked_periods`). Compare your existing tables against [Database Schema](database-schema.md) and the real migration stubs in `database/migrations/*.php.stub`, and write a migration that reconciles the two for your specific case. Check the [CHANGELOG](../CHANGELOG.md) for the column-level history of each table.
 
 **2. Run the migration:**
 ```bash
@@ -647,6 +659,8 @@ $booking = (new BookResource())->run(
 
 ## Automated Migration Tools
 
+The package does not ship any Artisan commands of its own (there is no `bookings:*` command namespace). Everything below — `bookings:migrate-to-v1`, `bookings:validate-migration`, `bookings:optimize-database` — is an example command **you** would write in `app/Console/Commands` for your own one-off migration, following the same pattern shown here.
+
 ### Migration Command
 
 ```php
@@ -834,10 +848,9 @@ php artisan view:clear
 
 ### 3. Performance Optimization
 
-```bash
-# Add recommended indexes
-php artisan bookings:optimize-database
+There is no `bookings:optimize-database` command. Add any extra indexes you need by hand — see [Database Schema → Indexing Strategy](database-schema.md#indexing-strategy) for what's already created by the package's own migrations versus what you might want to add.
 
+```bash
 # Cache configuration
 php artisan config:cache
 php artisan route:cache
@@ -861,8 +874,8 @@ Log::info('Booking created via migration', [
 # 1. Restore database backup
 mysql -u username -p database_name < backup_file.sql
 
-# 2. Downgrade package
-composer require masterix21/laravel-bookings:^0.9
+# 2. Downgrade package (the last pre-1.0 release was 0.0.2 — there was no 0.9.x)
+composer require masterix21/laravel-bookings:0.0.2
 
 # 3. Restore old configuration
 cp config/bookings.php.backup config/bookings.php

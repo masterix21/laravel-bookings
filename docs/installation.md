@@ -5,10 +5,12 @@ This guide provides detailed installation instructions for Laravel Bookings, inc
 ## Requirements
 
 - PHP 8.4 or higher
-- Laravel 12.x
+- Laravel 12.x or 13.x
 - Composer
 - MySQL 8.0+ or PostgreSQL 13+ (recommended)
 - SQLite 3.8+ (for development/testing)
+
+The test suite itself runs in CI against SQLite (the default) and MySQL 8.0 — see `.github/workflows/run-tests.yml`.
 
 ## Installation Steps
 
@@ -58,12 +60,9 @@ SET default_transaction_isolation = 'read committed';
 
 ### Environment Variables
 
-Add these to your `.env` file for advanced configuration:
+The package does not read any `BOOKINGS_*` environment variables out of the box — `config/bookings.php` ships with plain values (see [Model Configuration](#model-configuration) below). Wrap a value in `env()` yourself after publishing the config if you want it configurable per environment.
 
 ```env
-# Booking configuration
-BOOKINGS_DEFAULT_BATCH_SIZE=100
-
 # Performance tuning (use Laravel's standard configuration)
 DB_CONNECTION=mysql
 QUEUE_CONNECTION=redis
@@ -92,10 +91,16 @@ return [
     ],
 
     'planning_validation' => [
-        'batch_size' => env('BOOKINGS_DEFAULT_BATCH_SIZE', 100),
+        'batch_size' => 100,
+    ],
+
+    'booking_update' => [
+        'preserve_deleted_periods' => false,
     ],
 ];
 ```
+
+This is the real, complete config file — `batch_size` ships as a plain integer, not wrapped in `env()`. There is no `BOOKINGS_DEFAULT_BATCH_SIZE` environment variable read by the package; wrap it in `env()` yourself if you want that.
 
 ## Advanced Setup
 
@@ -250,9 +255,13 @@ use Masterix21\Bookings\Events\BookingFailed;
 public function boot()
 {
     Event::listen(BookingFailed::class, function ($event) {
+        // BookingFailed has no $booking or $exception property — it carries
+        // $reason (an UnbookableReason enum), $bookableResource, $periods,
+        // and optional $message/$stackTrace.
         Log::channel('bookings')->error('Booking failed', [
-            'booking_id' => $event->booking?->id,
-            'error' => $event->exception->getMessage(),
+            'resource_id' => $event->bookableResource->id,
+            'reason' => $event->reason->value,
+            'error' => $event->message,
         ]);
     });
 }

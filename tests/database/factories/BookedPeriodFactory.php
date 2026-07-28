@@ -20,7 +20,7 @@ class BookedPeriodFactory extends Factory
 
         return [
             'booking_id' => $bookingModel::factory(),
-            'is_excluded' => $this->faker->boolean(20),
+            'is_excluded' => false,
             'label' => $this->faker->words(3, true),
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,

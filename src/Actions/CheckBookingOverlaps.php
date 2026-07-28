@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Masterix21\Bookings\Actions;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Masterix21\Bookings\Enums\UnbookableReason;
 use Masterix21\Bookings\Events\BookingChangeFailed;
 use Masterix21\Bookings\Events\BookingFailed;
 use Masterix21\Bookings\Exceptions\BookingResourceOverlappingException;
 use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\Booking;
+use Masterix21\Bookings\Support\PeriodConcurrency;
 use Spatie\Period\PeriodCollection;
 
 class CheckBookingOverlaps
@@ -25,9 +28,11 @@ class CheckBookingOverlaps
             return true;
         }
 
-        $foundOverlaps = $this->countOverlappingPeriods($periods, $bookableResource, $ignoreBooking);
+        $lockedResource = $this->lockBookableResource($bookableResource);
 
-        if ($bookableResource->max > $foundOverlaps) {
+        $foundOverlaps = $this->maxConcurrentBookings($periods, $bookableResource, $ignoreBooking);
+
+        if (blank($lockedResource->max) || $lockedResource->max > $foundOverlaps) {
             return true;
         }
 
@@ -36,13 +41,20 @@ class CheckBookingOverlaps
         return false;
     }
 
-    protected function countOverlappingPeriods(
+    protected function maxConcurrentBookings(
         PeriodCollection $periods,
         BookableResource $bookableResource,
         ?Booking $ignoreBooking
     ): int {
-        $lockedResource = BookableResource::query()
-            ->where('id', $bookableResource->getKey())
+        $bookedPeriods = $this->lockOverlappingPeriods($periods, $bookableResource, $ignoreBooking);
+
+        return PeriodConcurrency::maxConcurrentBookings($periods, $bookedPeriods);
+    }
+
+    protected function lockBookableResource(BookableResource $bookableResource): BookableResource
+    {
+        $lockedResource = $bookableResource->newQuery()
+            ->whereKey($bookableResource->getKey())
             ->lockForUpdate()
             ->first();
 
@@ -50,8 +62,18 @@ class CheckBookingOverlaps
             throw new \RuntimeException('BookableResource not found or locked');
         }
 
+        return $lockedResource;
+    }
+
+    /** @return EloquentCollection<int, BookedPeriod> */
+    protected function lockOverlappingPeriods(
+        PeriodCollection $periods,
+        BookableResource $bookableResource,
+        ?Booking $ignoreBooking
+    ): EloquentCollection {
         $builder = resolve(config('bookings.models.booked_period'))::query()
             ->where('bookable_resource_id', $bookableResource->getKey())
+            ->where('is_excluded', false)
             ->lockForUpdate();
 
         $builder->where(function ($query) use ($periods) {
@@ -68,7 +90,7 @@ class CheckBookingOverlaps
             $builder->where('booking_id', '!=', $ignoreBooking->getKey());
         }
 
-        return $builder->count();
+        return $builder->get();
     }
 
     protected function handleOverlapFailure(

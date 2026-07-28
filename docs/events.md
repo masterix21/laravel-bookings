@@ -12,29 +12,28 @@ The package fires events at key points during the booking process, allowing you 
 - Add custom validation logic
 - Trigger workflows
 
+All booking lifecycle events live under `Masterix21\Bookings\Events`. The signatures below are the real constructors — copy them, don't guess at extra properties.
+
 ## Booking Lifecycle Events
 
 ### BookingInProgress
 
-Fired when a booking process starts, before any validation or database changes.
+Fired when a booking process starts, before overlap validation or any database changes. Dispatched from `BookResource::create()` only (not on update).
 
 ```php
-use Masterix21\Bookings\Events\BookingInProgress;
+namespace Masterix21\Bookings\Events;
 
 class BookingInProgress
 {
     public function __construct(
-        public PeriodCollection $periods,
         public BookableResource $bookableResource,
-        public ?Model $booker = null,
-        public ?Booking $booking = null
+        public PeriodCollection $periods,
     ) {}
 }
 ```
 
 **Use Cases:**
 - Log booking attempts
-- Pre-validation checks
 - Rate limiting
 - User activity tracking
 
@@ -54,10 +53,8 @@ class LogBookingAttempt
     public function handle(BookingInProgress $event): void
     {
         Log::info('Booking attempt started', [
-            'user_id' => $event->booker?->id,
             'resource_id' => $event->bookableResource->id,
             'periods_count' => $event->periods->count(),
-            'is_update' => $event->booking !== null,
         ]);
     }
 }
@@ -65,20 +62,21 @@ class LogBookingAttempt
 
 ### BookingCompleted
 
-Fired when a booking is successfully created or updated.
+Fired when a new booking is successfully created (after the transaction commits). For updates, see `BookingChanged` below.
 
 ```php
-use Masterix21\Bookings\Events\BookingCompleted;
+namespace Masterix21\Bookings\Events;
 
 class BookingCompleted
 {
     public function __construct(
         public Booking $booking,
         public PeriodCollection $periods,
-        public BookableResource $bookableResource
     ) {}
 }
 ```
+
+There is no `$bookableResource` property on this event — resolve the resource from the booking's periods if you need it: `$event->booking->bookedPeriods->first()?->bookableResource`.
 
 **Use Cases:**
 - Send confirmation emails
@@ -111,41 +109,36 @@ class SendBookingConfirmation
                 new BookingConfirmationMail($booking)
             );
         }
-
-        // Send to resource managers
-        $resource = $event->bookableResource->resource;
-        if ($resource->manager_email) {
-            Mail::to($resource->manager_email)->send(
-                new BookingNotificationMail($booking)
-            );
-        }
     }
 }
 ```
 
 ### BookingFailed
 
-Fired when a booking creation or update fails.
+Fired when creating a new booking fails — either an overlap was detected (`emitEvent: true` on `CheckBookingOverlaps`) or any `\Throwable` was raised and the transaction was rolled back. Also fired when an *update* fails after the booking's `save()` call has already happened during creation (see [Actions → Transaction Handling](actions.md#transaction-handling)).
 
 ```php
-use Masterix21\Bookings\Events\BookingFailed;
+namespace Masterix21\Bookings\Events;
+
+use Masterix21\Bookings\Enums\UnbookableReason;
 
 class BookingFailed
 {
     public function __construct(
-        public PeriodCollection $periods,
+        public UnbookableReason $reason,
         public BookableResource $bookableResource,
-        public \Exception $exception,
-        public ?Model $booker = null,
-        public ?Booking $booking = null
+        public PeriodCollection $periods,
+        public ?string $message = null,
+        public ?string $stackTrace = null,
     ) {}
 }
 ```
 
+There is no `$booking`, `$booker`, or `$exception` property — use `$event->reason` (an `UnbookableReason` enum: `PERIOD_OVERLAP` or `EXCEPTION`) and `$event->message`/`$event->stackTrace` instead.
+
 **Use Cases:**
 - Error logging
 - Send failure notifications
-- Trigger fallback processes
 - Analytics and monitoring
 
 **Example Listener:**
@@ -156,94 +149,58 @@ class BookingFailed
 
 namespace App\Listeners;
 
+use Masterix21\Bookings\Enums\UnbookableReason;
 use Masterix21\Bookings\Events\BookingFailed;
 use Illuminate\Support\Facades\Log;
-use App\Services\NotificationService;
 
 class HandleBookingFailure
 {
-    public function __construct(
-        private NotificationService $notificationService
-    ) {}
-
     public function handle(BookingFailed $event): void
     {
-        // Log the failure
         Log::error('Booking failed', [
-            'user_id' => $event->booker?->id,
             'resource_id' => $event->bookableResource->id,
-            'exception' => $event->exception->getMessage(),
-            'trace' => $event->exception->getTraceAsString(),
+            'reason' => $event->reason->value,
+            'message' => $event->message,
         ]);
 
-        // Notify administrators for critical failures
-        if ($this->isCriticalFailure($event->exception)) {
-            $this->notificationService->notifyAdmins(
-                'Critical booking failure',
-                $event->exception->getMessage()
-            );
+        if ($event->reason === UnbookableReason::EXCEPTION) {
+            // Notify administrators for unexpected failures
         }
-
-        // Send user-friendly notification
-        if ($event->booker) {
-            $this->notificationService->notifyUser(
-                $event->booker,
-                'Booking could not be completed',
-                $this->getUserFriendlyMessage($event->exception)
-            );
-        }
-    }
-
-    private function isCriticalFailure(\Exception $exception): bool
-    {
-        return !($exception instanceof BookingResourceOverlappingException);
-    }
-
-    private function getUserFriendlyMessage(\Exception $exception): string
-    {
-        return match (get_class($exception)) {
-            BookingResourceOverlappingException::class => 
-                'The requested time slot is no longer available.',
-            OutOfPlanningsException::class => 
-                'The resource is not available during the requested time.',
-            NoFreeSizeException::class => 
-                'The resource has reached its maximum capacity.',
-            default => 'An error occurred while processing your booking.'
-        };
     }
 }
 ```
 
 ### BookingChanging
 
-Fired when a booking update process starts.
+Fired when an update to an existing booking starts, before overlap validation.
 
 ```php
-use Masterix21\Bookings\Events\BookingChanging;
+namespace Masterix21\Bookings\Events;
 
 class BookingChanging
 {
     public function __construct(
         public Booking $booking,
-        public PeriodCollection $newPeriods,
-        public PeriodCollection $oldPeriods
+        public BookableResource $bookableResource,
+        public PeriodCollection $periods,
     ) {}
 }
 ```
 
+`$periods` is the new set of periods being applied — the event does not carry the previous periods. Read `$event->booking->bookedPeriods` *before* dispatching your own logic if you need the old state.
+
 ### BookingChanged
 
-Fired when a booking is successfully updated.
+Fired after an existing booking is successfully updated (after the transaction commits).
 
 ```php
-use Masterix21\Bookings\Events\BookingChanged;
+namespace Masterix21\Bookings\Events;
 
 class BookingChanged
 {
     public function __construct(
         public Booking $booking,
-        public PeriodCollection $newPeriods,
-        public PeriodCollection $oldPeriods
+        public PeriodCollection $periods,
     ) {}
 }
 ```
@@ -260,6 +217,7 @@ use Masterix21\Bookings\Events\BookingChanged;
 use App\Services\CalendarService;
 use App\Mail\BookingChangedMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class HandleBookingChange
 {
@@ -277,18 +235,13 @@ class HandleBookingChange
         // Send change notification
         if ($booking->booker && $booking->booker->email) {
             Mail::to($booking->booker->email)->send(
-                new BookingChangedMail($booking, $event->oldPeriods, $event->newPeriods)
+                new BookingChangedMail($booking, $event->periods)
             );
         }
 
-        // Log the change
         Log::info('Booking updated', [
             'booking_id' => $booking->id,
-            'old_periods' => $event->oldPeriods->map(fn($p) => [
-                'start' => $p->start(),
-                'end' => $p->end(),
-            ]),
-            'new_periods' => $event->newPeriods->map(fn($p) => [
+            'periods' => $event->periods->map(fn ($p) => [
                 'start' => $p->start(),
                 'end' => $p->end(),
             ]),
@@ -299,68 +252,84 @@ class HandleBookingChange
 
 ### BookingChangeFailed
 
-Fired when a booking update fails.
+Fired when updating an existing booking fails.
 
 ```php
-use Masterix21\Bookings\Events\BookingChangeFailed;
+namespace Masterix21\Bookings\Events;
+
+use Masterix21\Bookings\Enums\UnbookableReason;
 
 class BookingChangeFailed
 {
     public function __construct(
         public Booking $booking,
+        public UnbookableReason $reason,
+        public BookableResource $bookableResource,
         public PeriodCollection $periods,
-        public \Exception $exception
+        public ?string $message = null,
+        public ?string $stackTrace = null,
     ) {}
 }
 ```
 
 ## Planning Validation Events
 
+These are dispatched by `UsesBookablePlannings::validatePlanningAvailability()` (used internally by `ensureIsAvailable()`), not by `BookResource`.
+
 ### PlanningValidationStarted
 
 Fired when planning validation begins.
 
 ```php
-use Masterix21\Bookings\Events\PlanningValidationStarted;
+namespace Masterix21\Bookings\Events;
+
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class PlanningValidationStarted
 {
     public function __construct(
-        public BookableResource $bookableResource,
-        public PeriodCollection $periods
+        public readonly Model $resource,
+        public readonly Collection $dates,
+        public readonly Collection|EloquentCollection|null $relations = null,
     ) {}
 }
 ```
 
 ### PlanningValidationPassed
 
-Fired when planning validation succeeds.
+Fired when planning validation succeeds. Same constructor shape as `PlanningValidationStarted`.
 
 ```php
-use Masterix21\Bookings\Events\PlanningValidationPassed;
+namespace Masterix21\Bookings\Events;
 
 class PlanningValidationPassed
 {
     public function __construct(
-        public BookableResource $bookableResource,
-        public PeriodCollection $periods
+        public readonly Model $resource,
+        public readonly Collection $dates,
+        public readonly Collection|EloquentCollection|null $relations = null,
     ) {}
 }
 ```
 
 ### PlanningValidationFailed
 
-Fired when planning validation fails.
+Fired when planning validation fails. Carries the exception that was raised (`OutOfPlanningsException` or `RelationsOutOfPlanningsException`).
 
 ```php
-use Masterix21\Bookings\Events\PlanningValidationFailed;
+namespace Masterix21\Bookings\Events;
+
+use Exception;
 
 class PlanningValidationFailed
 {
     public function __construct(
-        public BookableResource $bookableResource,
-        public PeriodCollection $periods,
-        public string $reason
+        public readonly Model $resource,
+        public readonly Collection $dates,
+        public readonly Collection|EloquentCollection|null $relations,
+        public readonly Exception $exception,
     ) {}
 }
 ```
@@ -378,27 +347,24 @@ namespace App\Providers;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Masterix21\Bookings\Events\BookingCompleted;
 use Masterix21\Bookings\Events\BookingFailed;
+use Masterix21\Bookings\Events\BookingChanged;
 use App\Listeners\SendBookingConfirmation;
 use App\Listeners\HandleBookingFailure;
+use App\Listeners\HandleBookingChange;
 
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
         BookingCompleted::class => [
             SendBookingConfirmation::class,
-            UpdateInventory::class,
-            SyncWithExternalCalendar::class,
-            GenerateInvoice::class,
         ],
-        
+
         BookingFailed::class => [
             HandleBookingFailure::class,
-            NotifyAdministrators::class,
         ],
-        
+
         BookingChanged::class => [
             HandleBookingChange::class,
-            UpdateRelatedBookings::class,
         ],
     ];
 }
@@ -422,7 +388,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(BookingCompleted::class, function ($event) {
             // Quick inline logic
-            cache()->forget("availability:{$event->bookableResource->id}");
+            cache()->forget("availability:{$event->booking->id}");
         });
     }
 }
@@ -443,6 +409,7 @@ namespace App\Listeners;
 use Masterix21\Bookings\Events\BookingCompleted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Log;
 
 class SendBookingConfirmation implements ShouldQueue
 {
@@ -456,7 +423,7 @@ class SendBookingConfirmation implements ShouldQueue
         // Time-consuming email sending logic
     }
 
-    public function failed(\Exception $exception): void
+    public function failed(\Throwable $exception): void
     {
         // Handle failed job
         Log::error('Failed to send booking confirmation', [
@@ -492,9 +459,10 @@ class ConditionalBookingProcessor
             $this->processHighValueBooking($booking);
         }
 
-        // Resource-specific processing
-        $resource = $event->bookableResource->resource;
-        match (get_class($resource)) {
+        // Resource-specific processing, resolved from the booked periods
+        $resource = $booking->bookedPeriods->first()?->bookableResource?->resource;
+
+        match ($resource ? get_class($resource) : null) {
             \App\Models\Room::class => $this->processRoomBooking($booking),
             \App\Models\Vehicle::class => $this->processVehicleBooking($booking),
             default => null,
@@ -589,7 +557,7 @@ class CompleteBookingWorkflow
 
 ## Custom Events
 
-Create custom events for your specific business logic:
+The events above are dispatched by the package itself. Nothing stops you from defining and dispatching your own application-level events from listeners or `onBookingSaving()`/`onBookingSaved()` callbacks — these are ordinary Laravel events, unrelated to the package's own classes:
 
 ```php
 <?php
@@ -672,8 +640,7 @@ class BookingEventsTest extends TestCase
 
         Event::assertDispatched(BookingCompleted::class, function ($event) {
             return $event->booking instanceof Booking &&
-                   $event->periods instanceof PeriodCollection &&
-                   $event->bookableResource instanceof BookableResource;
+                   $event->periods instanceof PeriodCollection;
         });
     }
 }
@@ -700,7 +667,7 @@ class SendBookingConfirmationTest extends TestCase
         Mail::fake();
 
         $booking = $this->createBooking();
-        $event = new BookingCompleted($booking, $periods, $resource);
+        $event = new BookingCompleted($booking, $periods);
 
         $listener = new SendBookingConfirmation();
         $listener->handle($event);

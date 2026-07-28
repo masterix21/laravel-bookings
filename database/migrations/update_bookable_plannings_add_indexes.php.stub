@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $planningsTable = app(config('bookings.models.bookable_planning'))->getTable();
+
+        if (Schema::hasIndex($planningsTable, 'bookable_plannings_resource_dates_index')) {
+            return;
+        }
+
+        Schema::table($planningsTable, function (Blueprint $table) {
+            $table->index(
+                [
+                    app(config('bookings.models.bookable_resource'))->getForeignKey(),
+                    'starts_at',
+                    'ends_at',
+                ],
+                'bookable_plannings_resource_dates_index'
+            );
+        });
+    }
+};

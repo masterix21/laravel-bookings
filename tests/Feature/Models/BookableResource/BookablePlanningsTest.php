@@ -6,9 +6,14 @@ use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Period;
 use Masterix21\Bookings\Tests\Concerns\CreatesResources;
 use Spatie\Period\Period as SpatiePeriod;
+use Spatie\TestTime\TestTime;
 
 uses(CreatesResources::class);
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    TestTime::freeze();
+});
 
 it('throws an exception because it has no plannings', function () {
     BookableResource::factory()->count(1)->create();
@@ -31,7 +36,6 @@ it('works because it has a valid planning', function () {
         )
     );
 
-    $bookableResource->ensureHasValidPlannings(dates: $dates);
-
-    expect(true)->toBeTrue();
+    expect(fn () => $bookableResource->ensureHasValidPlannings(dates: $dates))
+        ->not->toThrow(Exception::class);
 });

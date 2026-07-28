@@ -13,8 +13,9 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int|null $parent_bookable_resource_id
  * @property int|null $bookable_resource_id
- * @property int|null $parent_bookable_area_id
- * @property int|null $bookable_area_id
+ * @property bool $is_required
+ * @property int|null $min
+ * @property int|null $max
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -25,8 +26,13 @@ class BookableRelation extends Model
     protected $fillable = [
         'parent_bookable_resource_id',
         'bookable_resource_id',
-        'parent_bookable_area_id',
-        'bookable_area_id',
+        'is_required',
+        'min',
+        'max',
+    ];
+
+    protected $casts = [
+        'is_required' => 'bool',
     ];
 
     public function parentBookableResource(): BelongsTo

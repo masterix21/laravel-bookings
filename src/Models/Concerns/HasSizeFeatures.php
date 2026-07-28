@@ -2,16 +2,16 @@
 
 namespace Masterix21\Bookings\Models\Concerns;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Masterix21\Bookings\Exceptions\NoFreeSizeException;
 use Masterix21\Bookings\Exceptions\RelationsHaveNoFreeSizeException;
 use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableResource;
+use Masterix21\Bookings\Support\PeriodConcurrency;
+use Spatie\Period\PeriodCollection;
 
-/** @mixin IsBookable */
+/** @mixin BookableResource */
 trait HasSizeFeatures
 {
     abstract public function size(bool $ignoresUnbookable = false): int;
@@ -22,7 +22,7 @@ trait HasSizeFeatures
      * @throws UnbookableException
      */
     public function ensureHasFreeSize(
-        Collection $dates,
+        PeriodCollection $periods,
         Collection|EloquentCollection|null $relations = null,
         bool $ignoresUnbookable = false
     ): void {
@@ -32,17 +32,18 @@ trait HasSizeFeatures
             throw new UnbookableException;
         }
 
-        $bookingsCount = $this->bookedPeriods()
-            ->whereDatesAreWithinPeriods($dates) // @phpstan-ignore method.notFound
-            ->when($this instanceof BookableResource, fn ($q) => $q->where('bookable_resource_id', $this->id))
-            ->count(DB::raw('DISTINCT booking_id'));
+        $bookedPeriods = $this->bookedPeriods()
+            ->whereDatesAreWithinPeriods($periods) // @phpstan-ignore method.notFound
+            ->get();
+
+        $bookingsCount = PeriodConcurrency::maxConcurrentBookings($periods, $bookedPeriods);
 
         if ($size <= $bookingsCount) {
             throw new NoFreeSizeException;
         }
 
         $this->ensureRelationsHaveFreeSize(
-            dates: $dates,
+            periods: $periods,
             relations: $relations,
             ignoresUnbookable: $ignoresUnbookable
         );
@@ -52,7 +53,7 @@ trait HasSizeFeatures
      * @throws RelationsHaveNoFreeSizeException
      */
     public function ensureRelationsHaveFreeSize(
-        Collection $dates,
+        PeriodCollection $periods,
         Collection|EloquentCollection|null $relations = null,
         bool $ignoresUnbookable = false
     ): void {
@@ -62,24 +63,34 @@ trait HasSizeFeatures
 
         $bookableResources = $relations->filter(fn ($bookable) => $bookable instanceof BookableResource);
 
-        if ($bookableResources->isNotEmpty()) {
-            $resourceIds = $bookableResources->pluck('id');
+        if ($bookableResources->isEmpty()) {
+            return;
+        }
 
-            $hasAvailableResources = BookableResource::query()
-                ->select(['id', 'size'])
-                ->withCount([
-                    'bookedPeriods' => fn (Builder $query) => $query
-                        ->whereDatesAreWithinPeriods($dates) // @phpstan-ignore method.notFound
-                        ->distinct('booking_id'),
-                ])
-                ->whereIn('id', $resourceIds)
-                ->when(! $ignoresUnbookable, fn ($query) => $query->where('is_bookable', true))
-                ->havingRaw('size > booked_periods_count')
-                ->exists();
+        $resourceIds = $bookableResources->pluck('id');
 
-            if (! $hasAvailableResources) {
-                throw new RelationsHaveNoFreeSizeException;
-            }
+        $resources = resolve(config('bookings.models.bookable_resource'))::query()
+            ->whereIn('id', $resourceIds)
+            ->when(! $ignoresUnbookable, fn ($query) => $query->where('is_bookable', true))
+            ->get(['id', 'size']);
+
+        $bookedPeriodsByResource = resolve(config('bookings.models.booked_period'))::query()
+            ->whereIn($this->getForeignKey(), $resourceIds)
+            ->whereDatesAreWithinPeriods($periods) // @phpstan-ignore method.notFound
+            ->get()
+            ->groupBy($this->getForeignKey());
+
+        $hasAvailableResources = $resources->contains(function (BookableResource $resource) use ($periods, $bookedPeriodsByResource) {
+            $occupancy = PeriodConcurrency::maxConcurrentBookings(
+                $periods,
+                $bookedPeriodsByResource->get($resource->id) ?? new EloquentCollection
+            );
+
+            return $resource->size > $occupancy;
+        });
+
+        if (! $hasAvailableResources) {
+            throw new RelationsHaveNoFreeSizeException;
         }
     }
 }

@@ -35,7 +35,7 @@ trait UsesGenerateBookedPeriods
             ];
 
             if ($relatable) {
-                $baseAttributes['relatable_type'] = $relatable::class;
+                $baseAttributes['relatable_type'] = $relatable->getMorphClass();
                 $baseAttributes['relatable_id'] = $relatable->getKey();
             }
 

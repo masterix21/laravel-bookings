@@ -9,7 +9,12 @@ use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Models\Booking;
 use Masterix21\Bookings\Tests\TestClasses\Product;
 use Spatie\Period\Period;
+use Spatie\TestTime\TestTime;
 use Staudenmeir\EloquentHasManyDeep\HasManyDeep;
+
+beforeEach(function () {
+    TestTime::freeze();
+});
 
 it('has bookableResources morphMany relationship', function () {
     $product = Product::factory()->create();

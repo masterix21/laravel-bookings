@@ -12,8 +12,7 @@ use Masterix21\Bookings\Exceptions\UnbookableException;
 use Masterix21\Bookings\Models\BookableResource;
 use Spatie\Period\PeriodCollection;
 
-/** @mixin BookableArea | BookableResource */
-// @phpstan-ignore trait.unused
+/** @mixin BookableResource */
 trait ImplementsEnsureIsAvailable
 {
     /**
@@ -32,6 +31,6 @@ trait ImplementsEnsureIsAvailable
 
         $this->validatePlanningAvailability(dates: $dates, relations: $relations);
 
-        $this->ensureHasFreeSize(dates: $dates, relations: $relations, ignoresUnbookable: $ignoresUnbookable);
+        $this->ensureHasFreeSize(periods: $periods, relations: $relations, ignoresUnbookable: $ignoresUnbookable);
     }
 }

@@ -30,6 +30,15 @@ return new class extends Migration
             $table->dateTime('ends_at')->nullable();
 
             $table->timestamps();
+
+            $table->index(
+                [
+                    app(config('bookings.models.bookable_resource'))->getForeignKey(),
+                    'starts_at',
+                    'ends_at',
+                ],
+                'bookable_plannings_resource_dates_index'
+            );
         });
     }
 

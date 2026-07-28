@@ -14,7 +14,6 @@ class BookingsServiceProvider extends PackageServiceProvider
             ->name('laravel-bookings')
             ->hasConfigFile()
             ->hasMigrations([
-                'create_bookable_areas_table',
                 'create_bookable_resources_table',
                 'create_bookable_plannings_table',
                 'create_bookable_relations_table',
@@ -22,6 +21,8 @@ class BookingsServiceProvider extends PackageServiceProvider
                 'create_booked_periods_table',
                 'update_bookable_plannings_add_source_columns',
                 'update_bookings_add_parent_booking_id',
+                'update_booked_periods_constraints',
+                'update_bookable_plannings_add_indexes',
             ]);
     }
 

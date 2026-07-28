@@ -179,9 +179,12 @@ it('scopes work correctly with table prefixes', function () {
     $bookableSql = $bookableQuery->toSql();
     $unbookableSql = $unbookableQuery->toSql();
 
-    // SQLite quotes the table and column names
-    expect($bookableSql)->toContain('"bookable_resources"."is_bookable"')
-        ->and($unbookableSql)->toContain('"bookable_resources"."is_bookable"');
+    // Build the expected identifier with the active grammar, so the assertion
+    // holds regardless of the database driver's quoting style.
+    $expectedColumn = $bookableQuery->getQuery()->getGrammar()->wrap('bookable_resources.is_bookable');
+
+    expect($bookableSql)->toContain($expectedColumn)
+        ->and($unbookableSql)->toContain($expectedColumn);
 
     // Verify the queries return correct results
     expect($bookableQuery->count())->toBe(1)

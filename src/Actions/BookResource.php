@@ -6,7 +6,6 @@ namespace Masterix21\Bookings\Actions;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Masterix21\Bookings\Enums\UnbookableReason;
 use Masterix21\Bookings\Events\BookingChanged;
 use Masterix21\Bookings\Events\BookingChangeFailed;
@@ -133,7 +132,7 @@ class BookResource
             $booking->fill([
                 'parent_booking_id' => $parent?->getKey(),
                 'code' => $code ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
-                'booker_type' => $booker ? $booker::class : null,
+                'booker_type' => $booker?->getMorphClass(),
                 'booker_id' => $booker?->getKey(),
                 'label' => $label,
                 'note' => $note,
@@ -157,7 +156,7 @@ class BookResource
                     relatable: $relatable,
                 );
 
-            DB::afterCommit(function () use ($booking, $periods) {
+            $booking->getConnection()->afterCommit(function () use ($booking, $periods) {
                 event(new BookingCompleted($booking, $periods));
             });
 
@@ -211,12 +210,12 @@ class BookResource
                     ?: $booking->code
                         ?: $codeGenerator->run(prefix: $codePrefix, suffix: $codeSuffix),
                 'booker_type' => $booker
-                    ? $booker::class
+                    ? $booker->getMorphClass()
                     : $booking->booker_type,
                 'booker_id' => $booker?->getKey() ?: $booking->booker_id,
-                'label' => $label,
-                'note' => $note,
-                'meta' => $meta,
+                'label' => $label ?? $booking->label,
+                'note' => $note ?? $booking->note,
+                'meta' => $meta ?? $booking->meta,
             ]);
 
             if ($this->savingCallback) {
@@ -242,7 +241,7 @@ class BookResource
                     relatable: $relatable,
                 );
 
-            DB::afterCommit(function () use ($booking, $periods) {
+            $booking->getConnection()->afterCommit(function () use ($booking, $periods) {
                 event(new BookingChanged($booking, $periods));
             });
 
@@ -256,6 +255,8 @@ class BookResource
         PeriodCollection $periods,
         callable $callback
     ): ?Booking {
+        $isUpdating = $booking->exists;
+
         try {
             $booking->getConnection()->beginTransaction();
 
@@ -264,17 +265,17 @@ class BookResource
             $booking->getConnection()->commit();
 
             return $result;
-        } catch (\Exception $e) {
-            $this->emitFailureEvent($e, $bookableResource, $periods, $booking->exists ? $booking : null);
-
+        } catch (\Throwable $e) {
             $booking->getConnection()->rollBack();
+
+            $this->emitFailureEvent($e, $bookableResource, $periods, $isUpdating ? $booking : null);
 
             throw $e;
         }
     }
 
     protected function emitFailureEvent(
-        \Exception $e,
+        \Throwable $e,
         BookableResource $bookableResource,
         PeriodCollection $periods,
         ?Booking $booking = null

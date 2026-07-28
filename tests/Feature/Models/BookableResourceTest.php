@@ -5,14 +5,20 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Masterix21\Bookings\Models\BookableRelation;
 use Masterix21\Bookings\Models\BookableResource;
 use Masterix21\Bookings\Models\BookedPeriod;
 use Masterix21\Bookings\Tests\database\factories\BookingFactory;
 use Masterix21\Bookings\Tests\TestClasses\Product;
 use Spatie\Period\Period;
 use Spatie\Period\Precision;
+use Spatie\TestTime\TestTime;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    TestTime::freeze();
+});
 
 it('has morphTo resource relationship', function () {
     $product = Product::factory()->create();
@@ -27,9 +33,24 @@ it('has morphTo resource relationship', function () {
 });
 
 it('has bookableRelations hasMany relationship', function () {
-    $bookableResource = BookableResource::factory()->create();
+    $parentResource = BookableResource::factory()->create();
+    $childResource1 = BookableResource::factory()->create();
+    $childResource2 = BookableResource::factory()->create();
 
-    expect($bookableResource->bookableRelations())->toBeInstanceOf(HasMany::class);
+    BookableRelation::create([
+        'parent_bookable_resource_id' => $parentResource->id,
+        'bookable_resource_id' => $childResource1->id,
+    ]);
+
+    BookableRelation::create([
+        'parent_bookable_resource_id' => $parentResource->id,
+        'bookable_resource_id' => $childResource2->id,
+    ]);
+
+    expect($parentResource->bookableRelations())->toBeInstanceOf(HasMany::class)
+        ->and($parentResource->bookableRelations()->get())->toHaveCount(2)
+        ->and($parentResource->bookableRelations()->pluck('bookable_resource_id'))
+        ->toContain($childResource1->id, $childResource2->id);
 });
 
 it('has bookedPeriods hasMany relationship', function () {
@@ -306,4 +327,183 @@ it('scopeAvailableForPeriod excludes fully booked resources even with valid plan
     $results = BookableResource::availableForPeriod($period)->get();
 
     expect($results->pluck('id'))->not->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod includes resources with unlimited capacity', function () {
+    $period = Period::make(now()->addDay(), now()->addDay()->addHours(2), Precision::HOUR());
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => null,
+    ]);
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod treats touching boundaries as occupied', function () {
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 1,
+    ]);
+
+    $booking = BookingFactory::new()->create();
+
+    $resource->bookedPeriods()->create([
+        'booking_id' => $booking->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(12, 0),
+        'is_excluded' => false,
+    ]);
+
+    // The requested period starts exactly when the booked one ends.
+    $period = Period::make(
+        now()->addDay()->setTime(12, 0),
+        now()->addDay()->setTime(14, 0),
+        Precision::MINUTE()
+    );
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->not->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod ignores excluded periods', function () {
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 1,
+    ]);
+
+    $booking = BookingFactory::new()->create();
+
+    $resource->bookedPeriods()->create([
+        'booking_id' => $booking->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(12, 0),
+        'is_excluded' => true,
+    ]);
+
+    $period = Period::make(
+        now()->addDay()->setTime(11, 0),
+        now()->addDay()->setTime(13, 0),
+        Precision::MINUTE()
+    );
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod excludes resources with zero capacity', function () {
+    $period = Period::make(now()->addDay(), now()->addDay()->addHours(2), Precision::HOUR());
+
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 0,
+    ]);
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->not->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod uses peak concurrency, not total distinct bookings', function () {
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    // Two distinct bookings that never overlap each other: at any instant the
+    // existing concurrency is 1, so a resource with max 2 still has room even
+    // though 2 distinct bookings intersect the requested window.
+    $resource->bookedPeriods()->create([
+        'booking_id' => BookingFactory::new()->create()->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(11, 0),
+        'is_excluded' => false,
+    ]);
+
+    $resource->bookedPeriods()->create([
+        'booking_id' => BookingFactory::new()->create()->id,
+        'starts_at' => now()->addDay()->setTime(14, 0),
+        'ends_at' => now()->addDay()->setTime(15, 0),
+        'is_excluded' => false,
+    ]);
+
+    $period = Period::make(
+        now()->addDay()->setTime(9, 0),
+        now()->addDay()->setTime(16, 0),
+        Precision::MINUTE()
+    );
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod excludes resources whose peak concurrency reaches max', function () {
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    // Two distinct bookings active at the same instants: peak concurrency 2.
+    $resource->bookedPeriods()->create([
+        'booking_id' => BookingFactory::new()->create()->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(12, 0),
+        'is_excluded' => false,
+    ]);
+
+    $resource->bookedPeriods()->create([
+        'booking_id' => BookingFactory::new()->create()->id,
+        'starts_at' => now()->addDay()->setTime(10, 0),
+        'ends_at' => now()->addDay()->setTime(12, 0),
+        'is_excluded' => false,
+    ]);
+
+    $period = Period::make(
+        now()->addDay()->setTime(9, 0),
+        now()->addDay()->setTime(16, 0),
+        Precision::MINUTE()
+    );
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->not->toContain($resource->id);
+});
+
+it('scopeAvailableSlotForPeriod counts distinct bookings, not period rows', function () {
+    $resource = BookableResource::factory()->create([
+        'is_bookable' => true,
+        'max' => 2,
+    ]);
+
+    $booking = BookingFactory::new()->create();
+
+    $resource->bookedPeriods()->createMany([
+        [
+            'booking_id' => $booking->id,
+            'starts_at' => now()->addDay()->setTime(10, 0),
+            'ends_at' => now()->addDay()->setTime(12, 0),
+            'is_excluded' => false,
+        ],
+        [
+            'booking_id' => $booking->id,
+            'starts_at' => now()->addDay()->setTime(10, 0),
+            'ends_at' => now()->addDay()->setTime(12, 0),
+            'is_excluded' => false,
+        ],
+    ]);
+
+    $period = Period::make(
+        now()->addDay()->setTime(11, 0),
+        now()->addDay()->setTime(13, 0),
+        Precision::MINUTE()
+    );
+
+    $results = BookableResource::availableSlotForPeriod($period)->get();
+
+    expect($results->pluck('id'))->toContain($resource->id);
 });

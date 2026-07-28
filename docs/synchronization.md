@@ -382,7 +382,7 @@ public function syncBookableResource(BookableResource $resource): void
 
     // Clean up planning for inactive rates
     if (!$this->is_active) {
-        $resource->plannings()
+        $resource->bookablePlannings()
             ->where('source_type', Rate::class)
             ->where('source_id', $this->id)
             ->delete();
@@ -502,10 +502,10 @@ This is by design! Multiple sources (rates, offers) can create planning for the 
 
 ```php
 // Query all planning for a resource
-$resource->plannings; // Returns all planning
+$resource->bookablePlannings; // Returns all planning
 
 // Query by source type
-$resource->plannings()->where('source_type', Rate::class)->get();
+$resource->bookablePlannings()->where('source_type', Rate::class)->get();
 
 // Get the source model
 $planning->source; // Returns Rate, Offer, or null

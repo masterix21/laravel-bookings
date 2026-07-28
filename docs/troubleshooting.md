@@ -65,6 +65,13 @@ php artisan route:clear
 
 **Problem:** Bookings created despite existing overlaps.
 
+Before debugging further, rule out expected behavior first:
+
+- `max = null` on the resource means **unlimited** capacity — it will never reject a booking. Set an explicit `max` if you want a concurrency limit.
+- `max = 0` means **zero** capacity — every booking on that resource is rejected and it never appears in `availableSlotForPeriod()`.
+- Periods with `is_excluded = true` never count as occupancy, by design.
+- A resource is only "full" when the number of *distinct bookings* concurrently active at some instant reaches `max` — several periods belonging to the same booking never count more than once.
+
 **Debugging Steps:**
 
 1. **Check BookableResource configuration:**
@@ -139,6 +146,8 @@ try {
 
 **Problem:** Partial booking data remains after transaction failure.
 
+`BookResource` catches `\Throwable` (not just `\Exception`) around the whole create/update flow, so a `TypeError` or other `\Error` raised inside `onBookingSaving`/`onBookingSaved` still rolls back the transaction. It rolls back **before** emitting `BookingFailed`/`BookingChangeFailed`, so listeners never observe a partially-committed state. If you still see partial data, check for code outside `BookResource` (raw model writes, a separate connection) that isn't part of its transaction — and catch `\Throwable` yourself when wrapping `run()`, not just `\Exception`:
+
 **Debugging:**
 ```php
 // Enable database query logging
@@ -146,7 +155,7 @@ DB::enableQueryLog();
 
 try {
     $booking = (new BookResource())->run(/* ... */);
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     // Check what queries were executed
     $queries = DB::getQueryLog();
     Log::error('Booking transaction failed', [
@@ -249,10 +258,12 @@ $listeners = Event::getListeners(BookingCompleted::class);
 dump('Registered listeners:', $listeners);
 
 // Add debug logging to events
+// BookingCompleted only carries $booking and $periods, no $bookableResource —
+// resolve the resource from the booking's periods if you need it.
 Event::listen(BookingCompleted::class, function ($event) {
     Log::info('BookingCompleted event fired', [
         'booking_id' => $event->booking->id,
-        'resource_id' => $event->bookableResource->id,
+        'resource_id' => $event->booking->bookedPeriods->first()?->bookable_resource_id,
     ]);
 });
 ```
@@ -335,6 +346,8 @@ dump([
        'organization' => \App\Models\Organization::class,
    ]);
    ```
+
+   `booker_type` and `relatable_type` are written via `$model->getMorphClass()`, so a configured morph map — including `Relation::enforceMorphMap()` — is honored automatically for new and updated bookings. If existing rows still hold the fully-qualified class name from before the morph map was configured, backfill them manually; the package does not rewrite historical data.
 
 2. **Check database data:**
    ```sql
@@ -461,10 +474,23 @@ BookableResource::factory()
 try {
     $booking = (new BookResource())->run(/* ... */);
 } catch (BookingResourceOverlappingException $e) {
-    $conflicts = $e->getConflictingBookings();
-    
+    // The exception carries no data of its own — no getConflictingBookings().
+    // Query the overlapping periods yourself if you need them in the log.
+    $conflicts = $resource->bookedPeriods()
+        ->where('is_excluded', false)
+        ->where(function ($query) use ($periods) {
+            foreach ($periods as $period) {
+                $query->orWhere(
+                    fn ($q) => $q->where('starts_at', '<=', $period->end())
+                        ->where('ends_at', '>=', $period->start())
+                );
+            }
+        })
+        ->pluck('booking_id');
+
     Log::error('Booking overlap detected', [
-        'conflicting_bookings' => $conflicts->pluck('id'),
+        'message' => $e->getMessage(),
+        'conflicting_booking_ids' => $conflicts,
         'requested_periods' => $periods->map(fn($p) => [
             'start' => $p->start(),
             'end' => $p->end(),
@@ -475,7 +501,7 @@ try {
 
 ### "OutOfPlanningsException"
 
-**Cause:** No valid planning exists for the requested time.
+**Cause:** No valid planning exists for the requested time. Thrown by `ensureIsAvailable()`/`validatePlanningAvailability()` — `BookResource::run()` never calls these itself, so if you're only seeing `BookingResourceOverlappingException` and expected this instead, check whether you're calling `ensureIsAvailable()` before `run()`.
 
 **Debug:**
 ```php
@@ -494,7 +520,7 @@ if ($plannings->isEmpty()) {
 
 ### "NoFreeSizeException"
 
-**Cause:** Resource capacity exceeded.
+**Cause:** Resource capacity exceeded. Thrown by `ensureHasFreeSize()`/`ensureIsAvailable()` — like `OutOfPlanningsException`, this is not thrown by `BookResource::run()` itself.
 
 **Debug:**
 ```php
