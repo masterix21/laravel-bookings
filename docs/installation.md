@@ -4,7 +4,7 @@ This guide provides detailed installation instructions for Laravel Bookings, inc
 
 ## Requirements
 
-- PHP 8.4 or higher
+- PHP 8.3 or higher
 - Laravel 12.x or 13.x
 - Composer
 - MySQL 8.0+ or PostgreSQL 13+ (recommended)

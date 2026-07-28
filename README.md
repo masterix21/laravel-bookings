@@ -36,7 +36,7 @@ Add booking functionality to any Eloquent model. Turn your models into bookable 
 
 | Requirement | Version       |
 |-------------|---------------|
-| PHP         | 8.4+          |
+| PHP         | 8.3+          |
 | Laravel     | 12.x or 13.x  |
 
 ## Installation

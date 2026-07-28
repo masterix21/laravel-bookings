@@ -8,7 +8,7 @@ This guide helps you migrate between versions of Laravel Bookings and upgrade yo
 
 | Laravel Bookings | Laravel | PHP | Status |
 |------------------|---------|-----|--------|
-| 2.x | 12.x, 13.x | 8.4+ | Current |
+| 2.x | 12.x, 13.x | 8.3+ | Current |
 | 1.x | 12.x (13.x added in 1.3.0) | 8.4+ | Previous |
 | 0.x | 9.x, 10.x | 8.1+ | Legacy |
 
